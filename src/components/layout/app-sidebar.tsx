@@ -25,8 +25,7 @@ import {
     return (
       <>
         <SidebarHeader>
-          <div className="flex items-center gap-2 p-2">
-            <Image src="https://storage.googleapis.com/aifirebase-1.appspot.com/images/158a156f-2032-4d2c-a28a-8742880d46d0.png" alt="Logo Retífica Figueirêdo" width={40} height={40} className="shrink-0 rounded-full" />
+          <div className="flex items-center gap-2 p-2 justify-center">
             <h1
               className={`text-lg font-semibold text-foreground transition-opacity duration-200 ${isCollapsed ? 'opacity-0' : 'opacity-100'}`}
             >
