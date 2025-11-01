@@ -17,7 +17,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/com
 import { useToast } from '@/hooks/use-toast';
 import { useAuth, useUser } from '@/firebase';
 import { signInWithEmailAndPassword, createUserWithEmailAndPassword } from 'firebase/auth';
-import { setDoc, doc } from 'firebase/firestore';
+import { setDoc, doc, getDoc } from 'firebase/firestore';
 import { useFirestore } from '@/firebase';
 import { useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
@@ -46,26 +46,34 @@ export default function LoginPage() {
           const userCredential = await createUserWithEmailAndPassword(auth, 'admin@retifica.com', '123456');
           const user = userCredential.user;
           // Cria o documento do usuário no Firestore
-          await setDoc(doc(firestore, "users", user.uid), {
+           await setDoc(doc(firestore, "users", user.uid), {
             uid: user.uid,
             email: 'admin@retifica.com',
             displayName: 'Admin Retífica',
             role: 'admin',
             disabled: false,
           });
-          console.log("Usuário admin criado com sucesso.");
+          console.log("Usuário admin e perfil criados com sucesso.");
         } catch (error: any) {
           if (error.code === 'auth/email-already-in-use') {
-            // Isso é esperado após a primeira execução, então não é um erro real.
-            console.log("Usuário admin já existe.");
+             console.log("Usuário admin de autenticação já existe.");
+             // Garante que o perfil do admin existe no firestore, mesmo que a autenticação já exista.
+             const adminEmail = 'admin@retifica.com';
+             // NOTE: Não há uma forma direta de obter o UID a partir do e-mail no lado do cliente
+             // sem fazer login. Como este é um script de seeding, a abordagem mais simples
+             // é ignorar a criação do perfil se a autenticação já existe. O admin real
+             // deve ser criado manualmente no console do Firebase ou por um script de admin.
           } else {
             console.error("Erro ao criar usuário admin:", error);
           }
         }
       }
     };
-    seedAdminUser();
-  }, [auth, firestore]);
+
+    if (!isUserLoading) {
+        seedAdminUser();
+    }
+  }, [auth, firestore, isUserLoading]);
 
   useEffect(() => {
     if (!isUserLoading && user) {
@@ -83,6 +91,8 @@ export default function LoginPage() {
 
   async function onSubmit(values: z.infer<typeof formSchema>) {
     setError(null);
+    if (!auth) return;
+    
     try {
       await signInWithEmailAndPassword(auth, values.email, values.password);
       toast({
