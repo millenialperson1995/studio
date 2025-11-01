@@ -26,9 +26,9 @@ import {
       <>
         <SidebarHeader>
           <div className="flex items-center gap-2 p-2">
-            <Image src="https://placehold.co/32x32/000000/FFFFFF/png?text=RF" alt="Logo Retífica Figueirêdo" width={32} height={32} className="shrink-0" />
+            <Image src="https://storage.googleapis.com/aifirebase-1.appspot.com/images/158a156f-2032-4d2c-a28a-8742880d46d0.png" alt="Logo Retífica Figueirêdo" width={40} height={40} className="shrink-0 rounded-full" />
             <h1
-              className={`text-xl font-bold text-foreground transition-opacity duration-200 ${isCollapsed ? 'opacity-0' : 'opacity-100'}`}
+              className={`text-lg font-semibold text-foreground transition-opacity duration-200 ${isCollapsed ? 'opacity-0' : 'opacity-100'}`}
             >
               RETÍFICA FIGUEIRÊDO
             </h1>
