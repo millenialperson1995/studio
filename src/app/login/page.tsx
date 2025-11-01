@@ -17,7 +17,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/com
 import { useToast } from '@/hooks/use-toast';
 import { useAuth, useUser } from '@/firebase';
 import { signInWithEmailAndPassword, createUserWithEmailAndPassword } from 'firebase/auth';
-import { setDoc, doc, getDocs, collection, query, where, limit } from 'firebase/firestore';
+import { setDoc, doc } from 'firebase/firestore';
 import { useFirestore } from '@/firebase';
 import { useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
@@ -63,31 +63,24 @@ export default function LoginPage() {
       });
       router.push('/');
     } catch (error: any) {
-       // Se o login falhar, tentamos criar o usuário
-       // Isso permite um fluxo de "login ou cadastre-se"
-      if (error.code === 'auth/user-not-found' || error.code === 'auth/invalid-credential' || error.code === 'auth/wrong-password') {
+      // If login fails, try to sign up the user, especially for the first time.
+      if (error.code === 'auth/user-not-found' || error.code === 'auth/invalid-credential') {
         try {
-            const usersCollectionRef = collection(firestore, 'users');
-            const q = query(usersCollectionRef, where('role', '==', 'admin'), limit(1));
-            const adminSnapshot = await getDocs(q);
-            const isAdminSeedNeeded = adminSnapshot.empty;
-
             const userCredential = await createUserWithEmailAndPassword(auth, values.email, values.password);
             const newUser = userCredential.user;
 
-            const newUserRole = isAdminSeedNeeded ? 'admin' : 'recepcionista'; // O primeiro usuário é admin
-
+            // Note: In a real app, you'd likely want to secure this. 
+            // For this implementation, any first-time user becomes a default user.
             await setDoc(doc(firestore, "users", newUser.uid), {
                 uid: newUser.uid,
                 email: newUser.email,
-                displayName: newUser.email, // Default display name
-                role: newUserRole,
-                disabled: false,
+                displayName: newUser.email,
+                // Simplified: no role system for now
             });
 
             toast({
                 title: `Cadastro realizado com sucesso!`,
-                description: `Bem-vindo! Você foi definido como ${newUserRole}.`,
+                description: `Bem-vindo!`,
             });
              router.push('/');
 
@@ -112,6 +105,9 @@ export default function LoginPage() {
           case 'auth/user-disabled':
               errorMessage = 'Este usuário foi desativado.';
               break;
+          case 'auth/wrong-password':
+                errorMessage = 'Senha incorreta. Tente novamente.';
+                break;
         }
         setError(errorMessage);
          toast({

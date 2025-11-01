@@ -1,10 +1,10 @@
 /**
- * @file This Firestore Security Rules file enforces a role-based and ownership-based model for the Retífica Ágil application.
+ * @file This Firestore Security Rules file enforces a simple ownership-based model.
  *
  * Core Philosophy:
- *   - Administrators ('admin') have full control over user management.
- *   - Regular users can only see their own data, but can see the list of users.
- *   - Write access to most collections is restricted to signed-in users.
+ *   - All authenticated users can read and write to most collections.
+ *   - This is a simplified ruleset for initial development and should be
+ *     tightened before production.
  */
 rules_version = '2';
 service cloud.firestore {
@@ -16,68 +16,10 @@ service cloud.firestore {
     function isSignedIn() {
       return request.auth != null;
     }
-
-    /**
-     * @description Checks if the authenticated user's UID matches the provided userId.
-     */
-    function isOwner(userId) {
-      return request.auth.uid == userId;
-    }
     
-    /**
-     * @description Checks if the signed-in user has the 'admin' role.
-     * It safely gets the user's role from their document in the /users collection.
-     */
-    function isAdmin() {
-      return isSignedIn() && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin';
-    }
+    // Default-deny all reads/writes and open up collections one by one.
     
-    match /users/{userId} {
-      // Allow creating own user document.
-      allow create: if isOwner(userId);
-      // Allow reading own profile, or any profile if admin
-      allow get: if isOwner(userId) || isAdmin();
-      // Allow listing users for any signed-in user (required for the management page)
-      allow list: if isSignedIn();
-      // Only admins can update/delete.
-      allow update, delete: if isAdmin();
-    }
-
-    match /clientes/{clienteId} {
-      allow read, write: if isSignedIn();
-    }
-
-    match /clientes/{clienteId}/veiculos/{veiculoId} {
-      allow read, write: if isSignedIn();
-    }
-    
-    match /orcamentos/{orcamentoId} {
-      allow read, write: if isSignedIn();
-    }
-    
-    match /clientes/{clienteId}/ordensServico/{ordemServicoId} {
-        allow read, write: if isSignedIn();
-    }
-
-    // This rule is required to allow collection group queries on 'veiculos'
-    match /{path=**}/veiculos/{veiculoId} {
-      allow list: if isSignedIn();
-    }
-    
-    // This rule is required to allow collection group queries on 'ordensServico'
-    match /{path=**}/ordensServico/{ordemServicoId} {
-      allow list: if isSignedIn();
-    }
-
-    match /clientes/{clienteId}/orcamentos/{orcamentoId} {
-      allow read, write: if isSignedIn();
-    }
-
-    match /pecas/{pecaId} {
-      allow read, write: if isSignedIn();
-    }
-
-    match /servicos/{servicoId} {
+    match /{document=**} {
       allow read, write: if isSignedIn();
     }
   }

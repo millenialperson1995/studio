@@ -2,7 +2,7 @@ export interface User {
   uid: string;
   email: string | null;
   displayName: string | null;
-  role: 'admin' | 'recepcionista' | 'mecanico';
+  // Role has been removed for simplification
   photoURL?: string | null;
   disabled?: boolean;
 }

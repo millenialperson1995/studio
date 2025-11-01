@@ -1,24 +1,5 @@
 {
   "entities": {
-    "User": {
-      "$schema": "http://json-schema.org/draft-07/schema#",
-      "title": "User",
-      "type": "object",
-      "description": "Represents a user in the system.",
-      "properties": {
-        "uid": { "type": "string", "description": "Firebase Authentication user UID." },
-        "email": { "type": "string", "description": "User's email address.", "format": "email" },
-        "displayName": { "type": "string", "description": "User's display name." },
-        "role": {
-          "type": "string",
-          "description": "The role of the user, determining their permissions.",
-          "enum": ["admin", "recepcionista", "mecanico"]
-        },
-        "photoURL": { "type": "string", "description": "URL of the user's profile picture.", "format": "uri" },
-        "disabled": { "type": "boolean", "description": "Flag to disable a user account." }
-      },
-      "required": ["uid", "email", "role"]
-    },
     "Cliente": {
       "$schema": "http://json-schema.org/draft-07/schema#",
       "title": "Cliente",
@@ -356,15 +337,6 @@
   },
   "firestore": {
     "structure": [
-      {
-        "path": "/users/{userId}",
-        "definition": {
-            "entityName": "User",
-            "schema": { "$ref": "#/backend/entities/User" },
-            "description": "Stores user profiles with their roles for RBAC.",
-            "params": [{ "name": "userId", "description": "Firebase Authentication user UID." }]
-        }
-      },
       {
         "path": "/clientes/{clienteId}",
         "definition": {
