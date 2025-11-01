@@ -17,8 +17,6 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/com
 import { useToast } from '@/hooks/use-toast';
 import { useAuth, useUser } from '@/firebase';
 import { signInWithEmailAndPassword, createUserWithEmailAndPassword } from 'firebase/auth';
-import { setDoc, doc } from 'firebase/firestore';
-import { useFirestore } from '@/firebase';
 import { useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
 import { Wrench } from 'lucide-react';
@@ -32,7 +30,6 @@ const formSchema = z.object({
 export default function LoginPage() {
   const { toast } = useToast();
   const auth = useAuth();
-  const firestore = useFirestore();
   const router = useRouter();
   const { user, isUserLoading } = useUser();
   const [error, setError] = useState<string | null>(null);
@@ -42,6 +39,26 @@ export default function LoginPage() {
       router.push('/');
     }
   }, [user, isUserLoading, router]);
+  
+  // Efetua o login com as credenciais padrão na primeira carga
+  useEffect(() => {
+    async function initialLogin() {
+        if (!auth || isUserLoading || user) return;
+        try {
+            await signInWithEmailAndPassword(auth, 'millenialperson1995@outlook.com.br', 'stayFrosty2*');
+        } catch (error: any) {
+            if (error.code === 'auth/user-not-found' || error.code === 'auth/invalid-credential') {
+                try {
+                    await createUserWithEmailAndPassword(auth, 'millenialperson1995@outlook.com.br', 'stayFrosty2*');
+                } catch (creationError) {
+                    console.error("Failed to create default user:", creationError);
+                }
+            }
+        }
+    }
+    initialLogin();
+  }, [auth, isUserLoading, user]);
+
 
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
@@ -53,7 +70,7 @@ export default function LoginPage() {
 
   async function onSubmit(values: z.infer<typeof formSchema>) {
     setError(null);
-    if (!auth || !firestore) return;
+    if (!auth) return;
     
     try {
       await signInWithEmailAndPassword(auth, values.email, values.password);
@@ -63,42 +80,12 @@ export default function LoginPage() {
       });
       router.push('/');
     } catch (error: any) {
-      // If login fails, try to sign up the user, especially for the first time.
-      if (error.code === 'auth/user-not-found' || error.code === 'auth/invalid-credential') {
-        try {
-            const userCredential = await createUserWithEmailAndPassword(auth, values.email, values.password);
-            const newUser = userCredential.user;
-
-            // Note: In a real app, you'd likely want to secure this. 
-            // For this implementation, any first-time user becomes a default user.
-            await setDoc(doc(firestore, "users", newUser.uid), {
-                uid: newUser.uid,
-                email: newUser.email,
-                displayName: newUser.email,
-                // Simplified: no role system for now
-            });
-
-            toast({
-                title: `Cadastro realizado com sucesso!`,
-                description: `Bem-vindo!`,
-            });
-             router.push('/');
-
-        } catch (creationError: any) {
-            let errorMessage = 'Ocorreu um erro desconhecido. Tente novamente.';
-            if (creationError.code === 'auth/email-already-in-use') {
-                errorMessage = 'Este e-mail já está em uso, mas a senha está incorreta.';
-            }
-             setError(errorMessage);
-            toast({
-                variant: 'destructive',
-                title: 'Erro',
-                description: errorMessage,
-            });
-        }
-      } else {
         let errorMessage = 'Ocorreu um erro desconhecido. Tente novamente.';
         switch (error.code) {
+          case 'auth/user-not-found':
+          case 'auth/invalid-credential':
+            errorMessage = 'E-mail ou senha inválidos.';
+            break;
           case 'auth/invalid-email':
             errorMessage = 'O formato do e-mail é inválido.';
             break;
@@ -115,7 +102,6 @@ export default function LoginPage() {
           title: 'Erro no Login',
           description: errorMessage,
         });
-      }
     }
   }
   
@@ -129,7 +115,7 @@ export default function LoginPage() {
        <div className="w-full max-w-sm mx-auto flex flex-col items-center text-center">
             <Wrench className="h-12 w-12 text-primary mb-4" />
             <h1 className="text-3xl font-bold text-gray-900 dark:text-gray-50">Retífica Ágil</h1>
-            <p className="text-gray-500 dark:text-gray-400 mb-8">Faça login ou cadastre-se para começar</p>
+            <p className="text-gray-500 dark:text-gray-400 mb-8">Faça login para começar</p>
       <Card className="w-full">
         <CardHeader>
           <CardTitle>Login</CardTitle>
@@ -166,7 +152,7 @@ export default function LoginPage() {
               />
               {error && <p className="text-sm font-medium text-destructive">{error}</p>}
               <Button type="submit" className="w-full" disabled={form.formState.isSubmitting}>
-                {form.formState.isSubmitting ? 'Entrando...' : 'Entrar / Cadastrar'}
+                {form.formState.isSubmitting ? 'Entrando...' : 'Entrar'}
               </Button>
             </form>
           </Form>
