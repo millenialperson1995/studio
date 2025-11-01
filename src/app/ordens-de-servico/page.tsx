@@ -38,8 +38,8 @@ export default function OrdensDeServicoPage() {
   const firestore = useFirestore();
 
   // Queries
-  const ordensServicoCollectionRef = useMemoFirebase(
-    () => (firestore ? collection(firestore, 'ordensServico') : null),
+  const ordensServicoQuery = useMemoFirebase(
+    () => (firestore ? query(collectionGroup(firestore, 'ordensServico')) : null),
     [firestore]
   );
   const clientesCollectionRef = useMemoFirebase(
@@ -53,7 +53,7 @@ export default function OrdensDeServicoPage() {
 
   // Data fetching
   const { data: ordensServico, isLoading: isLoadingOrdens } =
-    useCollection<OrdemServico>(ordensServicoCollectionRef);
+    useCollection<OrdemServico>(ordensServicoQuery);
   const { data: clients, isLoading: isLoadingClients } =
     useCollection<Cliente>(clientesCollectionRef);
   const { data: vehicles, isLoading: isLoadingVehicles } =

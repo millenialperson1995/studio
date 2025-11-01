@@ -112,7 +112,7 @@ export function EditOrdemServicoForm({
     if (!firestore) return;
 
     try {
-      const ordemDocRef = doc(firestore, 'ordensServico', ordemServico.id);
+      const ordemDocRef = doc(firestore, 'clientes', values.clienteId, 'ordensServico', ordemServico.id);
       updateDocumentNonBlocking(ordemDocRef, values);
 
       toast({

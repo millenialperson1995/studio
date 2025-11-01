@@ -107,10 +107,9 @@ export default function OrcamentoTable({
   const handleGenerateOS = async (orcamento: Orcamento) => {
     if (!firestore) return;
 
-    // Convert items from budget to services and parts for the service order
     const servicos: ItemServico[] = orcamento.itens.map(item => ({
         descricao: item.descricao,
-        valor: item.valorUnitario * item.quantidade, // We'll put the total for the line item here
+        valor: item.valorUnitario * item.quantidade,
     }));
 
     const newOrdemServico: Omit<OrdemServico, 'id' | 'cliente' | 'veiculo'> = {
@@ -122,13 +121,13 @@ export default function OrcamentoTable({
         dataPrevisao: new Date(new Date().setDate(new Date().getDate() + 7)), // Default to 7 days from now
         mecanicoResponsavel: 'A definir',
         servicos: servicos,
-        pecas: [], // We are assuming all items are services for now
+        pecas: [],
         valorTotal: orcamento.valorTotal,
         observacoes: orcamento.observacoes,
     };
     
     try {
-        const ordensServicoCollectionRef = collection(firestore, 'ordensServico');
+        const ordensServicoCollectionRef = collection(firestore, 'clientes', orcamento.clienteId, 'ordensServico');
         await addDocumentNonBlocking(ordensServicoCollectionRef, newOrdemServico);
         toast({
             title: 'Sucesso!',
@@ -146,7 +145,6 @@ export default function OrcamentoTable({
 
   const formatDate = (date: any) => {
       if (!date) return 'N/A';
-      // It might be a Firestore Timestamp, so convert to Date
       const jsDate = date.toDate ? date.toDate() : new Date(date);
       return format(jsDate, 'dd/MM/yyyy');
   }

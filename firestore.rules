@@ -58,7 +58,7 @@ service cloud.firestore {
       allow read, write: if isSignedIn();
     }
     
-    match /ordensServico/{ordemServicoId} {
+    match /clientes/{clienteId}/ordensServico/{ordemServicoId} {
         allow read, write: if isSignedIn();
     }
 
@@ -66,16 +66,13 @@ service cloud.firestore {
     match /{path=**}/veiculos/{veiculoId} {
       allow list: if isSignedIn();
     }
-
-    match /clientes/{clienteId}/orcamentos/{orcamentoId} {
-      allow get: if isOwner(clienteId);
-      allow list: if isOwner(clienteId);
-      allow create: if isOwner(clienteId);
-      allow update: if isOwner(clienteId);
-      allow delete: if isOwner(clienteId);
+    
+    // This rule is required to allow collection group queries on 'ordensServico'
+    match /{path=**}/ordensServico/{ordemServicoId} {
+      allow list: if isSignedIn();
     }
 
-    match /clientes/{clienteId}/ordensServico/{ordemServicoId} {
+    match /clientes/{clienteId}/orcamentos/{orcamentoId} {
       allow get: if isOwner(clienteId);
       allow list: if isOwner(clienteId);
       allow create: if isOwner(clienteId);

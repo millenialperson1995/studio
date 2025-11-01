@@ -22,7 +22,7 @@ import {
 } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
 import { addDocumentNonBlocking } from '@/firebase/non-blocking-updates';
-import { collection, serverTimestamp } from 'firebase/firestore';
+import { collection } from 'firebase/firestore';
 import { useFirestore } from '@/firebase';
 import { useToast } from '@/hooks/use-toast';
 import type { Cliente, Veiculo } from '@/lib/types';
@@ -109,7 +109,7 @@ export function AddOrdemServicoForm({
     if (!firestore) return;
 
     try {
-      const ordensServicoCollectionRef = collection(firestore, 'ordensServico');
+      const ordensServicoCollectionRef = collection(firestore, 'clientes', values.clienteId, 'ordensServico');
       await addDocumentNonBlocking(ordensServicoCollectionRef, values);
 
       toast({
