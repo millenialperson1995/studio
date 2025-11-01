@@ -21,16 +21,9 @@ import type { Cliente, OrdemServico, Orcamento } from '@/lib/types';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useRouter } from 'next/navigation';
 
-export default function Home() {
+function DashboardPage() {
   const firestore = useFirestore();
-  const { user, isUserLoading } = useUser();
-  const router = useRouter();
-
-  useEffect(() => {
-    if (!isUserLoading && !user) {
-      router.push('/login');
-    }
-  }, [user, isUserLoading, router]);
+  const { user } = useUser(); // No need for isUserLoading here, handled by parent
 
   // --- Data Fetching (Scoped to current user) ---
   const clientesRef = useMemoFirebase(
@@ -50,7 +43,7 @@ export default function Home() {
   const { data: orcamentos, isLoading: isLoadingOrcamentos } = useCollection<Orcamento>(orcamentosRef);
   const { data: ordensServico, isLoading: isLoadingOrdens } = useCollection<OrdemServico>(ordensQuery);
 
-  const isLoading = isUserLoading || isLoadingClientes || isLoadingOrcamentos || isLoadingOrdens;
+  const isLoading = isLoadingClientes || isLoadingOrcamentos || isLoadingOrdens;
 
   const toDate = (timestamp: any): Date => {
       if (!timestamp) return new Date(0);
@@ -153,34 +146,125 @@ export default function Home() {
     };
   }, [isLoading, clientes, orcamentos, ordensServico]);
   
-  if (isLoading || !user) {
+  if (isLoading) {
     return (
-        <SidebarProvider>
-            <Sidebar>
-                <AppSidebar />
-            </Sidebar>
-            <SidebarInset>
-                <AppHeader />
-                <main className="flex-1 space-y-6 p-4 md:p-6 lg:p-8">
-                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-4">
-                        {[...Array(5)].map((_, i) => <Skeleton key={i} className="h-28 w-full" />)}
-                    </div>
-                    <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
-                        <div className="lg:col-span-2">
-                             <Skeleton className="h-[380px] w-full" />
-                        </div>
-                        <div className="lg:col-span-1">
-                             <Skeleton className="h-[380px] w-full" />
-                        </div>
-                    </div>
-                    <Skeleton className="h-[380px] w-full" />
-                </main>
-            </SidebarInset>
-        </SidebarProvider>
+      <main className="flex-1 space-y-6 p-4 md:p-6 lg:p-8">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-4">
+            {[...Array(5)].map((_, i) => <Skeleton key={i} className="h-28 w-full" />)}
+        </div>
+        <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
+            <div className="lg:col-span-2">
+                  <Skeleton className="h-[380px] w-full" />
+            </div>
+            <div className="lg:col-span-1">
+                  <Skeleton className="h-[380px] w-full" />
+            </div>
+        </div>
+        <Skeleton className="h-[380px] w-full" />
+      </main>
     );
   }
   
 
+  return (
+    <main className="flex-1 space-y-6 p-4 md:p-6 lg:p-8">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-4">
+            <StatCard
+            title="Receita Mensal"
+            value={`R$ ${dashboardStats.receitaMensal.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`}
+            icon={<CircleDollarSign className="h-6 w-6 text-muted-foreground" />}
+            description="Receita do mês atual"
+            />
+            <StatCard
+            title="Ordens em Andamento"
+            value={dashboardStats.ordensAndamento.toString()}
+            icon={<Clock className="h-6 w-6 text-muted-foreground" />}
+            description="Serviços ativos no momento"
+            />
+            <StatCard
+            title="Ordens Concluídas"
+            value={dashboardStats.ordensConcluidasMes.toString()}
+            icon={<Wrench className="h-6 w-6 text-muted-foreground" />}
+            description="Ordens finalizadas este mês"
+            />
+            <StatCard
+            title="Orçamentos Pendentes"
+            value={dashboardStats.orcamentosPendentes.toString()}
+            icon={<FileText className="h-6 w-6 text-muted-foreground" />}
+            description="Aguardando aprovação do cliente"
+            />
+            <StatCard
+            title="Total de Clientes"
+            value={dashboardStats.totalClientes.toString()}
+            icon={<Users className="h-6 w-6 text-muted-foreground" />}
+            description={`${dashboardStats.novosClientesMes} novos este mês`}
+            />
+        </div>
+      
+
+      <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
+        <div className="lg:col-span-2">
+          <RevenueChartCard data={dashboardStats.revenueData} />
+        </div>
+        <div className="lg:col-span-1">
+              <RecentActivityCard
+                title="Orçamentos Pendentes"
+                items={dashboardStats.pendingQuotes}
+                icon={<FileText className="h-5 w-5" />}
+                emptyMessage="Nenhum orçamento pendente."
+              />
+        </div>
+      </div>
+      
+            <RecentActivityCard
+                title="Ordens de Serviço Recentes"
+                items={dashboardStats.recentOrders}
+                icon={<Car className="h-5 w-5" />}
+                emptyMessage="Nenhuma ordem de serviço recente."
+            />
+    </main>
+  );
+}
+
+export default function Home() {
+  const { user, isUserLoading } = useUser();
+  const router = useRouter();
+
+  useEffect(() => {
+    if (!isUserLoading && !user) {
+      router.push('/login');
+    }
+  }, [user, isUserLoading, router]);
+
+  // Render a loading state while checking for user auth
+  if (isUserLoading || !user) {
+    return (
+      <SidebarProvider>
+        <Sidebar>
+          <AppSidebar />
+        </Sidebar>
+        <SidebarInset>
+          <AppHeader />
+          <main className="flex-1 space-y-6 p-4 md:p-6 lg:p-8">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-4">
+              {[...Array(5)].map((_, i) => <Skeleton key={i} className="h-28 w-full" />)}
+            </div>
+            <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
+              <div className="lg:col-span-2">
+                <Skeleton className="h-[380px] w-full" />
+              </div>
+              <div className="lg:col-span-1">
+                <Skeleton className="h-[380px] w-full" />
+              </div>
+            </div>
+            <Skeleton className="h-[380px] w-full" />
+          </main>
+        </SidebarInset>
+      </SidebarProvider>
+    );
+  }
+
+  // Once user is authenticated, render the actual dashboard page
   return (
     <SidebarProvider>
       <Sidebar>
@@ -188,62 +272,7 @@ export default function Home() {
       </Sidebar>
       <SidebarInset>
         <AppHeader />
-        <main className="flex-1 space-y-6 p-4 md:p-6 lg:p-8">
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-4">
-                <StatCard
-                title="Receita Mensal"
-                value={`R$ ${dashboardStats.receitaMensal.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`}
-                icon={<CircleDollarSign className="h-6 w-6 text-muted-foreground" />}
-                description="Receita do mês atual"
-                />
-                <StatCard
-                title="Ordens em Andamento"
-                value={dashboardStats.ordensAndamento.toString()}
-                icon={<Clock className="h-6 w-6 text-muted-foreground" />}
-                description="Serviços ativos no momento"
-                />
-                <StatCard
-                title="Ordens Concluídas"
-                value={dashboardStats.ordensConcluidasMes.toString()}
-                icon={<Wrench className="h-6 w-6 text-muted-foreground" />}
-                description="Ordens finalizadas este mês"
-                />
-                <StatCard
-                title="Orçamentos Pendentes"
-                value={dashboardStats.orcamentosPendentes.toString()}
-                icon={<FileText className="h-6 w-6 text-muted-foreground" />}
-                description="Aguardando aprovação do cliente"
-                />
-                <StatCard
-                title="Total de Clientes"
-                value={dashboardStats.totalClientes.toString()}
-                icon={<Users className="h-6 w-6 text-muted-foreground" />}
-                description={`${dashboardStats.novosClientesMes} novos este mês`}
-                />
-            </div>
-         
-
-          <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
-            <div className="lg:col-span-2">
-              <RevenueChartCard data={dashboardStats.revenueData} />
-            </div>
-            <div className="lg:col-span-1">
-                 <RecentActivityCard
-                    title="Orçamentos Pendentes"
-                    items={dashboardStats.pendingQuotes}
-                    icon={<FileText className="h-5 w-5" />}
-                    emptyMessage="Nenhum orçamento pendente."
-                  />
-            </div>
-          </div>
-          
-                <RecentActivityCard
-                    title="Ordens de Serviço Recentes"
-                    items={dashboardStats.recentOrders}
-                    icon={<Car className="h-5 w-5" />}
-                    emptyMessage="Nenhuma ordem de serviço recente."
-                />
-        </main>
+        <DashboardPage />
       </SidebarInset>
     </SidebarProvider>
   );
