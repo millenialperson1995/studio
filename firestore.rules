@@ -34,9 +34,9 @@ service cloud.firestore {
      * @description Checks if the user is signed in.
      * @path N/A
      */
-    // function isSignedIn() {
-    //   return request.auth != null;
-    // }
+    function isSignedIn() {
+      return request.auth != null;
+    }
 
     /**
      * @description Checks if the authenticated user's UID matches the provided userId.
@@ -48,8 +48,8 @@ service cloud.firestore {
 
     match /clientes/{clienteId} {
       allow get: if isOwner(clienteId);
-      allow list: if false; // Do not allow listing all users.
-      allow create: if isOwner(clienteId);
+      allow list: if isSignedIn();
+      allow create: if isOwner(clienteId) || isSignedIn();
       allow update: if isOwner(clienteId);
       allow delete: if isOwner(clienteId);
     }
