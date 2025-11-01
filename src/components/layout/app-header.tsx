@@ -13,8 +13,34 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { SidebarTrigger } from '../ui/sidebar';
+import { useAuth, useUser } from '@/firebase';
+import { useRouter } from 'next/navigation';
+import { signOut } from 'firebase/auth';
 
 export default function AppHeader() {
+  const auth = useAuth();
+  const { user } = useUser();
+  const router = useRouter();
+
+  const handleSignOut = async () => {
+    try {
+      await signOut(auth);
+      router.push('/login');
+    } catch (error) {
+      console.error('Error signing out: ', error);
+      // Optionally, show a toast notification for the error
+    }
+  };
+  
+  const getInitials = (name?: string | null) => {
+    if (!name) return 'AD';
+    const names = name.split(' ');
+    if (names.length > 1) {
+      return `${names[0][0]}${names[names.length - 1][0]}`.toUpperCase();
+    }
+    return name.substring(0, 2).toUpperCase();
+  }
+
   return (
     <header className="flex h-16 items-center gap-4 border-b bg-card px-4 md:px-6 sticky top-0 z-30">
       <div className="md:hidden">
@@ -45,8 +71,10 @@ export default function AppHeader() {
           <DropdownMenuTrigger asChild>
             <Button variant="ghost" size="icon" className="rounded-full">
               <Avatar className="h-8 w-8">
-                <AvatarImage src="https://i.pravatar.cc/150?u=a042581f4e29026704d" alt="User" />
-                <AvatarFallback>AD</AvatarFallback>
+                {user?.photoURL ? (
+                    <AvatarImage src={user.photoURL} alt={user.displayName || 'User'} />
+                ) : null}
+                <AvatarFallback>{getInitials(user?.displayName)}</AvatarFallback>
               </Avatar>
             </Button>
           </DropdownMenuTrigger>
@@ -62,7 +90,7 @@ export default function AppHeader() {
               <span>Configurações</span>
             </DropdownMenuItem>
             <DropdownMenuSeparator />
-            <DropdownMenuItem>
+            <DropdownMenuItem onClick={handleSignOut}>
               <LogOut className="mr-2 h-4 w-4" />
               <span>Sair</span>
             </DropdownMenuItem>

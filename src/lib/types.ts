@@ -1,3 +1,12 @@
+export interface User {
+  uid: string;
+  email: string | null;
+  displayName: string | null;
+  role: 'admin' | 'recepcionista' | 'mecanico';
+  photoURL?: string | null;
+  disabled?: boolean;
+}
+
 export interface DashboardData {
   receitaMensal: number;
   receitaAnual: number;

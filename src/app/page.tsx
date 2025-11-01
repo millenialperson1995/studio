@@ -14,14 +14,24 @@ import {
 } from 'lucide-react';
 import RevenueChartCard from '@/components/dashboard/revenue-chart-card';
 import RecentActivityCard from '@/components/dashboard/recent-activity-card';
-import { useCollection, useFirestore } from '@/firebase';
+import { useCollection, useFirestore, useUser } from '@/firebase';
 import { collection, query, where, Timestamp, collectionGroup } from 'firebase/firestore';
 import { useMemoFirebase } from '@/firebase/provider';
 import type { Cliente, OrdemServico, Orcamento, Veiculo } from '@/lib/types';
 import { Skeleton } from '@/components/ui/skeleton';
+import { useRouter } from 'next/navigation';
+import { useEffect } from 'react';
 
 export default function Home() {
   const firestore = useFirestore();
+  const { user, isUserLoading } = useUser();
+  const router = useRouter();
+
+  useEffect(() => {
+    if (!isUserLoading && !user) {
+      router.push('/login');
+    }
+  }, [user, isUserLoading, router]);
 
   // --- Data Fetching ---
   const clientesRef = useMemoFirebase(
@@ -46,7 +56,7 @@ export default function Home() {
   const { data: ordensServico, isLoading: isLoadingOrdens } = useCollection<OrdemServico>(ordensQuery);
   const { data: veiculos, isLoading: isLoadingVeiculos } = useCollection<Veiculo>(veiculosQuery);
 
-  const isLoading = isLoadingClientes || isLoadingOrcamentos || isLoadingOrdens || isLoadingVeiculos;
+  const isLoading = isUserLoading || isLoadingClientes || isLoadingOrcamentos || isLoadingOrdens || isLoadingVeiculos;
 
   const toDate = (timestamp: any): Date => {
       if (!timestamp) return new Date(0); // return an old date if timestamp is null/undefined
@@ -152,6 +162,14 @@ export default function Home() {
       recentOrders,
     };
   }, [clientes, orcamentos, ordensServico, veiculos, isLoading]);
+  
+  if (isLoading) {
+    return <div className="flex h-screen w-screen items-center justify-center"><Skeleton className="h-24 w-24" /></div>
+  }
+  
+  if (!user) {
+    return null;
+  }
 
   return (
     <SidebarProvider>
@@ -161,11 +179,6 @@ export default function Home() {
       <SidebarInset>
         <AppHeader />
         <main className="flex-1 space-y-6 p-4 md:p-6 lg:p-8">
-          {isLoading ? (
-             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-4">
-                {[...Array(5)].map((_, i) => <Skeleton key={i} className="h-[126px] w-full" />)}
-             </div>
-          ) : (
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-4">
                 <StatCard
                 title="Receita Mensal"
@@ -198,32 +211,28 @@ export default function Home() {
                 description={`${dashboardStats.novosClientesMes} novos este mês`}
                 />
             </div>
-          )}
+         
 
           <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
             <div className="lg:col-span-2">
-              {isLoading ? <Skeleton className="h-[388px] w-full" /> : <RevenueChartCard data={dashboardStats.revenueData} />}
+              <RevenueChartCard data={dashboardStats.revenueData} />
             </div>
             <div className="lg:col-span-1">
-               {isLoading ? <Skeleton className="h-[388px] w-full" /> : (
                  <RecentActivityCard
                     title="Orçamentos Pendentes"
                     items={dashboardStats.pendingQuotes}
                     icon={<FileText className="h-5 w-5" />}
                     emptyMessage="Nenhum orçamento pendente."
                   />
-               )}
             </div>
           </div>
           
-           {isLoading ? <Skeleton className="h-[388px] w-full" /> : (
                 <RecentActivityCard
                     title="Ordens de Serviço Recentes"
                     items={dashboardStats.recentOrders}
                     icon={<Car className="h-5 w-5" />}
                     emptyMessage="Nenhuma ordem de serviço recente."
                 />
-           )}
         </main>
       </SidebarInset>
     </SidebarProvider>
