@@ -31,7 +31,7 @@ import {
           <SidebarMenu>
             <SidebarMenuItem>
               <Link href="/" passHref>
-                <SidebarMenuButton asChild isActive tooltip="Dashboard">
+                <SidebarMenuButton asChild tooltip="Dashboard">
                   <span>
                     <LayoutDashboard />
                     Dashboard
@@ -40,7 +40,7 @@ import {
               </Link>
             </SidebarMenuItem>
             <SidebarMenuItem>
-              <Link href="#" passHref>
+              <Link href="/clientes" passHref>
                 <SidebarMenuButton asChild tooltip="Clientes">
                   <span>
                     <Users />
