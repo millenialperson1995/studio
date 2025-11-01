@@ -257,9 +257,9 @@ export default function OrcamentoTable({
                                     <FilePlus2 className="mr-2 h-4 w-4" />
                                     {orcamento.ordemServicoId ? 'OS Gerada' : 'Gerar Ordem de Serviço'}
                                 </DropdownMenuItem>
-                                <DropdownMenuSeparator />
                             </>
                         )}
+                        <DropdownMenuSeparator />
                         <DropdownMenuItem
                           className="text-destructive focus:text-destructive focus:bg-destructive/10"
                           onClick={() => handleDeleteClick(orcamento)}
