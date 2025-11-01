@@ -28,7 +28,7 @@ export interface Veiculo {
   modelo: string;
   ano: number;
   informacoesTecnicas: string;
-  historicoServicos: Servico[];
+  cliente?: Cliente; // Optional for denormalization
 }
 
 export interface Cliente {
@@ -37,8 +37,7 @@ export interface Cliente {
   telefone: string;
   email: string;
   endereco: string;
-  veiculos: Veiculo[];
-  historicoServicos: Servico[];
+  createdAt?: any;
 }
 
 export interface Orcamento {

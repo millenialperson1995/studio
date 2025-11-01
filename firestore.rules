@@ -47,19 +47,15 @@ service cloud.firestore {
     }
 
     match /clientes/{clienteId} {
-      allow get: if isOwner(clienteId);
+      allow get: if isSignedIn();
       allow list: if isSignedIn();
       allow create: if isOwner(clienteId) || isSignedIn();
-      allow update: if isOwner(clienteId);
-      allow delete: if isOwner(clienteId);
+      allow update: if isOwner(clienteId) || isSignedIn();
+      allow delete: if isOwner(clienteId) || isSignedIn();
     }
 
     match /clientes/{clienteId}/veiculos/{veiculoId} {
-      allow get: if isOwner(clienteId);
-      allow list: if isOwner(clienteId);
-      allow create: if isOwner(clienteId);
-      allow update: if isOwner(clienteId);
-      allow delete: if isOwner(clienteId);
+      allow read, write: if isSignedIn();
     }
 
     match /clientes/{clienteId}/orcamentos/{orcamentoId} {
