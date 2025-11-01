@@ -48,6 +48,11 @@ export default function Home() {
 
   const isLoading = isLoadingClientes || isLoadingOrcamentos || isLoadingOrdens || isLoadingVeiculos;
 
+  const toDate = (timestamp: any): Date => {
+      if (!timestamp) return new Date(0); // return an old date if timestamp is null/undefined
+      return timestamp.toDate ? timestamp.toDate() : new Date(timestamp);
+  }
+
   // --- Data Processing & Calculations ---
   const dashboardStats = useMemo(() => {
     if (!clientes || !orcamentos || !ordensServico || !veiculos) {
@@ -144,11 +149,6 @@ export default function Home() {
       recentOrders,
     };
   }, [clientes, orcamentos, ordensServico, veiculos]);
-
-  const toDate = (timestamp: any): Date => {
-      if (!timestamp) return new Date(0); // return an old date if timestamp is null/undefined
-      return timestamp.toDate ? timestamp.toDate() : new Date(timestamp);
-  }
 
   return (
     <SidebarProvider>
