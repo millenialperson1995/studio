@@ -18,11 +18,9 @@ export default function AppHeader() {
   return (
     <header className="flex h-16 items-center gap-4 border-b bg-card px-4 md:px-6 sticky top-0 z-30">
       <div className="md:hidden">
-        <SidebarTrigger asChild>
-           <Button variant="ghost" size="icon">
-            <PanelLeft className="h-6 w-6" />
-            <span className="sr-only">Toggle Sidebar</span>
-          </Button>
+        <SidebarTrigger>
+           <PanelLeft className="h-6 w-6" />
+           <span className="sr-only">Toggle Sidebar</span>
         </SidebarTrigger>
       </div>
       
