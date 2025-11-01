@@ -25,13 +25,14 @@ import { updateDocumentNonBlocking } from '@/firebase/non-blocking-updates';
 import { doc } from 'firebase/firestore';
 import { useFirestore } from '@/firebase';
 import { useToast } from '@/hooks/use-toast';
-import type { OrdemServico, Cliente, Veiculo } from '@/lib/types';
+import type { OrdemServico, Cliente, Veiculo, Peca, Servico } from '@/lib/types';
 import { Trash2, PlusCircle, CalendarIcon } from 'lucide-react';
 import { useState, useEffect } from 'react';
 import { Popover, PopoverContent, PopoverTrigger } from '../ui/popover';
 import { Calendar } from '../ui/calendar';
 import { cn } from '@/lib/utils';
 import { format } from 'date-fns';
+import { ItemSelector } from '../orcamentos/item-selector';
 
 const servicoSchema = z.object({
   descricao: z.string().min(1, 'A descrição é obrigatória.'),
@@ -62,6 +63,8 @@ type EditOrdemServicoFormProps = {
   ordemServico: OrdemServico;
   clients: Cliente[];
   vehicles: Veiculo[];
+  pecas: Peca[];
+  servicos: Servico[];
   setDialogOpen: (open: boolean) => void;
 };
 
@@ -75,6 +78,8 @@ export function EditOrdemServicoForm({
   ordemServico,
   clients,
   vehicles,
+  pecas,
+  servicos,
   setDialogOpen,
 }: EditOrdemServicoFormProps) {
   const firestore = useFirestore();
@@ -91,8 +96,8 @@ export function EditOrdemServicoForm({
     },
   });
 
-  const { fields: servicosFields, append: appendServico, remove: removeServico } = useFieldArray({ control: form.control, name: 'servicos' });
-  const { fields: pecasFields, append: appendPeca, remove: removePeca } = useFieldArray({ control: form.control, name: 'pecas' });
+  const { fields: servicosFields, append: appendServico, remove: removeServico, update: updateServico } = useFieldArray({ control: form.control, name: 'servicos' });
+  const { fields: pecasFields, append: appendPeca, remove: removePeca, update: updatePeca } = useFieldArray({ control: form.control, name: 'pecas' });
 
   const servicosValues = form.watch('servicos');
   const pecasValues = form.watch('pecas');
@@ -130,6 +135,23 @@ export function EditOrdemServicoForm({
       });
     }
   }
+
+    const handleItemSelect = (index: number, item: Peca | Servico, type: 'peca' | 'servico') => {
+    if (type === 'servico') {
+        updateServico(index, {
+            ...form.getValues(`servicos.${index}`),
+            descricao: item.descricao,
+            valor: (item as Servico).valorPadrao,
+        })
+    } else { // type === 'peca'
+        updatePeca(index, {
+            ...form.getValues(`pecas.${index}`),
+            descricao: item.descricao,
+            valorUnitario: (item as Peca).valorVenda,
+        })
+    }
+  }
+
 
   return (
     <Form {...form}>
@@ -236,7 +258,7 @@ export function EditOrdemServicoForm({
             />
         </div>
 
-        {form.getValues('status') === 'concluida' && (
+        {form.watch('status') === 'concluida' && (
              <FormField name="dataConclusao" control={form.control} render={({ field }) => (
                 <FormItem className="flex flex-col"><FormLabel>Data de Conclusão</FormLabel>
                     <Popover><PopoverTrigger asChild><FormControl>
@@ -259,7 +281,19 @@ export function EditOrdemServicoForm({
               <div key={field.id} className="grid grid-cols-12 gap-x-2 gap-y-4 items-start">
                 <div className="col-span-12 md:col-span-8"><FormLabel className={cn(index !== 0 && "sr-only")}>Descrição</FormLabel>
                    <FormField control={form.control} name={`servicos.${index}.descricao`} render={({ field }) => (
-                        <FormItem className="w-full"><FormControl><Input placeholder="Ex: Retífica do cabeçote" {...field} /></FormControl><FormMessage /></FormItem>)}
+                        <FormItem className="w-full">
+                           <ItemSelector
+                                pecas={[]}
+                                servicos={servicos}
+                                onSelect={(item, type) => handleItemSelect(index, item, type)}
+                                trigger={
+                                    <FormControl>
+                                        <Input placeholder="Selecione ou digite um serviço" {...field} />
+                                    </FormControl>
+                                }
+                            />
+                           <FormMessage />
+                        </FormItem>)}
                     />
                 </div>
                  <div className="col-span-10 md:col-span-3"><FormLabel className={cn(index !== 0 && "sr-only")}>Valor</FormLabel>
@@ -285,7 +319,19 @@ export function EditOrdemServicoForm({
               <div key={field.id} className="grid grid-cols-12 gap-x-2 gap-y-4 items-start">
                 <div className="col-span-12 md:col-span-5"><FormLabel className={cn(index !== 0 && "sr-only")}>Descrição</FormLabel>
                    <FormField control={form.control} name={`pecas.${index}.descricao`} render={({ field }) => (
-                        <FormItem className="w-full"><FormControl><Input placeholder="Ex: Jogo de pistões" {...field} /></FormControl><FormMessage /></FormItem>)}
+                        <FormItem className="w-full">
+                            <ItemSelector
+                                pecas={pecas}
+                                servicos={[]}
+                                onSelect={(item, type) => handleItemSelect(index, item, type)}
+                                trigger={
+                                    <FormControl>
+                                        <Input placeholder="Selecione ou digite uma peça" {...field} />
+                                    </FormControl>
+                                }
+                            />
+                            <FormMessage />
+                        </FormItem>)}
                     />
                 </div>
                  <div className="col-span-6 md:col-span-2"><FormLabel className={cn(index !== 0 && "sr-only")}>Qtd.</FormLabel>

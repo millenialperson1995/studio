@@ -36,7 +36,7 @@ import {
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { MoreHorizontal, Pencil, Trash2 } from 'lucide-react';
-import type { OrdemServico, Cliente, Veiculo } from '@/lib/types';
+import type { OrdemServico, Cliente, Veiculo, Peca, Servico } from '@/lib/types';
 import { deleteDocumentNonBlocking } from '@/firebase/non-blocking-updates';
 import { doc } from 'firebase/firestore';
 import { useFirestore } from '@/firebase';
@@ -48,6 +48,8 @@ interface OrdemServicoTableProps {
   ordensServico: OrdemServico[];
   clients: Cliente[];
   vehicles: Veiculo[];
+  pecas: Peca[];
+  servicos: Servico[];
 }
 
 const statusVariantMap: { [key: string]: 'default' | 'secondary' | 'destructive' | 'outline' } = {
@@ -69,6 +71,8 @@ export default function OrdemServicoTable({
   ordensServico = [],
   clients = [],
   vehicles = [],
+  pecas = [],
+  servicos = [],
 }: OrdemServicoTableProps) {
   const firestore = useFirestore();
   const { toast } = useToast();
@@ -224,6 +228,8 @@ export default function OrdemServicoTable({
               ordemServico={selectedOrdem}
               clients={clients}
               vehicles={vehicles}
+              pecas={pecas}
+              servicos={servicos}
               setDialogOpen={setIsEditDialogOpen}
             />
           )}
