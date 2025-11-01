@@ -17,7 +17,6 @@ import {
     SidebarFooter,
     useSidebar,
   } from '../ui/sidebar';
-  import Link from 'next/link';
 
   const AppSidebar = () => {
     const { state } = useSidebar();
@@ -37,88 +36,56 @@ import {
         <SidebarContent>
           <SidebarMenu>
             <SidebarMenuItem>
-              <Link href="/" passHref>
-                <SidebarMenuButton asChild tooltip="Dashboard">
-                  <span>
+                <SidebarMenuButton href="/" tooltip="Dashboard">
                     <LayoutDashboard />
                     {!isCollapsed && 'Dashboard'}
-                  </span>
                 </SidebarMenuButton>
-              </Link>
             </SidebarMenuItem>
             <SidebarMenuItem>
-              <Link href="/clientes" passHref>
-                <SidebarMenuButton asChild tooltip="Clientes">
-                  <span>
+                <SidebarMenuButton href="/clientes" tooltip="Clientes">
                     <Users />
                     {!isCollapsed && 'Clientes'}
-                  </span>
                 </SidebarMenuButton>
-              </Link>
             </SidebarMenuItem>
             <SidebarMenuItem>
-              <Link href="/veiculos" passHref>
-                <SidebarMenuButton asChild tooltip="Veículos">
-                  <span>
+                <SidebarMenuButton href="/veiculos" tooltip="Veículos">
                     <Car />
                     {!isCollapsed && 'Veículos'}
-                  </span>
                 </SidebarMenuButton>
-              </Link>
             </SidebarMenuItem>
             <SidebarMenuItem>
-              <Link href="/orcamentos" passHref>
-                <SidebarMenuButton asChild tooltip="Orçamentos">
-                  <span>
+                <SidebarMenuButton href="/orcamentos" tooltip="Orçamentos">
                     <FileText />
                     {!isCollapsed && 'Orçamentos'}
-                  </span>
                 </SidebarMenuButton>
-              </Link>
             </SidebarMenuItem>
             <SidebarMenuItem>
-              <Link href="/ordens-de-servico" passHref>
-                <SidebarMenuButton asChild tooltip="Ordens de Serviço">
-                  <span>
+                <SidebarMenuButton href="/ordens-de-servico" tooltip="Ordens de Serviço">
                     <Wrench />
                     {!isCollapsed && 'Ordens de Serviço'}
-                  </span>
                 </SidebarMenuButton>
-              </Link>
             </SidebarMenuItem>
             <SidebarMenuItem>
-              <Link href="/estoque" passHref>
-                <SidebarMenuButton asChild tooltip="Estoque">
-                  <span>
+                <SidebarMenuButton href="/estoque" tooltip="Estoque">
                     <Package />
                     {!isCollapsed && 'Estoque'}
-                  </span>
                 </SidebarMenuButton>
-              </Link>
             </SidebarMenuItem>
             <SidebarMenuItem>
-              <Link href="/servicos" passHref>
-                <SidebarMenuButton asChild tooltip="Serviços">
-                  <span>
+                <SidebarMenuButton href="/servicos" tooltip="Serviços">
                     <List />
                     {!isCollapsed && 'Serviços'}
-                  </span>
                 </SidebarMenuButton>
-              </Link>
             </SidebarMenuItem>
           </SidebarMenu>
         </SidebarContent>
         <SidebarFooter className="mt-auto">
             <SidebarMenu>
                 <SidebarMenuItem>
-                  <Link href="/configuracoes" passHref>
-                    <SidebarMenuButton asChild tooltip="Configurações">
-                        <span>
-                            <Settings />
-                            {!isCollapsed && 'Configurações'}
-                        </span>
+                    <SidebarMenuButton href="/configuracoes" tooltip="Configurações">
+                        <Settings />
+                        {!isCollapsed && 'Configurações'}
                     </SidebarMenuButton>
-                  </Link>
                 </SidebarMenuItem>
             </SidebarMenu>
         </SidebarFooter>
