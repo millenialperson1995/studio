@@ -16,7 +16,7 @@ import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth, useUser } from '@/firebase';
-import { signInWithEmailAndPassword, createUserWithEmailAndPassword } from 'firebase/auth';
+import { signInWithEmailAndPassword } from 'firebase/auth';
 import { useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
 import { Wrench } from 'lucide-react';
@@ -39,26 +39,6 @@ export default function LoginPage() {
       router.push('/');
     }
   }, [user, isUserLoading, router]);
-  
-  // Efetua o login com as credenciais padrão na primeira carga
-  useEffect(() => {
-    async function initialLogin() {
-        if (!auth || isUserLoading || user) return;
-        try {
-            await signInWithEmailAndPassword(auth, 'millenialperson1995@outlook.com.br', 'stayFrosty2*');
-        } catch (error: any) {
-            if (error.code === 'auth/user-not-found' || error.code === 'auth/invalid-credential') {
-                try {
-                    await createUserWithEmailAndPassword(auth, 'millenialperson1995@outlook.com.br', 'stayFrosty2*');
-                } catch (creationError) {
-                    console.error("Failed to create default user:", creationError);
-                }
-            }
-        }
-    }
-    initialLogin();
-  }, [auth, isUserLoading, user]);
-
 
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
