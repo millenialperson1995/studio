@@ -81,15 +81,11 @@ service cloud.firestore {
     }
 
     match /pecas/{pecaId} {
-      allow get: if true;
-      allow list: if true;
-      allow create, update, delete: if false; // TODO: Add owner validation once the schema is updated with an ownership field.
+      allow read, write: if isSignedIn();
     }
 
     match /servicos/{servicoId} {
-      allow get: if true;
-      allow list: if true;
-      allow create, update, delete: if false; // TODO: Add owner validation once the schema is updated with an ownership field.
+      allow read, write: if isSignedIn();
     }
   }
 }

@@ -1,11 +1,47 @@
+'use client';
+
+import { useState } from 'react';
 import AppHeader from '@/components/layout/app-header';
 import AppSidebar from '@/components/layout/app-sidebar';
-import { Sidebar, SidebarInset, SidebarProvider } from '@/components/ui/sidebar';
+import {
+  Sidebar,
+  SidebarInset,
+  SidebarProvider,
+} from '@/components/ui/sidebar';
 import { Button } from '@/components/ui/button';
 import { PlusCircle } from 'lucide-react';
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
+import {
+  Card,
+  CardContent,
+  CardHeader,
+  CardTitle,
+  CardDescription,
+} from '@/components/ui/card';
+import { useCollection, useFirestore } from '@/firebase';
+import { useMemoFirebase } from '@/firebase/provider';
+import { collection } from 'firebase/firestore';
+import type { Peca } from '@/lib/types';
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+  DialogTrigger,
+} from '@/components/ui/dialog';
+import { Skeleton } from '@/components/ui/skeleton';
+import { AddPecaForm } from '@/components/estoque/add-peca-form';
+import PecaTable from '@/components/estoque/peca-table';
 
-export default async function EstoquePage() {
+export default function EstoquePage() {
+  const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const firestore = useFirestore();
+  const pecasCollectionRef = useMemoFirebase(
+    () => (firestore ? collection(firestore, 'pecas') : null),
+    [firestore]
+  );
+  const { data: pecas, isLoading, error } = useCollection<Peca>(pecasCollectionRef);
+
   return (
     <SidebarProvider>
       <Sidebar>
@@ -14,28 +50,50 @@ export default async function EstoquePage() {
       <SidebarInset>
         <AppHeader />
         <main className="flex-1 space-y-6 p-4 md:p-6 lg:p-8">
-            <div className="flex items-center justify-between">
-                <h1 className="text-2xl font-semibold">Estoque</h1>
+          <div className="flex items-center justify-between">
+            <h1 className="text-2xl font-semibold">Estoque de Peças</h1>
+            <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+              <DialogTrigger asChild>
                 <Button>
-                    <PlusCircle className="mr-2 h-4 w-4" />
-                    Adicionar Peça
+                  <PlusCircle className="mr-2 h-4 w-4" />
+                  Adicionar Peça
                 </Button>
-            </div>
-            
-            <Card>
-                <CardHeader>
-                    <CardTitle>Controle de Estoque</CardTitle>
-                    <CardDescription>
-                        Gerencie as peças e produtos da sua retífica.
-                    </CardDescription>
-                </CardHeader>
-                <CardContent>
-                    <div className="flex items-center justify-center h-48 text-muted-foreground">
-                        <p>Nenhum item no estoque. A funcionalidade será implementada em breve.</p>
-                    </div>
-                </CardContent>
-            </Card>
+              </DialogTrigger>
+              <DialogContent className="sm:max-w-md">
+                <DialogHeader>
+                  <DialogTitle>Adicionar Nova Peça</DialogTitle>
+                  <DialogDescription>
+                    Preencha os dados para cadastrar uma nova peça no estoque.
+                  </DialogDescription>
+                </DialogHeader>
+                <AddPecaForm setDialogOpen={setIsDialogOpen} />
+              </DialogContent>
+            </Dialog>
+          </div>
 
+          <Card>
+            <CardHeader>
+              <CardTitle>Controle de Estoque</CardTitle>
+              <CardDescription>
+                Gerencie as peças e produtos da sua retífica.
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              {isLoading && (
+                <div className="space-y-2">
+                  <Skeleton className="h-12 w-full" />
+                  <Skeleton className="h-12 w-full" />
+                  <Skeleton className="h-12 w-full" />
+                </div>
+              )}
+              {!isLoading && <PecaTable pecas={pecas || []} />}
+              {error && (
+                <div className="text-destructive text-center p-4">
+                  Ocorreu um erro ao carregar as peças. Tente novamente.
+                </div>
+              )}
+            </CardContent>
+          </Card>
         </main>
       </SidebarInset>
     </SidebarProvider>
