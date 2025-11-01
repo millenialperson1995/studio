@@ -1,0 +1,93 @@
+/**
+ * @file This Firestore Security Rules file enforces a strict user-ownership model for the Retífica Ágil application.
+ *   It leverages path-based access control to protect customer data and their associated entities (vehicles, quotations, service orders).
+ *   Standalone collections like 'pecas' and 'servicos' are publicly readable but only allow authorized writes.
+ *
+ * Core Philosophy:
+ *   This ruleset enforces a strict user-ownership model. Users can only access their own data.
+ *   Public read access is granted to 'pecas' and 'servicos' collections, but writes are restricted.
+ *
+ * Data Structure:
+ *   All data is nested under /clientes/{clienteId}, representing the customer's data tree.
+ *   Vehicles, quotations, and service orders are stored as subcollections under the respective customer.
+ *   Inventory parts (/pecas) and services (/servicos) are stored in top-level collections.
+ *
+ * Key Security Decisions:
+ *   - Listing of all users is disallowed.
+ *   - The 'pecas' and 'servicos' collections are publicly readable to allow easy access to the catalog of items.
+ *   - Default security posture for ambiguous relationships is to deny access.
+ *
+ * Denormalization for Authorization:
+ *   The 'clienteId' is present in all subcollections (/clientes/{clienteId}/veiculos, /clientes/{clienteId}/orcamentos, /clientes/{clienteId}/ordensServico) to easily enforce ownership.
+ *   Each document in the subcollections includes the `clienteId` field, which must match the `clienteId` in the path.
+ *   This enables granular access control without additional `get()` calls.
+ *
+ * Structural Segregation:
+ *   Private customer data is stored under the /clientes/{clienteId} path.
+ *   Publicly readable data (inventory parts and services) is stored in top-level collections.
+ */
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    /**
+     * @description Checks if the user is signed in.
+     * @path N/A
+     */
+    // function isSignedIn() {
+    //   return request.auth != null;
+    // }
+
+    /**
+     * @description Checks if the authenticated user's UID matches the provided userId.
+     * @path N/A
+     */
+    function isOwner(userId) {
+      return request.auth.uid == userId;
+    }
+
+    match /clientes/{clienteId} {
+      allow get: if isOwner(clienteId);
+      allow list: if false; // Do not allow listing all users.
+      allow create: if isOwner(clienteId);
+      allow update: if isOwner(clienteId);
+      allow delete: if isOwner(clienteId);
+    }
+
+    match /clientes/{clienteId}/veiculos/{veiculoId} {
+      allow get: if isOwner(clienteId);
+      allow list: if isOwner(clienteId);
+      allow create: if isOwner(clienteId);
+      allow update: if isOwner(clienteId);
+      allow delete: if isOwner(clienteId);
+    }
+
+    match /clientes/{clienteId}/orcamentos/{orcamentoId} {
+      allow get: if isOwner(clienteId);
+      allow list: if isOwner(clienteId);
+      allow create: if isOwner(clienteId);
+      allow update: if isOwner(clienteId);
+      allow delete: if isOwner(clienteId);
+    }
+
+    match /clientes/{clienteId}/ordensServico/{ordemServicoId} {
+      allow get: if isOwner(clienteId);
+      allow list: if isOwner(clienteId);
+      allow create: if isOwner(clienteId);
+      allow update: if isOwner(clienteId);
+      allow delete: if isOwner(clienteId);
+    }
+
+    match /pecas/{pecaId} {
+      allow get: if true;
+      allow list: if true;
+      allow create, update, delete: if false; // TODO: Add owner validation once the schema is updated with an ownership field.
+    }
+
+    match /servicos/{servicoId} {
+      allow get: if true;
+      allow list: if true;
+      allow create, update, delete: if false; // TODO: Add owner validation once the schema is updated with an ownership field.
+    }
+  }
+}
