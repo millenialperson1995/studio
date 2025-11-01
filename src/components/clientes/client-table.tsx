@@ -24,7 +24,7 @@ interface ClientTableProps {
   clients: Cliente[];
 }
 
-export default function ClientTable({ clients }: ClientTableProps) {
+export default function ClientTable({ clients = [] }: ClientTableProps) {
   return (
     <div className="rounded-md border">
       <Table>
