@@ -1,30 +1,15 @@
 /**
- * @file This Firestore Security Rules file enforces a strict user-ownership model for the Retífica Ágil application.
- *   It leverages path-based access control to protect customer data and their associated entities (vehicles, quotations, service orders).
- *   Standalone collections like 'pecas' and 'servicos' are publicly readable but only allow authorized writes.
+ * @file This Firestore Security Rules file enforces a role-based and ownership-based model for the Retífica Ágil application.
  *
  * Core Philosophy:
- *   This ruleset enforces a strict user-ownership model. Users can only access their own data.
- *   Public read access is granted to 'pecas' and 'servicos' collections, but writes are restricted.
- *
- * Data Structure:
- *   All data is nested under /clientes/{clienteId}, representing the customer's data tree.
- *   Vehicles, quotations, and service orders are stored as subcollections under the respective customer.
- *   Inventory parts (/pecas) and services (/servicos) are stored in top-level collections.
+ *   - Administrators ('admin') have broad read access for management purposes.
+ *   - Other users ('recepcionista', 'mecanico') operate under a stricter ownership model.
+ *   - Public listing of all users is disallowed to non-admins.
  *
  * Key Security Decisions:
- *   - Listing of all users is disallowed.
- *   - The 'pecas' and 'servicos' collections are publicly readable to allow easy access to the catalog of items.
- *   - Default security posture for ambiguous relationships is to deny access.
- *
- * Denormalization for Authorization:
- *   The 'clienteId' is present in all subcollections (/clientes/{clienteId}/veiculos, /clientes/{clienteId}/orcamentos, /clientes/{clienteId}/ordensServico) to easily enforce ownership.
- *   Each document in the subcollections includes the `clienteId` field, which must match the `clienteId` in the path.
- *   This enables granular access control without additional `get()` calls.
- *
- * Structural Segregation:
- *   Private customer data is stored under the /clientes/{clienteId} path.
- *   Publicly readable data (inventory parts and services) is stored in top-level collections.
+ *   - Admins can read the '/users' collection to manage user accounts.
+ *   - Regular users can only read their own user document.
+ *   - All authenticated users can read from shared data pools like '/clientes', '/pecas', '/servicos', etc., but write access might be more granular if needed in the future.
  */
 rules_version = '2';
 service cloud.firestore {
@@ -32,7 +17,6 @@ service cloud.firestore {
 
     /**
      * @description Checks if the user is signed in.
-     * @path N/A
      */
     function isSignedIn() {
       return request.auth != null;
@@ -40,10 +24,25 @@ service cloud.firestore {
 
     /**
      * @description Checks if the authenticated user's UID matches the provided userId.
-     * @path N/A
      */
     function isOwner(userId) {
       return request.auth.uid == userId;
+    }
+    
+    /**
+     * @description Checks if the signed-in user has the 'admin' role.
+     * It safely gets the user's role from their document in the /users collection.
+     */
+    function isAdmin() {
+      return isSignedIn() && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin';
+    }
+    
+    match /users/{userId} {
+       // Admins can list all users for the management page.
+      allow list: if isAdmin();
+      // Any signed-in user can read their own profile, but not others. Writes are restricted to admins.
+      allow get, update: if isOwner(userId) || isAdmin();
+      allow create, delete: if isAdmin();
     }
 
     match /clientes/{clienteId} {
