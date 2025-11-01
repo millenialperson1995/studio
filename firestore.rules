@@ -33,13 +33,14 @@ service cloud.firestore {
     }
     
     match /users/{userId} {
+      // Allow creating own user document.
+      allow create: if isOwner(userId);
       // Allow reading own profile, or any profile if admin
       allow get: if isOwner(userId) || isAdmin();
-      // Allow creating own user document. Only admins can update/delete.
-      allow create: if isOwner(userId);
-      allow update, delete: if isAdmin();
       // Allow listing users for any signed-in user (required for the management page)
       allow list: if isSignedIn();
+      // Only admins can update/delete.
+      allow update, delete: if isAdmin();
     }
 
     match /clientes/{clienteId} {
