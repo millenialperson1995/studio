@@ -198,8 +198,7 @@ export function EditOrcamentoForm({
             const qty = form.watch(`itens.${index}.quantidade`) || 0;
             const price = form.watch(`itens.${index}.valorUnitario`) || 0;
             const total = qty * price;
-            form.setValue(`itens.${index}.valorTotal`, total, { shouldDirty: true, shouldValidate: true });
-
+            
             return (
               <div
                 key={field.id}
