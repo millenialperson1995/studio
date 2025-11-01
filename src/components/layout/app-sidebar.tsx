@@ -30,72 +30,88 @@ import {
         <SidebarContent className="p-2">
           <SidebarMenu>
             <SidebarMenuItem>
-              <SidebarMenuButton asChild isActive tooltip="Dashboard">
-                <Link href="/">
-                  <LayoutDashboard />
-                  Dashboard
-                </Link>
-              </SidebarMenuButton>
+              <Link href="/" passHref>
+                <SidebarMenuButton asChild isActive tooltip="Dashboard">
+                  <span>
+                    <LayoutDashboard />
+                    Dashboard
+                  </span>
+                </SidebarMenuButton>
+              </Link>
             </SidebarMenuItem>
             <SidebarMenuItem>
-              <SidebarMenuButton asChild tooltip="Clientes">
-                <Link href="#">
-                  <Users />
-                  Clientes
-                </Link>
-              </SidebarMenuButton>
+              <Link href="#" passHref>
+                <SidebarMenuButton asChild tooltip="Clientes">
+                  <span>
+                    <Users />
+                    Clientes
+                  </span>
+                </SidebarMenuButton>
+              </Link>
             </SidebarMenuItem>
             <SidebarMenuItem>
-              <SidebarMenuButton asChild tooltip="Veículos">
-                <Link href="#">
-                  <Car />
-                  Veículos
-                </Link>
-              </SidebarMenuButton>
+              <Link href="#" passHref>
+                <SidebarMenuButton asChild tooltip="Veículos">
+                  <span>
+                    <Car />
+                    Veículos
+                  </span>
+                </SidebarMenuButton>
+              </Link>
             </SidebarMenuItem>
             <SidebarMenuItem>
-              <SidebarMenuButton asChild tooltip="Orçamentos">
-                <Link href="#">
-                  <FileText />
-                  Orçamentos
-                </Link>
-              </SidebarMenuButton>
+              <Link href="#" passHref>
+                <SidebarMenuButton asChild tooltip="Orçamentos">
+                  <span>
+                    <FileText />
+                    Orçamentos
+                  </span>
+                </SidebarMenuButton>
+              </Link>
             </SidebarMenuItem>
             <SidebarMenuItem>
-              <SidebarMenuButton asChild tooltip="Ordens de Serviço">
-                <Link href="#">
-                  <Wrench />
-                  Ordens de Serviço
-                </Link>
-              </SidebarMenuButton>
+              <Link href="#" passHref>
+                <SidebarMenuButton asChild tooltip="Ordens de Serviço">
+                  <span>
+                    <Wrench />
+                    Ordens de Serviço
+                  </span>
+                </SidebarMenuButton>
+              </Link>
             </SidebarMenuItem>
             <SidebarMenuItem>
-              <SidebarMenuButton asChild tooltip="Estoque">
-                <Link href="#">
-                  <Package />
-                  Estoque
-                </Link>
-              </SidebarMenuButton>
+              <Link href="#" passHref>
+                <SidebarMenuButton asChild tooltip="Estoque">
+                  <span>
+                    <Package />
+                    Estoque
+                  </span>
+                </SidebarMenuButton>
+              </Link>
             </SidebarMenuItem>
             <SidebarMenuItem>
-              <SidebarMenuButton asChild tooltip="Serviços">
-                <Link href="#">
-                  <List />
-                  Serviços
-                </Link>
-              </SidebarMenuButton>
+              <Link href="#" passHref>
+                <SidebarMenuButton asChild tooltip="Serviços">
+                  <span>
+                    <List />
+                    Serviços
+                  </span>
+                </SidebarMenuButton>
+              </Link>
             </SidebarMenuItem>
           </SidebarMenu>
         </SidebarContent>
         <SidebarFooter className="p-2 border-t mt-auto">
             <SidebarMenu>
                 <SidebarMenuItem>
+                  <Link href="#" passHref>
                     <SidebarMenuButton asChild tooltip="Configurações">
-                        <Link href="#">
+                        <span>
                             <Settings />
                             Configurações
-                        </Link>
+                        </span>
                     </SidebarMenuButton>
+                  </Link>
                 </SidebarMenuItem>
             </SidebarMenu>
         </SidebarFooter>
