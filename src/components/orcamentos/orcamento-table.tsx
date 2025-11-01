@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useMemo } from 'react';
+import { useRouter } from 'next/navigation';
 import {
   Table,
   TableBody,
@@ -71,6 +72,7 @@ export default function OrcamentoTable({
 }: OrcamentoTableProps) {
   const firestore = useFirestore();
   const { toast } = useToast();
+  const router = useRouter();
 
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
@@ -133,6 +135,7 @@ export default function OrcamentoTable({
             title: 'Sucesso!',
             description: 'Ordem de Serviço gerada a partir do orçamento.',
         });
+        router.push('/ordens-de-servico');
     } catch (error) {
         console.error("Error generating service order: ", error);
         toast({
