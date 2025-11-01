@@ -101,6 +101,14 @@ export function EditOrdemServicoForm({
 
   const servicosValues = form.watch('servicos');
   const pecasValues = form.watch('pecas');
+  const statusValue = form.watch('status');
+
+   useEffect(() => {
+    if (statusValue === 'concluida' && !form.getValues('dataConclusao')) {
+      form.setValue('dataConclusao', new Date());
+    }
+  }, [statusValue, form]);
+
 
   useEffect(() => {
     const totalServicos = servicosValues.reduce((sum, servico) => sum + (servico.valor || 0), 0);
@@ -119,7 +127,7 @@ export function EditOrdemServicoForm({
     try {
       const finalValues = {
         ...values,
-        dataConclusao: values.dataConclusao || null,
+        dataConclusao: values.status === 'concluida' ? (values.dataConclusao || new Date()) : null,
       };
 
       const ordemDocRef = doc(firestore, 'clientes', finalValues.clienteId, 'ordensServico', ordemServico.id);
@@ -384,5 +392,7 @@ export function EditOrdemServicoForm({
     </Form>
   );
 }
+
+    
 
     
