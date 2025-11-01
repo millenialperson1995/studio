@@ -21,7 +21,7 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { collection, doc, setDoc, getDoc } from 'firebase/firestore';
-import { useAuth, useFirestore } from '@/firebase';
+import { useAuth, useFirestore, errorEmitter, FirestorePermissionError } from '@/firebase';
 import { useToast } from '@/hooks/use-toast';
 import { createUserWithEmailAndPassword } from 'firebase/auth';
 
@@ -52,8 +52,9 @@ export function AddUserForm({ setDialogOpen }: AddUserFormProps) {
     },
   });
 
-  // Função auxiliar para criar o documento do usuário no Firestore
-  const createUserProfile = async (uid: string, data: Omit<z.infer<typeof formSchema>, 'password'>) => {
+  const createUserProfile = (uid: string, data: Omit<z.infer<typeof formSchema>, 'password'>) => {
+    if (!firestore) return;
+    const userDocRef = doc(firestore, 'users', uid);
     const userData = {
       uid: uid,
       displayName: data.displayName,
@@ -61,7 +62,15 @@ export function AddUserForm({ setDialogOpen }: AddUserFormProps) {
       role: data.role,
       disabled: false,
     };
-    await setDoc(doc(firestore, "users", uid), userData);
+    
+    setDoc(userDocRef, userData).catch(async (serverError) => {
+        const permissionError = new FirestorePermissionError({
+            path: userDocRef.path,
+            operation: 'create',
+            requestResourceData: userData,
+        });
+        errorEmitter.emit('permission-error', permissionError);
+    });
   };
 
   async function onSubmit(values: z.infer<typeof formSchema>) {
@@ -74,29 +83,23 @@ export function AddUserForm({ setDialogOpen }: AddUserFormProps) {
       const userCredential = await createUserWithEmailAndPassword(auth, values.email, values.password);
       const user = userCredential.user;
 
-      // 2. Cria o perfil do usuário no Firestore
-      await createUserProfile(user.uid, values);
+      // 2. Cria o perfil do usuário no Firestore (de forma não-bloqueante)
+      createUserProfile(user.uid, values);
 
       toast({
         title: 'Sucesso!',
-        description: 'Usuário criado e perfil salvo com sucesso.',
+        description: 'Usuário criado com sucesso.',
       });
       form.reset();
       setDialogOpen(false);
-    } catch (error: any) {
-        console.error('Error adding user: ', error);
-        let description = 'Não foi possível criar o usuário. Tente novamente.';
-        
-        // 3. Lógica para lidar com erro de "e-mail em uso"
-        if (error.code === 'auth/email-already-in-use') {
-            description = 'Este e-mail já pertence a uma conta existente.';
-            toast({ variant: 'destructive', title: 'Erro', description });
 
-        } else if (error.code === 'auth/weak-password') {
-            description = 'A senha é muito fraca. Tente uma senha mais forte.';
+    } catch (error: any) {
+        let description = 'Não foi possível criar o usuário. Tente novamente.';
+        if (error.code === 'auth/email-already-in-use') {
+            description = 'Este e-mail já pertence a uma conta. Verifique a lista de usuários.';
             toast({ variant: 'destructive', title: 'Erro', description });
         } else {
-            toast({ variant: 'destructive', title: 'Erro', description });
+             toast({ variant: 'destructive', title: 'Erro de Autenticação', description });
         }
     }
   }
