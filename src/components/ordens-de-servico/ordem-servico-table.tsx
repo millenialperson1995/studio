@@ -133,7 +133,7 @@ export default function OrdemServicoTable({
               <TableHead className="hidden md:table-cell">Veículo</TableHead>
               <TableHead className="hidden sm:table-cell">Data Entrada</TableHead>
               <TableHead>Valor</TableHead>
-              <TableHead>Status</TableHead>
+              <TableHead className="hidden sm:table-cell">Status</TableHead>
               <TableHead>
                 <span className="sr-only">Ações</span>
               </TableHead>
@@ -143,11 +143,16 @@ export default function OrdemServicoTable({
             {enrichedOrdens.length > 0 ? (
               enrichedOrdens.map((ordem) => (
                 <TableRow key={ordem.id}>
-                  <TableCell className="font-medium">{ordem.clienteNome}</TableCell>
+                  <TableCell>
+                     <div className="font-medium">{ordem.clienteNome}</div>
+                     <div className="block sm:hidden text-xs text-muted-foreground">
+                       {statusLabelMap[ordem.status]}
+                    </div>
+                  </TableCell>
                    <TableCell className="hidden md:table-cell text-muted-foreground">{ordem.veiculoDesc}</TableCell>
                    <TableCell className="hidden sm:table-cell text-muted-foreground">{formatDate(ordem.dataEntrada)}</TableCell>
                   <TableCell>{`R$ ${ordem.valorTotal.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`}</TableCell>
-                   <TableCell>
+                   <TableCell className="hidden sm:table-cell">
                     <Badge variant={statusVariantMap[ordem.status]} className="text-xs">
                         {statusLabelMap[ordem.status]}
                     </Badge>

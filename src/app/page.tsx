@@ -50,12 +50,15 @@ export default function Home() {
 
   const toDate = (timestamp: any): Date => {
       if (!timestamp) return new Date(0); // return an old date if timestamp is null/undefined
-      return timestamp.toDate ? timestamp.toDate() : new Date(timestamp);
+      if (timestamp.toDate) return timestamp.toDate();
+      // Handle cases where it might already be a Date object or a string
+      if (timestamp instanceof Date) return timestamp;
+      return new Date(timestamp);
   }
 
   // --- Data Processing & Calculations ---
   const dashboardStats = useMemo(() => {
-    if (!clientes || !orcamentos || !ordensServico || !veiculos) {
+    if (isLoading || !clientes || !orcamentos || !ordensServico || !veiculos) {
       return {
         receitaMensal: 0,
         ordensAndamento: 0,
@@ -71,7 +74,6 @@ export default function Home() {
 
     const now = new Date();
     const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
-    const startOfMonthTimestamp = Timestamp.fromDate(startOfMonth);
 
     // Stat Cards
     const ordensConcluidasMes = ordensServico.filter(os => 
@@ -120,6 +122,7 @@ export default function Home() {
 
     const pendingQuotes = orcamentos
         .filter(o => o.status === 'pendente')
+        .sort((a, b) => toDate(b.dataCriacao).getTime() - toDate(a.dataCriacao).getTime())
         .map(o => ({
             ...o,
             cliente: clientsMap.get(o.clienteId),
@@ -148,7 +151,7 @@ export default function Home() {
       pendingQuotes,
       recentOrders,
     };
-  }, [clientes, orcamentos, ordensServico, veiculos]);
+  }, [clientes, orcamentos, ordensServico, veiculos, isLoading]);
 
   return (
     <SidebarProvider>
@@ -159,14 +162,14 @@ export default function Home() {
         <AppHeader />
         <main className="flex-1 space-y-6 p-4 md:p-6 lg:p-8">
           {isLoading ? (
-             <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5">
+             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-4">
                 {[...Array(5)].map((_, i) => <Skeleton key={i} className="h-[126px] w-full" />)}
              </div>
           ) : (
-            <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-4">
                 <StatCard
                 title="Receita Mensal"
-                value={`R$ ${dashboardStats.receitaMensal.toLocaleString('pt-BR')}`}
+                value={`R$ ${dashboardStats.receitaMensal.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`}
                 icon={<CircleDollarSign className="h-6 w-6 text-muted-foreground" />}
                 description="Receita do mês atual"
                 />

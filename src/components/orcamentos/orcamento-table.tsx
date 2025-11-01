@@ -211,7 +211,7 @@ export default function OrcamentoTable({
               <TableHead className="hidden md:table-cell">Veículo</TableHead>
               <TableHead className="hidden sm:table-cell">Data</TableHead>
               <TableHead>Valor</TableHead>
-              <TableHead>Status</TableHead>
+              <TableHead className="hidden sm:table-cell">Status</TableHead>
               <TableHead>
                 <span className="sr-only">Ações</span>
               </TableHead>
@@ -221,11 +221,16 @@ export default function OrcamentoTable({
             {enrichedOrcamentos.length > 0 ? (
               enrichedOrcamentos.map((orcamento) => (
                 <TableRow key={orcamento.id}>
-                  <TableCell className="font-medium">{orcamento.cliente?.nome || 'Desconhecido'}</TableCell>
+                  <TableCell>
+                    <div className="font-medium">{orcamento.cliente?.nome || 'Desconhecido'}</div>
+                     <div className="block sm:hidden text-xs text-muted-foreground">
+                       {statusLabelMap[orcamento.status]}
+                    </div>
+                  </TableCell>
                    <TableCell className="hidden md:table-cell text-muted-foreground">{orcamento.veiculo ? `${orcamento.veiculo.marca} ${orcamento.veiculo.modelo}` : 'Desconhecido'}</TableCell>
                    <TableCell className="hidden sm:table-cell text-muted-foreground">{formatDate(orcamento.dataCriacao)}</TableCell>
                   <TableCell>{`R$ ${orcamento.valorTotal.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`}</TableCell>
-                   <TableCell>
+                   <TableCell className="hidden sm:table-cell">
                     <Badge variant={statusVariantMap[orcamento.status]} className="text-xs">
                         {statusLabelMap[orcamento.status]}
                     </Badge>

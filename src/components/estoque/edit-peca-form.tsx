@@ -97,7 +97,7 @@ export function EditPecaForm({ peca, setDialogOpen }: EditPecaFormProps) {
             </FormItem>
           )}
         />
-        <div className="grid grid-cols-2 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <FormField name="quantidadeEstoque" control={form.control} render={({ field }) => (
                 <FormItem>
                 <FormLabel>Qtd. em Estoque</FormLabel>
@@ -115,7 +115,7 @@ export function EditPecaForm({ peca, setDialogOpen }: EditPecaFormProps) {
             )}
             />
         </div>
-         <div className="grid grid-cols-2 gap-4">
+         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <FormField name="valorCompra" control={form.control} render={({ field }) => (
                 <FormItem>
                 <FormLabel>Valor de Compra (R$)</FormLabel>

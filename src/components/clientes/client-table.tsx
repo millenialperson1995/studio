@@ -84,8 +84,8 @@ export default function ClientTable({ clients = [] }: ClientTableProps) {
           <TableHeader>
             <TableRow>
               <TableHead>Nome</TableHead>
-              <TableHead className="hidden md:table-cell">Email</TableHead>
               <TableHead className="hidden sm:table-cell">Telefone</TableHead>
+              <TableHead className="hidden md:table-cell">Email</TableHead>
               <TableHead>
                 <span className="sr-only">Ações</span>
               </TableHead>
@@ -96,11 +96,11 @@ export default function ClientTable({ clients = [] }: ClientTableProps) {
               clients.map((client) => (
                 <TableRow key={client.id}>
                   <TableCell className="font-medium">{client.nome}</TableCell>
-                  <TableCell className="hidden md:table-cell text-muted-foreground">
-                    {client.email}
-                  </TableCell>
                   <TableCell className="hidden sm:table-cell text-muted-foreground">
                     {client.telefone}
+                  </TableCell>
+                  <TableCell className="hidden md:table-cell text-muted-foreground">
+                    {client.email}
                   </TableCell>
                   <TableCell>
                     <DropdownMenu>

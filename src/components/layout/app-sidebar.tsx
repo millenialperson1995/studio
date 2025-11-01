@@ -15,26 +15,33 @@ import {
     SidebarMenuItem,
     SidebarMenuButton,
     SidebarFooter,
+    useSidebar,
   } from '../ui/sidebar';
   import Link from 'next/link';
 
   const AppSidebar = () => {
+    const { state } = useSidebar();
+    const isCollapsed = state === 'collapsed';
     return (
       <>
-        <SidebarHeader className="border-b">
+        <SidebarHeader>
           <div className="flex items-center gap-2 p-2">
-            <Wrench className="h-8 w-8 text-primary" />
-            <h1 className="text-xl font-bold text-foreground">Retífica Ágil</h1>
+            <Wrench className="h-8 w-8 text-primary shrink-0" />
+            <h1
+              className={`text-xl font-bold text-foreground transition-opacity duration-200 ${isCollapsed ? 'opacity-0' : 'opacity-100'}`}
+            >
+              Retífica Ágil
+            </h1>
           </div>
         </SidebarHeader>
-        <SidebarContent className="p-2">
+        <SidebarContent>
           <SidebarMenu>
             <SidebarMenuItem>
               <Link href="/" passHref>
                 <SidebarMenuButton asChild tooltip="Dashboard">
                   <span>
                     <LayoutDashboard />
-                    Dashboard
+                    {!isCollapsed && 'Dashboard'}
                   </span>
                 </SidebarMenuButton>
               </Link>
@@ -44,7 +51,7 @@ import {
                 <SidebarMenuButton asChild tooltip="Clientes">
                   <span>
                     <Users />
-                    Clientes
+                    {!isCollapsed && 'Clientes'}
                   </span>
                 </SidebarMenuButton>
               </Link>
@@ -54,7 +61,7 @@ import {
                 <SidebarMenuButton asChild tooltip="Veículos">
                   <span>
                     <Car />
-                    Veículos
+                    {!isCollapsed && 'Veículos'}
                   </span>
                 </SidebarMenuButton>
               </Link>
@@ -64,7 +71,7 @@ import {
                 <SidebarMenuButton asChild tooltip="Orçamentos">
                   <span>
                     <FileText />
-                    Orçamentos
+                    {!isCollapsed && 'Orçamentos'}
                   </span>
                 </SidebarMenuButton>
               </Link>
@@ -74,7 +81,7 @@ import {
                 <SidebarMenuButton asChild tooltip="Ordens de Serviço">
                   <span>
                     <Wrench />
-                    Ordens de Serviço
+                    {!isCollapsed && 'Ordens de Serviço'}
                   </span>
                 </SidebarMenuButton>
               </Link>
@@ -84,7 +91,7 @@ import {
                 <SidebarMenuButton asChild tooltip="Estoque">
                   <span>
                     <Package />
-                    Estoque
+                    {!isCollapsed && 'Estoque'}
                   </span>
                 </SidebarMenuButton>
               </Link>
@@ -94,21 +101,21 @@ import {
                 <SidebarMenuButton asChild tooltip="Serviços">
                   <span>
                     <List />
-                    Serviços
+                    {!isCollapsed && 'Serviços'}
                   </span>
                 </SidebarMenuButton>
               </Link>
             </SidebarMenuItem>
           </SidebarMenu>
         </SidebarContent>
-        <SidebarFooter className="p-2 border-t mt-auto">
+        <SidebarFooter className="mt-auto">
             <SidebarMenu>
                 <SidebarMenuItem>
                   <Link href="/configuracoes" passHref>
                     <SidebarMenuButton asChild tooltip="Configurações">
                         <span>
                             <Settings />
-                            Configurações
+                            {!isCollapsed && 'Configurações'}
                         </span>
                     </SidebarMenuButton>
                   </Link>
