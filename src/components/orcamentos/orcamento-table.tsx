@@ -38,7 +38,7 @@ import {
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { MoreHorizontal, Pencil, Trash2, FilePlus2, FileDown } from 'lucide-react';
-import type { Orcamento, Cliente, Veiculo, ItemServico, OrdemServico, Peca, Servico } from '@/lib/types';
+import type { Orcamento, Cliente, Veiculo, ItemServico, OrdemServico, Peca, Servico, ItemPeca } from '@/lib/types';
 import { deleteDocumentNonBlocking, addDocumentNonBlocking, updateDocumentNonBlocking } from '@/firebase/non-blocking-updates';
 import { doc, collection, serverTimestamp } from 'firebase/firestore';
 import { useFirestore } from '@/firebase';
@@ -131,7 +131,7 @@ export default function OrcamentoTable({
   };
   
   const handleGenerateOS = async (orcamento: Orcamento) => {
-    if (!firestore || orcamento.ordemServicoId) return;
+    if (!firestore || !orcamento.clienteId || orcamento.ordemServicoId) return;
 
     const osServicos: ItemServico[] = orcamento.itens
         .filter(item => item.tipo === 'servico')
@@ -140,7 +140,7 @@ export default function OrcamentoTable({
             valor: item.valorTotal,
         }));
     
-    const osPecas = orcamento.itens
+    const osPecas: ItemPeca[] = orcamento.itens
         .filter(item => item.tipo === 'peca')
         .map(item => ({
             descricao: item.descricao,
@@ -169,7 +169,7 @@ export default function OrcamentoTable({
 
         if (newOSDoc) {
              const orcamentoDocRef = doc(firestore, 'orcamentos', orcamento.id);
-             updateDocumentNonBlocking(orcamentoDocRef, { ordemServicoId: newOSDoc.id });
+             updateDocumentNonBlocking(orcamentoDocRef, { ordemServicoId: newOSDoc.id, status: 'aprovado' });
         }
        
         toast({
