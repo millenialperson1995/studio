@@ -33,12 +33,12 @@ service cloud.firestore {
     }
     
     match /users/{userId} {
-      // Any authenticated user can list users to find colleagues, but only admins can create/delete.
+      // Allow reading own profile, or any profile if admin
+      allow get: if isOwner(userId) || isAdmin();
+      // Allow creating, updating, and deleting only if admin
+      allow create, update, delete: if isAdmin();
+      // Allow listing users for any signed-in user (required for the management page)
       allow list: if isSignedIn();
-      // A user can get/update their own profile. Admins can get/update any profile.
-      allow get, update: if isOwner(userId) || isAdmin();
-      // Only admins can create or delete user profiles.
-      allow create, delete: if isAdmin();
     }
 
     match /clientes/{clienteId} {
