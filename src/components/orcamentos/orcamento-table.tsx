@@ -37,7 +37,7 @@ import {
 } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { MoreHorizontal, Pencil, Trash2, FilePlus2 } from 'lucide-react';
+import { MoreHorizontal, Pencil, Trash2, FilePlus2, FileDown } from 'lucide-react';
 import type { Orcamento, Cliente, Veiculo, ItemServico, OrdemServico, Peca, Servico } from '@/lib/types';
 import { deleteDocumentNonBlocking, addDocumentNonBlocking, updateDocumentNonBlocking } from '@/firebase/non-blocking-updates';
 import { doc, collection, serverTimestamp } from 'firebase/firestore';
@@ -45,6 +45,7 @@ import { useFirestore } from '@/firebase';
 import { useToast } from '@/hooks/use-toast';
 import { EditOrcamentoForm } from './edit-orcamento-form';
 import { format } from 'date-fns';
+import { generateOrcamentoPDF } from '@/lib/pdf-generator';
 
 interface OrcamentoTableProps {
   orcamentos: Orcamento[];
@@ -84,8 +85,9 @@ export default function OrcamentoTable({
     null
   );
 
-  const clientsMap = useMemo(() => new Map(clients.map((c) => [c.id, c.nome])), [clients]);
-  const vehiclesMap = useMemo(() => new Map(vehicles.map((v) => [v.id, `${v.marca} ${v.modelo} (${v.placa})`])), [vehicles]);
+  const clientsMap = useMemo(() => new Map(clients.map((c) => [c.id, c])), [clients]);
+  const vehiclesMap = useMemo(() => new Map(vehicles.map((v) => [v.id, v])), [vehicles]);
+
 
   const handleEditClick = (orcamento: Orcamento) => {
     setSelectedOrcamento(orcamento);
@@ -95,6 +97,24 @@ export default function OrcamentoTable({
   const handleDeleteClick = (orcamento: Orcamento) => {
     setSelectedOrcamento(orcamento);
     setIsDeleteDialogOpen(true);
+  };
+
+  const handleDownloadPDF = (orcamento: Orcamento) => {
+    const cliente = clientsMap.get(orcamento.clienteId);
+    const veiculo = vehiclesMap.get(orcamento.veiculoId);
+    if (cliente && veiculo) {
+      generateOrcamentoPDF(orcamento, cliente, veiculo);
+      toast({
+        title: 'PDF Gerado',
+        description: 'O download do seu PDF foi iniciado.',
+      });
+    } else {
+      toast({
+        variant: 'destructive',
+        title: 'Erro',
+        description: 'Não foi possível encontrar os dados do cliente ou veículo para gerar o PDF.',
+      });
+    }
   };
 
   const handleDeleteConfirm = () => {
@@ -176,8 +196,8 @@ export default function OrcamentoTable({
   const enrichedOrcamentos = useMemo(() => {
     return orcamentos.map((orc) => ({
       ...orc,
-      clienteNome: clientsMap.get(orc.clienteId) || 'Desconhecido',
-      veiculoDesc: vehiclesMap.get(orc.veiculoId) || 'Desconhecido',
+      cliente: clientsMap.get(orc.clienteId),
+      veiculo: vehiclesMap.get(orc.veiculoId),
     }));
   }, [orcamentos, clientsMap, vehiclesMap]);
 
@@ -201,8 +221,8 @@ export default function OrcamentoTable({
             {enrichedOrcamentos.length > 0 ? (
               enrichedOrcamentos.map((orcamento) => (
                 <TableRow key={orcamento.id}>
-                  <TableCell className="font-medium">{orcamento.clienteNome}</TableCell>
-                   <TableCell className="hidden md:table-cell text-muted-foreground">{orcamento.veiculoDesc}</TableCell>
+                  <TableCell className="font-medium">{orcamento.cliente?.nome || 'Desconhecido'}</TableCell>
+                   <TableCell className="hidden md:table-cell text-muted-foreground">{orcamento.veiculo ? `${orcamento.veiculo.marca} ${orcamento.veiculo.modelo}` : 'Desconhecido'}</TableCell>
                    <TableCell className="hidden sm:table-cell text-muted-foreground">{formatDate(orcamento.dataCriacao)}</TableCell>
                   <TableCell>{`R$ ${orcamento.valorTotal.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`}</TableCell>
                    <TableCell>
@@ -220,6 +240,10 @@ export default function OrcamentoTable({
                       </DropdownMenuTrigger>
                       <DropdownMenuContent align="end">
                         <DropdownMenuLabel>Ações</DropdownMenuLabel>
+                        <DropdownMenuItem onClick={() => handleDownloadPDF(orcamento)}>
+                            <FileDown className="mr-2 h-4 w-4" />
+                            Baixar PDF
+                        </DropdownMenuItem>
                         <DropdownMenuItem
                           onClick={() => handleEditClick(orcamento)}
                         >
