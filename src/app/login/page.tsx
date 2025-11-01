@@ -16,7 +16,9 @@ import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth, useUser } from '@/firebase';
-import { signInWithEmailAndPassword } from 'firebase/auth';
+import { signInWithEmailAndPassword, createUserWithEmailAndPassword } from 'firebase/auth';
+import { setDoc, doc } from 'firebase/firestore';
+import { useFirestore } from '@/firebase';
 import { useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
 import { Wrench } from 'lucide-react';
@@ -30,9 +32,40 @@ const formSchema = z.object({
 export default function LoginPage() {
   const { toast } = useToast();
   const auth = useAuth();
+  const firestore = useFirestore();
   const router = useRouter();
   const { user, isUserLoading } = useUser();
   const [error, setError] = useState<string | null>(null);
+
+  // Seed o primeiro usuário admin
+  useEffect(() => {
+    const seedAdminUser = async () => {
+      if (auth && firestore) {
+        try {
+          // Tenta criar o usuário. Se já existir, vai dar um erro que será ignorado.
+          const userCredential = await createUserWithEmailAndPassword(auth, 'admin@retifica.com', '123456');
+          const user = userCredential.user;
+          // Cria o documento do usuário no Firestore
+          await setDoc(doc(firestore, "users", user.uid), {
+            uid: user.uid,
+            email: 'admin@retifica.com',
+            displayName: 'Admin Retífica',
+            role: 'admin',
+            disabled: false,
+          });
+          console.log("Usuário admin criado com sucesso.");
+        } catch (error: any) {
+          if (error.code === 'auth/email-already-in-use') {
+            // Isso é esperado após a primeira execução, então não é um erro real.
+            console.log("Usuário admin já existe.");
+          } else {
+            console.error("Erro ao criar usuário admin:", error);
+          }
+        }
+      }
+    };
+    seedAdminUser();
+  }, [auth, firestore]);
 
   useEffect(() => {
     if (!isUserLoading && user) {
@@ -68,6 +101,9 @@ export default function LoginPage() {
         case 'auth/invalid-email':
           errorMessage = 'O formato do e-mail é inválido.';
           break;
+        case 'auth/user-disabled':
+            errorMessage = 'Este usuário foi desativado.';
+            break;
       }
       setError(errorMessage);
        toast({
@@ -85,12 +121,11 @@ export default function LoginPage() {
 
   return (
     <main className="flex h-screen w-screen items-center justify-center bg-gray-100 dark:bg-gray-900 p-4">
-        <div className="flex flex-col items-center text-center mb-8">
+       <div className="w-full max-w-sm mx-auto flex flex-col items-center text-center">
             <Wrench className="h-12 w-12 text-primary mb-4" />
             <h1 className="text-3xl font-bold text-gray-900 dark:text-gray-50">Retífica Ágil</h1>
-            <p className="text-gray-500 dark:text-gray-400">Faça login para gerenciar sua oficina</p>
-        </div>
-      <Card className="w-full max-w-sm">
+            <p className="text-gray-500 dark:text-gray-400 mb-8">Faça login para gerenciar sua oficina</p>
+      <Card className="w-full">
         <CardHeader>
           <CardTitle>Login</CardTitle>
           <CardDescription>Acesse o painel com seu e-mail e senha.</CardDescription>
@@ -132,6 +167,7 @@ export default function LoginPage() {
           </Form>
         </CardContent>
       </Card>
+      </div>
     </main>
   );
 }

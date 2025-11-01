@@ -21,17 +21,16 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { addDocumentNonBlocking } from '@/firebase/non-blocking-updates';
-import { collection, doc } from 'firebase/firestore';
-import { useFirestore } from '@/firebase';
+import { collection, doc, setDoc } from 'firebase/firestore';
+import { useAuth, useFirestore } from '@/firebase';
 import { useToast } from '@/hooks/use-toast';
+import { createUserWithEmailAndPassword } from 'firebase/auth';
 
-// NOTA: A criação de usuários com email/senha deve ser feita em um ambiente seguro (backend/Cloud Function).
-// Este formulário cria apenas o perfil do usuário no Firestore. O admin precisaria criar o usuário no Firebase Auth Console.
-// Para uma solução completa, seria necessário um backend para gerenciar a criação de usuários no Firebase Auth.
 
 const formSchema = z.object({
   displayName: z.string().min(2, 'O nome deve ter pelo menos 2 caracteres.'),
   email: z.string().email('Formato de e-mail inválido.'),
+  password: z.string().min(6, 'A senha deve ter pelo menos 6 caracteres.'),
   role: z.enum(['admin', 'recepcionista', 'mecanico']),
 });
 
@@ -41,6 +40,7 @@ type AddUserFormProps = {
 
 export function AddUserForm({ setDialogOpen }: AddUserFormProps) {
   const firestore = useFirestore();
+  const auth = useAuth();
   const { toast } = useToast();
 
   const form = useForm<z.infer<typeof formSchema>>({
@@ -48,41 +48,51 @@ export function AddUserForm({ setDialogOpen }: AddUserFormProps) {
     defaultValues: {
       displayName: '',
       email: '',
+      password: '',
       role: 'recepcionista',
     },
   });
 
   async function onSubmit(values: z.infer<typeof formSchema>) {
-    if (!firestore) return;
+    if (!firestore || !auth) return;
 
+    // A criação de usuário deve ser idealmente feita por uma função de backend
+    // para não expor lógicas sensíveis no cliente. Para este protótipo,
+    // faremos no cliente com a premissa de que a página é protegida por regras de segurança.
     try {
-      // ATENÇÃO: Esta é uma abordagem simplificada. O ideal é usar o UID do Firebase Auth.
-      // Como estamos em um ambiente client-side, vamos usar o email como ID temporário
-      // e o administrador deve garantir a criação do usuário no Firebase Auth Console.
-      const usersCollectionRef = collection(firestore, 'users');
-      // Usar um ID gerado automaticamente pelo Firestore
-      const newUserDocRef = doc(usersCollectionRef);
+      // Cria o usuário no Firebase Authentication
+      const userCredential = await createUserWithEmailAndPassword(auth, values.email, values.password);
+      const user = userCredential.user;
 
+      // Cria o perfil do usuário no Firestore
       const userData = {
-        ...values,
-        uid: newUserDocRef.id, // Usando o ID do documento como UID
+        uid: user.uid,
+        displayName: values.displayName,
+        email: values.email,
+        role: values.role,
         disabled: false,
       };
 
-      await addDocumentNonBlocking(newUserDocRef, userData);
+      await setDoc(doc(firestore, "users", user.uid), userData);
 
       toast({
         title: 'Sucesso!',
-        description: 'Perfil de usuário criado. Lembre-se de criar a conta de autenticação no Firebase Console.',
+        description: 'Usuário criado e perfil salvo com sucesso.',
       });
       form.reset();
       setDialogOpen(false);
-    } catch (error) {
-      console.error('Error adding user profile: ', error);
+    } catch (error: any) {
+      console.error('Error adding user: ', error);
+      let description = 'Não foi possível criar o usuário. Tente novamente.';
+      if (error.code === 'auth/email-already-in-use') {
+          description = 'Este e-mail já está em uso por outra conta.';
+      } else if (error.code === 'auth/weak-password') {
+          description = 'A senha é muito fraca. Tente uma senha mais forte.';
+      }
       toast({
         variant: 'destructive',
         title: 'Erro',
-        description: 'Não foi possível criar o perfil do usuário. Tente novamente.',
+        description,
       });
     }
   }
@@ -111,6 +121,19 @@ export function AddUserForm({ setDialogOpen }: AddUserFormProps) {
               <FormLabel>Email de Acesso</FormLabel>
               <FormControl>
                 <Input type="email" placeholder="email@exemplo.com" {...field} />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+        <FormField
+          control={form.control}
+          name="password"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Senha</FormLabel>
+              <FormControl>
+                <Input type="password" placeholder="Mínimo 6 caracteres" {...field} />
               </FormControl>
               <FormMessage />
             </FormItem>
