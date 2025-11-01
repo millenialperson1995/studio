@@ -17,7 +17,7 @@ import RecentActivityCard from '@/components/dashboard/recent-activity-card';
 import { useCollection, useFirestore } from '@/firebase';
 import { collection, query, where, Timestamp, collectionGroup } from 'firebase/firestore';
 import { useMemoFirebase } from '@/firebase/provider';
-import type { Cliente, OrdemServico, Orcamento } from '@/lib/types';
+import type { Cliente, OrdemServico, Orcamento, Veiculo } from '@/lib/types';
 import { Skeleton } from '@/components/ui/skeleton';
 
 export default function Home() {
@@ -36,16 +36,21 @@ export default function Home() {
     () => (firestore ? query(collectionGroup(firestore, 'ordensServico')) : null),
     [firestore]
   );
+   const veiculosQuery = useMemoFirebase(
+    () => (firestore ? query(collectionGroup(firestore, 'veiculos')) : null),
+    [firestore]
+  );
 
   const { data: clientes, isLoading: isLoadingClientes } = useCollection<Cliente>(clientesRef);
   const { data: orcamentos, isLoading: isLoadingOrcamentos } = useCollection<Orcamento>(orcamentosRef);
   const { data: ordensServico, isLoading: isLoadingOrdens } = useCollection<OrdemServico>(ordensQuery);
+  const { data: veiculos, isLoading: isLoadingVeiculos } = useCollection<Veiculo>(veiculosQuery);
 
-  const isLoading = isLoadingClientes || isLoadingOrcamentos || isLoadingOrdens;
+  const isLoading = isLoadingClientes || isLoadingOrcamentos || isLoadingOrdens || isLoadingVeiculos;
 
   // --- Data Processing & Calculations ---
   const dashboardStats = useMemo(() => {
-    if (!clientes || !orcamentos || !ordensServico) {
+    if (!clientes || !orcamentos || !ordensServico || !veiculos) {
       return {
         receitaMensal: 0,
         ordensAndamento: 0,
@@ -67,7 +72,7 @@ export default function Home() {
     const ordensConcluidasMes = ordensServico.filter(os => 
       os.status === 'concluida' && 
       os.dataConclusao && 
-      os.dataConclusao.toDate() >= startOfMonth
+      toDate(os.dataConclusao) >= startOfMonth
     );
 
     const receitaMensal = ordensConcluidasMes.reduce((acc, os) => acc + os.valorTotal, 0);
@@ -75,7 +80,7 @@ export default function Home() {
     const orcamentosPendentes = orcamentos.filter(o => o.status === 'pendente').length;
     const totalClientes = clientes.length;
     const novosClientesMes = clientes.filter(c => 
-        c.createdAt && c.createdAt.toDate() >= startOfMonth
+        c.createdAt && toDate(c.createdAt) >= startOfMonth
     ).length;
 
     // Revenue Chart (Last 6 months)
@@ -90,7 +95,7 @@ export default function Home() {
 
     ordensServico.forEach(os => {
         if (os.status === 'concluida' && os.dataConclusao) {
-            const conclusionDate = os.dataConclusao.toDate();
+            const conclusionDate = toDate(os.dataConclusao);
             const monthDiff = (now.getFullYear() - conclusionDate.getFullYear()) * 12 + (now.getMonth() - conclusionDate.getMonth());
             if (monthDiff >= 0 && monthDiff < 6) {
                  const monthKey = `${monthNames[conclusionDate.getMonth()]}`;
@@ -106,23 +111,23 @@ export default function Home() {
 
     // Recent Activity Lists
     const clientsMap = new Map(clientes.map(c => [c.id, c]));
-    const vehiclesMap = new Map<string, any>(); // Simplified for this context
+    const vehiclesMap = new Map(veiculos.map(v => [v.id, v]));
 
     const pendingQuotes = orcamentos
         .filter(o => o.status === 'pendente')
         .map(o => ({
             ...o,
             cliente: clientsMap.get(o.clienteId),
-            veiculo: { marca: '', modelo: '', placa: '' }, // Simplified
+            veiculo: vehiclesMap.get(o.veiculoId),
         }))
         .slice(0, 5);
 
     const recentOrders = ordensServico
-        .sort((a, b) => b.dataEntrada.toDate().getTime() - a.dataEntrada.toDate().getTime())
+        .sort((a, b) => toDate(b.dataEntrada).getTime() - toDate(a.dataEntrada).getTime())
         .map(os => ({
             ...os,
             cliente: clientsMap.get(os.clienteId),
-            veiculo: { marca: '', modelo: '', placa: '' }, // Simplified
+            veiculo: vehiclesMap.get(os.veiculoId),
         }))
         .slice(0, 5);
 
@@ -138,8 +143,12 @@ export default function Home() {
       pendingQuotes,
       recentOrders,
     };
-  }, [clientes, orcamentos, ordensServico]);
+  }, [clientes, orcamentos, ordensServico, veiculos]);
 
+  const toDate = (timestamp: any): Date => {
+      if (!timestamp) return new Date(0); // return an old date if timestamp is null/undefined
+      return timestamp.toDate ? timestamp.toDate() : new Date(timestamp);
+  }
 
   return (
     <SidebarProvider>
