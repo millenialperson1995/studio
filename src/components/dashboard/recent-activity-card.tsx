@@ -8,12 +8,15 @@ import {
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
 import { OrdemServico, Orcamento } from '@/lib/types';
-import { cn } from '@/lib/utils';
 import { ScrollArea } from '../ui/scroll-area';
+
+// Corrected type definition from interface to type
+type EnrichedItem = OrdemServico | Orcamento;
+
 
 interface RecentActivityCardProps {
   title: string;
-  items: (OrdemServico | Orcamento)[];
+  items: EnrichedItem[];
   icon: React.ReactNode;
   emptyMessage: string;
 }
@@ -53,14 +56,14 @@ export default function RecentActivityCard({ title, items, icon, emptyMessage }:
               items.map((item) => (
                 <div key={item.id} className="flex items-center gap-4">
                   <Avatar className="hidden h-9 w-9 sm:flex">
-                    <AvatarFallback>{item.cliente?.nome.charAt(0)}</AvatarFallback>
+                    <AvatarFallback>{item.cliente?.nome.charAt(0) || '?'}</AvatarFallback>
                   </Avatar>
                   <div className="grid gap-1 flex-1">
                     <p className="text-sm font-medium leading-none truncate">
-                      {item.cliente?.nome}
+                      {item.cliente?.nome || 'Cliente não encontrado'}
                     </p>
                     <p className="text-sm text-muted-foreground truncate">
-                      {item.veiculo?.marca} {item.veiculo?.modelo} ({item.veiculo?.placa})
+                      ID: {item.id.substring(0, 8)}...
                     </p>
                   </div>
                   <div className="ml-auto text-right">

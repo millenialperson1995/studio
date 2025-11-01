@@ -15,9 +15,9 @@ import {
 import RevenueChartCard from '@/components/dashboard/revenue-chart-card';
 import RecentActivityCard from '@/components/dashboard/recent-activity-card';
 import { useCollection, useFirestore, useUser } from '@/firebase';
-import { collection, query, where, Timestamp, collectionGroup } from 'firebase/firestore';
+import { collection, query, where, Timestamp } from 'firebase/firestore';
 import { useMemoFirebase } from '@/firebase/provider';
-import type { Cliente, OrdemServico, Orcamento, Veiculo } from '@/lib/types';
+import type { Cliente, OrdemServico, Orcamento } from '@/lib/types';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useRouter } from 'next/navigation';
 
@@ -45,29 +45,23 @@ export default function Home() {
     () => (firestore && user?.uid ? query(collection(firestore, 'ordensServico'), where('userId', '==', user.uid)) : null),
     [firestore, user?.uid]
   );
-   const veiculosQuery = useMemoFirebase(
-    () => (firestore && user?.uid ? query(collectionGroup(firestore, 'veiculos'), where('userId', '==', user.uid)) : null),
-    [firestore, user?.uid]
-  );
-
+  
   const { data: clientes, isLoading: isLoadingClientes } = useCollection<Cliente>(clientesRef);
   const { data: orcamentos, isLoading: isLoadingOrcamentos } = useCollection<Orcamento>(orcamentosRef);
   const { data: ordensServico, isLoading: isLoadingOrdens } = useCollection<OrdemServico>(ordensQuery);
-  const { data: veiculos, isLoading: isLoadingVeiculos } = useCollection<Veiculo>(veiculosQuery);
 
-  const isLoading = isUserLoading || isLoadingClientes || isLoadingOrcamentos || isLoadingOrdens || isLoadingVeiculos;
+  const isLoading = isUserLoading || isLoadingClientes || isLoadingOrcamentos || isLoadingOrdens;
 
   const toDate = (timestamp: any): Date => {
-      if (!timestamp) return new Date(0); // return an old date if timestamp is null/undefined
+      if (!timestamp) return new Date(0);
       if (timestamp.toDate) return timestamp.toDate();
-      // Handle cases where it might already be a Date object or a string
       if (timestamp instanceof Date) return timestamp;
       return new Date(timestamp);
   }
 
   // --- Data Processing & Calculations ---
   const dashboardStats = useMemo(() => {
-    if (!clientes || !orcamentos || !ordensServico || !veiculos) {
+    if (isLoading || !clientes || !orcamentos || !ordensServico) {
       return {
         receitaMensal: 0,
         ordensAndamento: 0,
@@ -127,7 +121,6 @@ export default function Home() {
 
     // Recent Activity Lists
     const clientsMap = new Map(clientes.map(c => [c.id, c]));
-    const vehiclesMap = new Map(veiculos.map(v => [v.id, v]));
 
     const pendingQuotes = orcamentos
         .filter(o => o.status === 'pendente')
@@ -135,7 +128,6 @@ export default function Home() {
         .map(o => ({
             ...o,
             cliente: clientsMap.get(o.clienteId),
-            veiculo: vehiclesMap.get(o.veiculoId),
         }))
         .slice(0, 5);
 
@@ -144,7 +136,6 @@ export default function Home() {
         .map(os => ({
             ...os,
             cliente: clientsMap.get(os.clienteId),
-            veiculo: vehiclesMap.get(os.veiculoId),
         }))
         .slice(0, 5);
 
@@ -160,9 +151,9 @@ export default function Home() {
       pendingQuotes,
       recentOrders,
     };
-  }, [clientes, orcamentos, ordensServico, veiculos]);
+  }, [isLoading, clientes, orcamentos, ordensServico]);
   
-  if (isUserLoading || !user) {
+  if (isLoading || !user) {
     return (
         <SidebarProvider>
             <Sidebar>
