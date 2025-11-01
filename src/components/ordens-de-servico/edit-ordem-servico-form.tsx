@@ -149,14 +149,14 @@ export function EditOrdemServicoForm({
     }
   }
 
-    const handleItemSelect = (index: number, item: Peca | Servico, type: 'peca' | 'servico') => {
-    if (type === 'servico') {
+  const handleItemSelect = (index: number, item: Peca | Servico, type: 'peca' | 'servico', itemType: 'servicos' | 'pecas') => {
+    if (itemType === 'servicos') {
         updateServico(index, {
             ...form.getValues(`servicos.${index}`),
             descricao: item.descricao,
             valor: (item as Servico).valorPadrao,
         })
-    } else { // type === 'peca'
+    } else { // itemType === 'pecas'
         updatePeca(index, {
             ...form.getValues(`pecas.${index}`),
             descricao: item.descricao,
@@ -294,13 +294,13 @@ export function EditOrdemServicoForm({
           {servicosFields.map((field, index) => (
               <div key={field.id} className="flex flex-col md:flex-row items-end gap-2 border-b md:border-none pb-4 md:pb-0 mb-4 md:mb-0">
                 <div className="flex-1 w-full">
-                  <FormLabel className={cn(index !== 0 && "sr-only md:not-sr-only", "text-xs md:hidden")}>Descrição</FormLabel>
+                  <FormLabel className={cn(index !== 0 && "md:hidden", "text-xs md:hidden")}>Descrição</FormLabel>
                    <FormField control={form.control} name={`servicos.${index}.descricao`} render={({ field }) => (
                         <FormItem>
                            <ItemSelector
                                 pecas={[]}
                                 servicos={servicos}
-                                onSelect={(item, type) => handleItemSelect(index, item, type)}
+                                onSelect={(item, type) => handleItemSelect(index, item, type, 'servicos')}
                                 trigger={
                                     <FormControl>
                                         <Input placeholder="Selecione ou digite um serviço" {...field} />
@@ -312,13 +312,13 @@ export function EditOrdemServicoForm({
                     />
                 </div>
                  <div className="flex-grow-0 flex-shrink-0 basis-1/3 w-full md:w-auto">
-                    <FormLabel className={cn(index !== 0 && "sr-only md:not-sr-only", "text-xs md:hidden")}>Valor</FormLabel>
+                    <FormLabel className={cn(index !== 0 && "md:hidden", "text-xs md:hidden")}>Valor</FormLabel>
                     <FormField control={form.control} name={`servicos.${index}.valor`} render={({ field }) => (
                         <FormItem><FormControl><Input type="number" placeholder="400.00" {...field} /></FormControl><FormMessage /></FormItem>)}
                     />
                 </div>
                 <div className="w-full md:w-auto">
-                    <Button type="button" variant="destructive" size="icon" onClick={() => removeServico(index)} disabled={servicosFields.length <= 1} className="w-full md:w-10 h-10">
+                    <Button type="button" variant="destructive" size="icon" onClick={() => removeServico(index)} className="w-full md:w-10 h-10">
                         <Trash2 className="h-4 w-4" />
                         <span className="sr-only">Remover Serviço</span>
                     </Button>
@@ -333,15 +333,15 @@ export function EditOrdemServicoForm({
         <div className="space-y-4 rounded-md border p-4">
           <h3 className="font-medium">Peças</h3>
           {pecasFields.map((field, index) => (
-              <div key={field.id} className="flex flex-col md:grid md:grid-cols-12 gap-2 md:gap-x-2 items-start border-b md:border-none pb-4 md:pb-0 mb-4 md:mb-0">
-                <div className="col-span-12 md:col-span-5 w-full">
+              <div key={field.id} className="grid grid-cols-12 gap-x-2 gap-y-2 items-start border-b pb-4 mb-4 md:border-none md:pb-0 md:mb-2">
+                <div className="col-span-12 md:col-span-5">
                   <FormLabel className="text-xs md:hidden">Descrição</FormLabel>
                    <FormField control={form.control} name={`pecas.${index}.descricao`} render={({ field }) => (
                         <FormItem>
                             <ItemSelector
                                 pecas={pecas}
                                 servicos={[]}
-                                onSelect={(item, type) => handleItemSelect(index, item, type)}
+                                onSelect={(item, type) => handleItemSelect(index, item, type, 'pecas')}
                                 trigger={
                                     <FormControl>
                                         <Input placeholder="Selecione ou digite uma peça" {...field} />
@@ -352,23 +352,23 @@ export function EditOrdemServicoForm({
                         </FormItem>)}
                     />
                 </div>
-                 <div className="col-span-6 md:col-span-2 w-full">
+                 <div className="col-span-4 md:col-span-2">
                     <FormLabel className="text-xs md:hidden">Qtd.</FormLabel>
                     <FormField control={form.control} name={`pecas.${index}.quantidade`} render={({ field }) => (
                         <FormItem><FormControl><Input type="number" placeholder="1" {...field} /></FormControl><FormMessage /></FormItem>)}
                     />
                 </div>
-                <div className="col-span-6 md:col-span-2 w-full">
+                <div className="col-span-4 md:col-span-2">
                     <FormLabel className="text-xs md:hidden">Vlr. Unitário</FormLabel>
                     <FormField control={form.control} name={`pecas.${index}.valorUnitario`} render={({ field }) => (
                         <FormItem><FormControl><Input type="number" placeholder="100.00" {...field} /></FormControl><FormMessage /></FormItem>)}
                     />
                 </div>
-                <div className="col-span-10 md:col-span-2 w-full">
-                  <FormLabel className="text-xs md:hidden">Subtotal</FormLabel>
+                <div className="col-span-4 md:col-span-2">
+                     <FormLabel className="text-xs md:hidden">Subtotal</FormLabel>
                     <Input readOnly disabled value={((form.watch(`pecas.${index}.quantidade`) || 0) * (form.watch(`pecas.${index}.valorUnitario`) || 0)).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })} />
                 </div>
-                <div className="col-span-2 md:col-span-1 flex items-end h-full w-full">
+                <div className="col-span-12 md:col-span-1 flex items-end h-full">
                     <Button type="button" variant="destructive" size="icon" onClick={() => removePeca(index)} className="w-full h-10">
                         <Trash2 className="h-4 w-4" />
                         <span className="sr-only">Remover Peça</span>
