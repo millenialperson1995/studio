@@ -57,6 +57,10 @@ service cloud.firestore {
     match /orcamentos/{orcamentoId} {
       allow read, write: if isSignedIn();
     }
+    
+    match /ordensServico/{ordemServicoId} {
+        allow read, write: if isSignedIn();
+    }
 
     // This rule is required to allow collection group queries on 'veiculos'
     match /{path=**}/veiculos/{veiculoId} {

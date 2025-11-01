@@ -62,28 +62,31 @@ export interface Orcamento {
   veiculo?: Veiculo;
 }
 
+
+export interface ItemServico {
+  descricao: string;
+  valor: number;
+}
+
+export interface ItemPeca {
+    descricao: string;
+    quantidade: number;
+    valorUnitario: number;
+}
+
+
 export interface OrdemServico {
   id: string;
   orcamentoId?: string;
   clienteId: string;
   veiculoId: string;
   status: 'pendente' | 'andamento' | 'concluida' | 'cancelada';
-  dataEntrada: Date;
-  dataPrevisao: Date;
-  dataConclusao?: Date;
+  dataEntrada: any;
+  dataPrevisao: any;
+  dataConclusao?: any;
   mecanicoResponsavel: string;
-  servicos: Array<{
-    servicoId: string;
-    descricao: string;
-    valor: number;
-    concluido: boolean;
-  }>;
-  pecas: Array<{
-    pecaId: string;
-    descricao: string;
-    quantidade: number;
-    valorUnitario: number;
-  }>;
+  servicos: ItemServico[];
+  pecas: ItemPeca[];
   valorTotal: number;
   observacoes: string;
   cliente?: Cliente;
