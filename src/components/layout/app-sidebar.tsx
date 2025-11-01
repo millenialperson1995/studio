@@ -50,7 +50,7 @@ import {
               </Link>
             </SidebarMenuItem>
             <SidebarMenuItem>
-              <Link href="#" passHref>
+              <Link href="/veiculos" passHref>
                 <SidebarMenuButton asChild tooltip="Veículos">
                   <span>
                     <Car />
@@ -60,7 +60,7 @@ import {
               </Link>
             </SidebarMenuItem>
             <SidebarMenuItem>
-              <Link href="#" passHref>
+              <Link href="/orcamentos" passHref>
                 <SidebarMenuButton asChild tooltip="Orçamentos">
                   <span>
                     <FileText />
@@ -70,7 +70,7 @@ import {
               </Link>
             </SidebarMenuItem>
             <SidebarMenuItem>
-              <Link href="#" passHref>
+              <Link href="/ordens-de-servico" passHref>
                 <SidebarMenuButton asChild tooltip="Ordens de Serviço">
                   <span>
                     <Wrench />
@@ -80,7 +80,7 @@ import {
               </Link>
             </SidebarMenuItem>
             <SidebarMenuItem>
-              <Link href="#" passHref>
+              <Link href="/estoque" passHref>
                 <SidebarMenuButton asChild tooltip="Estoque">
                   <span>
                     <Package />
@@ -90,7 +90,7 @@ import {
               </Link>
             </SidebarMenuItem>
             <SidebarMenuItem>
-              <Link href="#" passHref>
+              <Link href="/servicos" passHref>
                 <SidebarMenuButton asChild tooltip="Serviços">
                   <span>
                     <List />
@@ -104,7 +104,7 @@ import {
         <SidebarFooter className="p-2 border-t mt-auto">
             <SidebarMenu>
                 <SidebarMenuItem>
-                  <Link href="#" passHref>
+                  <Link href="/configuracoes" passHref>
                     <SidebarMenuButton asChild tooltip="Configurações">
                         <span>
                             <Settings />
