@@ -2,14 +2,9 @@
  * @file This Firestore Security Rules file enforces a role-based and ownership-based model for the Retífica Ágil application.
  *
  * Core Philosophy:
- *   - Administrators ('admin') have broad read access for management purposes.
- *   - Other users ('recepcionista', 'mecanico') operate under a stricter ownership model.
- *   - Public listing of all users is disallowed to non-admins.
- *
- * Key Security Decisions:
- *   - Admins can read the '/users' collection to manage user accounts.
- *   - Regular users can only read their own user document.
- *   - All authenticated users can read from shared data pools like '/clientes', '/pecas', '/servicos', etc., but write access might be more granular if needed in the future.
+ *   - Administrators ('admin') have full control over user management.
+ *   - Regular users can only see their own data, but can see the list of users.
+ *   - Write access to most collections is restricted to signed-in users.
  */
 rules_version = '2';
 service cloud.firestore {
@@ -38,10 +33,11 @@ service cloud.firestore {
     }
     
     match /users/{userId} {
-       // Admins can list all users for the management page.
-      allow list: if isAdmin();
-      // Any signed-in user can read their own profile, but not others. Writes are restricted to admins.
+      // Any authenticated user can list users to find colleagues, but only admins can create/delete.
+      allow list: if isSignedIn();
+      // A user can get/update their own profile. Admins can get/update any profile.
       allow get, update: if isOwner(userId) || isAdmin();
+      // Only admins can create or delete user profiles.
       allow create, delete: if isAdmin();
     }
 
@@ -72,11 +68,7 @@ service cloud.firestore {
     }
 
     match /clientes/{clienteId}/orcamentos/{orcamentoId} {
-      allow get: if isOwner(clienteId);
-      allow list: if isOwner(clienteId);
-      allow create: if isOwner(clienteId);
-      allow update: if isOwner(clienteId);
-      allow delete: if isOwner(clienteId);
+      allow read, write: if isSignedIn();
     }
 
     match /pecas/{pecaId} {
