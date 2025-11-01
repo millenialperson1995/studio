@@ -17,7 +17,7 @@ import {
   CardTitle,
   CardDescription,
 } from '@/components/ui/card';
-import { useCollection, useFirestore } from '@/firebase';
+import { useCollection, useFirestore, useUser } from '@/firebase';
 import { useMemoFirebase } from '@/firebase/provider';
 import { collection, collectionGroup, query } from 'firebase/firestore';
 import type { OrdemServico, Cliente, Veiculo, Peca, Servico } from '@/lib/types';
@@ -36,27 +36,28 @@ import { AddOrdemServicoForm } from '@/components/ordens-de-servico/add-ordem-se
 export default function OrdensDeServicoPage() {
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
   const firestore = useFirestore();
+  const { user } = useUser();
 
   // Queries
   const ordensServicoQuery = useMemoFirebase(
-    () => (firestore ? query(collectionGroup(firestore, 'ordensServico')) : null),
-    [firestore]
+    () => (firestore && user ? query(collectionGroup(firestore, 'ordensServico')) : null),
+    [firestore, user]
   );
   const clientesCollectionRef = useMemoFirebase(
-    () => (firestore ? collection(firestore, 'clientes') : null),
-    [firestore]
+    () => (firestore && user ? collection(firestore, 'clientes') : null),
+    [firestore, user]
   );
   const veiculosQuery = useMemoFirebase(
-    () => (firestore ? query(collectionGroup(firestore, 'veiculos')) : null),
-    [firestore]
+    () => (firestore && user ? query(collectionGroup(firestore, 'veiculos')) : null),
+    [firestore, user]
   );
   const servicosCollectionRef = useMemoFirebase(
-    () => (firestore ? collection(firestore, 'servicos') : null),
-    [firestore]
+    () => (firestore && user ? collection(firestore, 'servicos') : null),
+    [firestore, user]
   );
   const pecasCollectionRef = useMemoFirebase(
-    () => (firestore ? collection(firestore, 'pecas') : null),
-    [firestore]
+    () => (firestore && user ? collection(firestore, 'pecas') : null),
+    [firestore, user]
   );
 
 

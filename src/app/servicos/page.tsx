@@ -17,7 +17,7 @@ import {
   CardTitle,
   CardDescription,
 } from '@/components/ui/card';
-import { useCollection, useFirestore } from '@/firebase';
+import { useCollection, useFirestore, useUser } from '@/firebase';
 import { useMemoFirebase } from '@/firebase/provider';
 import { collection } from 'firebase/firestore';
 import type { Servico } from '@/lib/types';
@@ -36,9 +36,10 @@ import ServicoTable from '@/components/servicos/servico-table';
 export default function ServicosPage() {
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const firestore = useFirestore();
+  const { user } = useUser();
   const servicosCollectionRef = useMemoFirebase(
-    () => (firestore ? collection(firestore, 'servicos') : null),
-    [firestore]
+    () => (firestore && user ? collection(firestore, 'servicos') : null),
+    [firestore, user]
   );
   const { data: servicos, isLoading, error } = useCollection<Servico>(servicosCollectionRef);
 

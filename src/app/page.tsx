@@ -35,20 +35,20 @@ export default function Home() {
 
   // --- Data Fetching ---
   const clientesRef = useMemoFirebase(
-    () => (firestore ? collection(firestore, 'clientes') : null),
-    [firestore]
+    () => (firestore && user ? collection(firestore, 'clientes') : null),
+    [firestore, user]
   );
   const orcamentosRef = useMemoFirebase(
-    () => (firestore ? collection(firestore, 'orcamentos') : null),
-    [firestore]
+    () => (firestore && user ? collection(firestore, 'orcamentos') : null),
+    [firestore, user]
   );
   const ordensQuery = useMemoFirebase(
-    () => (firestore ? query(collectionGroup(firestore, 'ordensServico')) : null),
-    [firestore]
+    () => (firestore && user ? query(collectionGroup(firestore, 'ordensServico')) : null),
+    [firestore, user]
   );
    const veiculosQuery = useMemoFirebase(
-    () => (firestore ? query(collectionGroup(firestore, 'veiculos')) : null),
-    [firestore]
+    () => (firestore && user ? query(collectionGroup(firestore, 'veiculos')) : null),
+    [firestore, user]
   );
 
   const { data: clientes, isLoading: isLoadingClientes } = useCollection<Cliente>(clientesRef);
@@ -163,13 +163,10 @@ export default function Home() {
     };
   }, [clientes, orcamentos, ordensServico, veiculos, isLoading]);
   
-  if (isLoading) {
+  if (isLoading || !user) {
     return <div className="flex h-screen w-screen items-center justify-center"><Skeleton className="h-24 w-24" /></div>
   }
   
-  if (!user) {
-    return null;
-  }
 
   return (
     <SidebarProvider>

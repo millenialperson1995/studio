@@ -17,7 +17,7 @@ import {
   CardTitle,
   CardDescription,
 } from '@/components/ui/card';
-import { useCollection, useFirestore } from '@/firebase';
+import { useCollection, useFirestore, useUser } from '@/firebase';
 import { useMemoFirebase } from '@/firebase/provider';
 import { collection } from 'firebase/firestore';
 import type { Peca } from '@/lib/types';
@@ -36,9 +36,10 @@ import PecaTable from '@/components/estoque/peca-table';
 export default function EstoquePage() {
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const firestore = useFirestore();
+  const { user } = useUser();
   const pecasCollectionRef = useMemoFirebase(
-    () => (firestore ? collection(firestore, 'pecas') : null),
-    [firestore]
+    () => (firestore && user ? collection(firestore, 'pecas') : null),
+    [firestore, user]
   );
   const { data: pecas, isLoading, error } = useCollection<Peca>(pecasCollectionRef);
 
