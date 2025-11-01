@@ -40,24 +40,24 @@ export default function OrdensDeServicoPage() {
 
   // Queries for current user
   const ordensServicoQuery = useMemoFirebase(
-    () => (firestore && user ? query(collection(firestore, 'ordensServico'), where('userId', '==', user.uid)) : null),
-    [firestore, user]
+    () => (firestore && user?.uid ? query(collection(firestore, 'ordensServico'), where('userId', '==', user.uid)) : null),
+    [firestore, user?.uid]
   );
   const clientesCollectionRef = useMemoFirebase(
-    () => (firestore && user ? query(collection(firestore, 'clientes'), where('userId', '==', user.uid)) : null),
-    [firestore, user]
+    () => (firestore && user?.uid ? query(collection(firestore, 'clientes'), where('userId', '==', user.uid)) : null),
+    [firestore, user?.uid]
   );
   const veiculosQuery = useMemoFirebase(
-    () => (firestore && user ? query(collectionGroup(firestore, 'veiculos'), where('userId', '==', user.uid)) : null),
-    [firestore, user]
+    () => (firestore && user?.uid ? query(collectionGroup(firestore, 'veiculos'), where('userId', '==', user.uid)) : null),
+    [firestore, user?.uid]
   );
   const servicosCollectionRef = useMemoFirebase(
-    () => (firestore && user ? query(collection(firestore, 'servicos'), where('userId', '==', user.uid)) : null),
-    [firestore, user]
+    () => (firestore && user?.uid ? query(collection(firestore, 'servicos'), where('userId', '==', user.uid)) : null),
+    [firestore, user?.uid]
   );
   const pecasCollectionRef = useMemoFirebase(
-    () => (firestore && user ? query(collection(firestore, 'pecas'), where('userId', '==', user.uid)) : null),
-    [firestore, user]
+    () => (firestore && user?.uid ? query(collection(firestore, 'pecas'), where('userId', '==', user.uid)) : null),
+    [firestore, user?.uid]
   );
 
 

@@ -38,8 +38,8 @@ export default function ServicosPage() {
   const firestore = useFirestore();
   const { user } = useUser();
   const servicosCollectionRef = useMemoFirebase(
-    () => (firestore && user ? query(collection(firestore, 'servicos'), where('userId', '==', user.uid)) : null),
-    [firestore, user]
+    () => (firestore && user?.uid ? query(collection(firestore, 'servicos'), where('userId', '==', user.uid)) : null),
+    [firestore, user?.uid]
   );
   const { data: servicos, isLoading, error } = useCollection<Servico>(servicosCollectionRef);
 

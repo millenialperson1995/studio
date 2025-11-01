@@ -40,15 +40,15 @@ export default function VeiculosPage() {
 
   // Query to get all vehicles from all clients of the current user
   const vehiclesQuery = useMemoFirebase(
-    () => (firestore && user ? query(collectionGroup(firestore, 'veiculos'), where('userId', '==', user.uid)) : null),
-    [firestore, user]
+    () => (firestore && user?.uid ? query(collectionGroup(firestore, 'veiculos'), where('userId', '==', user.uid)) : null),
+    [firestore, user?.uid]
   );
   const { data: vehicles, isLoading: isLoadingVehicles } = useCollection<Veiculo>(vehiclesQuery);
 
   // Query to get all clients of the current user (for the select dropdown in the form)
   const clientsCollectionRef = useMemoFirebase(
-    () => (firestore && user ? query(collection(firestore, 'clientes'), where('userId', '==', user.uid)) : null),
-    [firestore, user]
+    () => (firestore && user?.uid ? query(collection(firestore, 'clientes'), where('userId', '==', user.uid)) : null),
+    [firestore, user?.uid]
   );
   const { data: clients, isLoading: isLoadingClients } = useCollection<Cliente>(clientsCollectionRef);
   

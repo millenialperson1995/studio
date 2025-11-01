@@ -39,8 +39,8 @@ export default function ClientesPage() {
   const { user } = useUser();
 
   const clientesCollectionRef = useMemoFirebase(
-    () => (firestore && user ? query(collection(firestore, 'clientes'), where('userId', '==', user.uid)) : null),
-    [firestore, user]
+    () => (firestore && user?.uid ? query(collection(firestore, 'clientes'), where('userId', '==', user.uid)) : null),
+    [firestore, user?.uid]
   );
   
   const {

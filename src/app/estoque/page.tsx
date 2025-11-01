@@ -38,8 +38,8 @@ export default function EstoquePage() {
   const firestore = useFirestore();
   const { user } = useUser();
   const pecasCollectionRef = useMemoFirebase(
-    () => (firestore && user ? query(collection(firestore, 'pecas'), where('userId', '==', user.uid)) : null),
-    [firestore, user]
+    () => (firestore && user?.uid ? query(collection(firestore, 'pecas'), where('userId', '==', user.uid)) : null),
+    [firestore, user?.uid]
   );
   const { data: pecas, isLoading, error } = useCollection<Peca>(pecasCollectionRef);
 

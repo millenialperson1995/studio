@@ -1,5 +1,5 @@
 'use client';
-import { useMemo } from 'react';
+import { useMemo, useEffect } from 'react';
 import AppHeader from '@/components/layout/app-header';
 import AppSidebar from '@/components/layout/app-sidebar';
 import { Sidebar, SidebarInset, SidebarProvider } from '@/components/ui/sidebar';
@@ -20,7 +20,6 @@ import { useMemoFirebase } from '@/firebase/provider';
 import type { Cliente, OrdemServico, Orcamento, Veiculo } from '@/lib/types';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useRouter } from 'next/navigation';
-import { useEffect } from 'react';
 
 export default function Home() {
   const firestore = useFirestore();
@@ -35,20 +34,20 @@ export default function Home() {
 
   // --- Data Fetching (Scoped to current user) ---
   const clientesRef = useMemoFirebase(
-    () => (firestore && user ? query(collection(firestore, 'clientes'), where('userId', '==', user.uid)) : null),
-    [firestore, user]
+    () => (firestore && user?.uid ? query(collection(firestore, 'clientes'), where('userId', '==', user.uid)) : null),
+    [firestore, user?.uid]
   );
   const orcamentosRef = useMemoFirebase(
-    () => (firestore && user ? query(collection(firestore, 'orcamentos'), where('userId', '==', user.uid)) : null),
-    [firestore, user]
+    () => (firestore && user?.uid ? query(collection(firestore, 'orcamentos'), where('userId', '==', user.uid)) : null),
+    [firestore, user?.uid]
   );
   const ordensQuery = useMemoFirebase(
-    () => (firestore && user ? query(collection(firestore, 'ordensServico'), where('userId', '==', user.uid)) : null),
-    [firestore, user]
+    () => (firestore && user?.uid ? query(collection(firestore, 'ordensServico'), where('userId', '==', user.uid)) : null),
+    [firestore, user?.uid]
   );
    const veiculosQuery = useMemoFirebase(
-    () => (firestore && user ? query(collectionGroup(firestore, 'veiculos'), where('userId', '==', user.uid)) : null),
-    [firestore, user]
+    () => (firestore && user?.uid ? query(collectionGroup(firestore, 'veiculos'), where('userId', '==', user.uid)) : null),
+    [firestore, user?.uid]
   );
 
   const { data: clientes, isLoading: isLoadingClientes } = useCollection<Cliente>(clientesRef);
@@ -68,7 +67,7 @@ export default function Home() {
 
   // --- Data Processing & Calculations ---
   const dashboardStats = useMemo(() => {
-    if (isLoading || !clientes || !orcamentos || !ordensServico || !veiculos) {
+    if (!clientes || !orcamentos || !ordensServico || !veiculos) {
       return {
         receitaMensal: 0,
         ordensAndamento: 0,
@@ -161,10 +160,33 @@ export default function Home() {
       pendingQuotes,
       recentOrders,
     };
-  }, [clientes, orcamentos, ordensServico, veiculos, isLoading]);
+  }, [clientes, orcamentos, ordensServico, veiculos]);
   
-  if (isLoading || !user) {
-    return <div className="flex h-screen w-screen items-center justify-center"><Skeleton className="h-24 w-24" /></div>
+  if (isUserLoading || !user) {
+    return (
+        <SidebarProvider>
+            <Sidebar>
+                <AppSidebar />
+            </Sidebar>
+            <SidebarInset>
+                <AppHeader />
+                <main className="flex-1 space-y-6 p-4 md:p-6 lg:p-8">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-4">
+                        {[...Array(5)].map((_, i) => <Skeleton key={i} className="h-28 w-full" />)}
+                    </div>
+                    <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
+                        <div className="lg:col-span-2">
+                             <Skeleton className="h-[380px] w-full" />
+                        </div>
+                        <div className="lg:col-span-1">
+                             <Skeleton className="h-[380px] w-full" />
+                        </div>
+                    </div>
+                    <Skeleton className="h-[380px] w-full" />
+                </main>
+            </SidebarInset>
+        </SidebarProvider>
+    );
   }
   
 
