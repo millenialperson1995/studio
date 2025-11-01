@@ -8,7 +8,6 @@ import {
   CardTitle,
 } from '@/components/ui/card';
 import { ChartContainer, ChartTooltipContent } from '@/components/ui/chart';
-import { revenueData } from '@/lib/mock-data';
 
 const chartConfig = {
   revenue: {
@@ -17,7 +16,11 @@ const chartConfig = {
   },
 };
 
-export default function RevenueChartCard() {
+interface RevenueChartCardProps {
+    data: { month: string; revenue: number }[];
+}
+
+export default function RevenueChartCard({ data }: RevenueChartCardProps) {
   return (
     <Card>
       <CardHeader>
@@ -27,7 +30,7 @@ export default function RevenueChartCard() {
       <CardContent>
         <ChartContainer config={chartConfig} className="h-[300px] w-full">
           <ResponsiveContainer width="100%" height="100%">
-            <BarChart data={revenueData} margin={{ top: 5, right: 20, left: -10, bottom: 5 }}>
+            <BarChart data={data} margin={{ top: 5, right: 20, left: -10, bottom: 5 }}>
               <XAxis
                 dataKey="month"
                 stroke="hsl(var(--foreground))"
@@ -40,7 +43,7 @@ export default function RevenueChartCard() {
                 fontSize={12}
                 tickLine={false}
                 axisLine={false}
-                tickFormatter={(value) => `R$${value / 1000}k`}
+                tickFormatter={(value) => `R$${Number(value) / 1000}k`}
               />
               <Tooltip
                 cursor={false}

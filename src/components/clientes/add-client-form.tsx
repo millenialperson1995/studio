@@ -15,7 +15,7 @@ import {
 import { Input } from '@/components/ui/input';
 import { useAuth } from '@/firebase';
 import { addDocumentNonBlocking } from '@/firebase/non-blocking-updates';
-import { collection, serverTimestamp } from 'firebase/firestore';
+import { collection, serverTimestamp, doc } from 'firebase/firestore';
 import { useFirestore } from '@/firebase';
 import { useToast } from '@/hooks/use-toast';
 
@@ -56,15 +56,19 @@ export function AddClientForm({ setDialogOpen }: AddClientFormProps) {
       });
       return;
     }
+    if (!firestore) return;
 
     try {
+      const clientesCollectionRef = collection(firestore, 'clientes');
+      const newClientRef = doc(clientesCollectionRef); // Create a new doc ref to get ID
+      
       const clienteData = {
         ...values,
-        id: auth.currentUser.uid,
+        id: newClientRef.id,
         createdAt: serverTimestamp(),
       };
-      const clientesCollectionRef = collection(firestore, 'clientes');
-      await addDocumentNonBlocking(clientesCollectionRef, clienteData);
+
+      await addDocumentNonBlocking(newClientRef, clienteData);
 
       toast({
         title: 'Sucesso!',

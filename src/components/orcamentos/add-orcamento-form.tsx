@@ -22,7 +22,7 @@ import {
 } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
 import { addDocumentNonBlocking } from '@/firebase/non-blocking-updates';
-import { collection, serverTimestamp } from 'firebase/firestore';
+import { collection, serverTimestamp, doc } from 'firebase/firestore';
 import { useFirestore } from '@/firebase';
 import { useToast } from '@/hooks/use-toast';
 import type { Cliente, Veiculo, Peca, Servico } from '@/lib/types';
@@ -111,14 +111,18 @@ export function AddOrcamentoForm({
     if (!firestore) return;
 
     try {
+      const orcamentosCollectionRef = collection(firestore, 'orcamentos');
+      const newOrcamentoRef = doc(orcamentosCollectionRef);
+
       const orcamentoData = {
         ...values,
+        id: newOrcamentoRef.id,
         itens: values.itens.map(item => ({...item, valorTotal: (item.quantidade || 0) * (item.valorUnitario || 0)})),
         dataCriacao: serverTimestamp(),
+        createdAt: serverTimestamp(),
       };
 
-      const orcamentosCollectionRef = collection(firestore, 'orcamentos');
-      await addDocumentNonBlocking(orcamentosCollectionRef, orcamentoData);
+      await addDocumentNonBlocking(newOrcamentoRef, orcamentoData);
 
       toast({
         title: 'Sucesso!',

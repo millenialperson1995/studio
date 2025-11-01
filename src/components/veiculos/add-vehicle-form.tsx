@@ -21,7 +21,7 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { addDocumentNonBlocking } from '@/firebase/non-blocking-updates';
-import { collection, serverTimestamp } from 'firebase/firestore';
+import { collection, serverTimestamp, doc } from 'firebase/firestore';
 import { useFirestore } from '@/firebase';
 import { useToast } from '@/hooks/use-toast';
 import type { Cliente } from '@/lib/types';
@@ -63,13 +63,16 @@ export function AddVehicleForm({
     if (!firestore) return;
 
     try {
+      const vehiclesCollectionRef = collection(firestore, 'clientes', values.clienteId, 'veiculos');
+      const newVehicleRef = doc(vehiclesCollectionRef);
+
       const vehicleData = {
         ...values,
+        id: newVehicleRef.id,
         createdAt: serverTimestamp(),
       };
       
-      const vehiclesCollectionRef = collection(firestore, 'clientes', values.clienteId, 'veiculos');
-      await addDocumentNonBlocking(vehiclesCollectionRef, vehicleData);
+      await addDocumentNonBlocking(newVehicleRef, vehicleData);
 
       toast({
         title: 'Sucesso!',

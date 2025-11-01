@@ -29,6 +29,7 @@ export interface Veiculo {
   ano: number;
   informacoesTecnicas: string;
   cliente?: Cliente; // Optional for denormalization
+  createdAt?: any;
 }
 
 export interface Cliente {
@@ -63,6 +64,7 @@ export interface Orcamento {
   cliente?: Cliente;
   veiculo?: Veiculo;
   ordemServicoId?: string;
+  createdAt?: any;
 }
 
 
@@ -94,6 +96,7 @@ export interface OrdemServico {
   observacoes: string;
   cliente?: Cliente;
   veiculo?: Veiculo;
+  createdAt?: any;
 }
 
 export interface Peca {
@@ -106,4 +109,5 @@ export interface Peca {
   valorVenda: number;
   fornecedor: string;
   alertaEstoqueBaixo: boolean;
+  createdAt?: any;
 }
