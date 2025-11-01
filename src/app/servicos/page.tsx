@@ -19,7 +19,7 @@ import {
 } from '@/components/ui/card';
 import { useCollection, useFirestore, useUser } from '@/firebase';
 import { useMemoFirebase } from '@/firebase/provider';
-import { collection } from 'firebase/firestore';
+import { collection, query, where } from 'firebase/firestore';
 import type { Servico } from '@/lib/types';
 import {
   Dialog,
@@ -38,7 +38,7 @@ export default function ServicosPage() {
   const firestore = useFirestore();
   const { user } = useUser();
   const servicosCollectionRef = useMemoFirebase(
-    () => (firestore && user ? collection(firestore, 'servicos') : null),
+    () => (firestore && user ? query(collection(firestore, 'servicos'), where('userId', '==', user.uid)) : null),
     [firestore, user]
   );
   const { data: servicos, isLoading, error } = useCollection<Servico>(servicosCollectionRef);

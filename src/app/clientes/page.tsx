@@ -20,7 +20,7 @@ import {
 } from '@/components/ui/card';
 import { useCollection, useFirestore, useUser } from '@/firebase';
 import { useMemoFirebase } from '@/firebase/provider';
-import { collection } from 'firebase/firestore';
+import { collection, query, where } from 'firebase/firestore';
 import type { Cliente } from '@/lib/types';
 import {
   Dialog,
@@ -37,10 +37,12 @@ export default function ClientesPage() {
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const firestore = useFirestore();
   const { user } = useUser();
+
   const clientesCollectionRef = useMemoFirebase(
-    () => (firestore && user ? collection(firestore, 'clientes') : null),
+    () => (firestore && user ? query(collection(firestore, 'clientes'), where('userId', '==', user.uid)) : null),
     [firestore, user]
   );
+  
   const {
     data: clients,
     isLoading,

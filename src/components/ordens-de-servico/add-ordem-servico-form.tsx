@@ -22,8 +22,8 @@ import {
 } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
 import { addDocumentNonBlocking } from '@/firebase/non-blocking-updates';
-import { collection } from 'firebase/firestore';
-import { useFirestore } from '@/firebase';
+import { collection, serverTimestamp, doc } from 'firebase/firestore';
+import { useFirestore, useUser } from '@/firebase';
 import { useToast } from '@/hooks/use-toast';
 import type { Cliente, Veiculo, Peca, Servico } from '@/lib/types';
 import { Trash2, PlusCircle, CalendarIcon } from 'lucide-react';
@@ -74,6 +74,7 @@ export function AddOrdemServicoForm({
   setDialogOpen,
 }: AddOrdemServicoFormProps) {
   const firestore = useFirestore();
+  const { user } = useUser();
   const { toast } = useToast();
   const [selectedClientId, setSelectedClientId] = useState('');
 
@@ -111,11 +112,20 @@ export function AddOrdemServicoForm({
   );
 
   async function onSubmit(values: z.infer<typeof formSchema>) {
-    if (!firestore) return;
+    if (!firestore || !user) return;
 
     try {
-      const ordensServicoCollectionRef = collection(firestore, 'clientes', values.clienteId, 'ordensServico');
-      await addDocumentNonBlocking(ordensServicoCollectionRef, values);
+      const osCollectionRef = collection(firestore, 'ordensServico');
+      const newOSRef = doc(osCollectionRef);
+
+      const osData = {
+          ...values,
+          id: newOSRef.id,
+          userId: user.uid,
+          createdAt: serverTimestamp()
+      }
+      
+      await addDocumentNonBlocking(newOSRef, osData);
 
       toast({
         title: 'Sucesso!',

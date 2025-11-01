@@ -33,21 +33,21 @@ export default function Home() {
     }
   }, [user, isUserLoading, router]);
 
-  // --- Data Fetching ---
+  // --- Data Fetching (Scoped to current user) ---
   const clientesRef = useMemoFirebase(
-    () => (firestore && user ? collection(firestore, 'clientes') : null),
+    () => (firestore && user ? query(collection(firestore, 'clientes'), where('userId', '==', user.uid)) : null),
     [firestore, user]
   );
   const orcamentosRef = useMemoFirebase(
-    () => (firestore && user ? collection(firestore, 'orcamentos') : null),
+    () => (firestore && user ? query(collection(firestore, 'orcamentos'), where('userId', '==', user.uid)) : null),
     [firestore, user]
   );
   const ordensQuery = useMemoFirebase(
-    () => (firestore && user ? query(collectionGroup(firestore, 'ordensServico')) : null),
+    () => (firestore && user ? query(collection(firestore, 'ordensServico'), where('userId', '==', user.uid)) : null),
     [firestore, user]
   );
    const veiculosQuery = useMemoFirebase(
-    () => (firestore && user ? query(collectionGroup(firestore, 'veiculos')) : null),
+    () => (firestore && user ? query(collectionGroup(firestore, 'veiculos'), where('userId', '==', user.uid)) : null),
     [firestore, user]
   );
 

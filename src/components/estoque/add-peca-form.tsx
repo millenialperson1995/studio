@@ -14,8 +14,8 @@ import {
 } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
 import { addDocumentNonBlocking } from '@/firebase/non-blocking-updates';
-import { collection, serverTimestamp } from 'firebase/firestore';
-import { useFirestore } from '@/firebase';
+import { collection, serverTimestamp, doc } from 'firebase/firestore';
+import { useFirestore, useUser } from '@/firebase';
 import { useToast } from '@/hooks/use-toast';
 
 const formSchema = z.object({
@@ -34,6 +34,7 @@ type AddPecaFormProps = {
 
 export function AddPecaForm({ setDialogOpen }: AddPecaFormProps) {
   const firestore = useFirestore();
+  const { user } = useUser();
   const { toast } = useToast();
 
   const form = useForm<z.infer<typeof formSchema>>({
@@ -50,16 +51,21 @@ export function AddPecaForm({ setDialogOpen }: AddPecaFormProps) {
   });
 
   async function onSubmit(values: z.infer<typeof formSchema>) {
-    if (!firestore) return;
+    if (!firestore || !user) return;
 
     try {
+      const pecasCollectionRef = collection(firestore, 'pecas');
+      const newPecaRef = doc(pecasCollectionRef);
+
       const pecaData = {
         ...values,
+        id: newPecaRef.id,
+        userId: user.uid,
         alertaEstoqueBaixo: values.quantidadeEstoque <= values.quantidadeMinima,
         createdAt: serverTimestamp(),
       };
-      const pecasCollectionRef = collection(firestore, 'pecas');
-      await addDocumentNonBlocking(pecasCollectionRef, pecaData);
+
+      await addDocumentNonBlocking(newPecaRef, pecaData);
 
       toast({
         title: 'Sucesso!',

@@ -130,7 +130,7 @@ export function EditOrdemServicoForm({
         dataConclusao: values.status === 'concluida' ? (values.dataConclusao || new Date()) : null,
       };
 
-      const ordemDocRef = doc(firestore, 'clientes', finalValues.clienteId, 'ordensServico', ordemServico.id);
+      const ordemDocRef = doc(firestore, 'ordensServico', ordemServico.id);
       updateDocumentNonBlocking(ordemDocRef, finalValues);
 
       toast({

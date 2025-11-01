@@ -19,7 +19,7 @@ import {
 } from '@/components/ui/card';
 import { useCollection, useFirestore, useUser } from '@/firebase';
 import { useMemoFirebase } from '@/firebase/provider';
-import { collection, collectionGroup, query } from 'firebase/firestore';
+import { collection, collectionGroup, query, where } from 'firebase/firestore';
 import type { Orcamento, Cliente, Veiculo, Servico, Peca } from '@/lib/types';
 import {
   Dialog,
@@ -38,25 +38,25 @@ export default function OrcamentosPage() {
   const firestore = useFirestore();
   const { user } = useUser();
 
-  // Queries
+  // Queries for the current user
   const orcamentosCollectionRef = useMemoFirebase(
-    () => (firestore && user ? collection(firestore, 'orcamentos') : null),
+    () => (firestore && user ? query(collection(firestore, 'orcamentos'), where('userId', '==', user.uid)) : null),
     [firestore, user]
   );
   const clientesCollectionRef = useMemoFirebase(
-    () => (firestore && user ? collection(firestore, 'clientes') : null),
+    () => (firestore && user ? query(collection(firestore, 'clientes'), where('userId', '==', user.uid)) : null),
     [firestore, user]
   );
   const veiculosQuery = useMemoFirebase(
-    () => (firestore && user ? query(collectionGroup(firestore, 'veiculos')) : null),
+    () => (firestore && user ? query(collectionGroup(firestore, 'veiculos'), where('userId', '==', user.uid)) : null),
     [firestore, user]
   );
   const servicosCollectionRef = useMemoFirebase(
-    () => (firestore && user ? collection(firestore, 'servicos') : null),
+    () => (firestore && user ? query(collection(firestore, 'servicos'), where('userId', '==', user.uid)) : null),
     [firestore, user]
   );
   const pecasCollectionRef = useMemoFirebase(
-    () => (firestore && user ? collection(firestore, 'pecas') : null),
+    () => (firestore && user ? query(collection(firestore, 'pecas'), where('userId', '==', user.uid)) : null),
     [firestore, user]
   );
 

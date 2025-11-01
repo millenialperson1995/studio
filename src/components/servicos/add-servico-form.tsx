@@ -14,8 +14,8 @@ import {
 } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
 import { addDocumentNonBlocking } from '@/firebase/non-blocking-updates';
-import { collection, serverTimestamp } from 'firebase/firestore';
-import { useFirestore } from '@/firebase';
+import { collection, serverTimestamp, doc } from 'firebase/firestore';
+import { useFirestore, useUser } from '@/firebase';
 import { useToast } from '@/hooks/use-toast';
 import { Switch } from '../ui/switch';
 
@@ -34,6 +34,7 @@ type AddServicoFormProps = {
 
 export function AddServicoForm({ setDialogOpen }: AddServicoFormProps) {
   const firestore = useFirestore();
+  const { user } = useUser();
   const { toast } = useToast();
 
   const form = useForm<z.infer<typeof formSchema>>({
@@ -49,15 +50,20 @@ export function AddServicoForm({ setDialogOpen }: AddServicoFormProps) {
   });
 
   async function onSubmit(values: z.infer<typeof formSchema>) {
-    if (!firestore) return;
+    if (!firestore || !user) return;
 
     try {
+      const servicosCollectionRef = collection(firestore, 'servicos');
+      const newServicoRef = doc(servicosCollectionRef);
+      
       const servicoData = {
         ...values,
+        id: newServicoRef.id,
+        userId: user.uid,
         createdAt: serverTimestamp(),
       };
-      const servicosCollectionRef = collection(firestore, 'servicos');
-      await addDocumentNonBlocking(servicosCollectionRef, servicoData);
+      
+      await addDocumentNonBlocking(newServicoRef, servicoData);
 
       toast({
         title: 'Sucesso!',

@@ -1,451 +1,177 @@
 {
   "entities": {
+    "UserProfile": {
+      "title": "User Profile",
+      "description": "Represents a user account in the system, typically the owner of a workshop.",
+      "type": "object",
+      "properties": {
+        "uid": { "type": "string", "description": "The user's unique ID from Firebase Auth." },
+        "email": { "type": "string", "format": "email", "description": "The user's email address." },
+        "nome": { "type": "string", "description": "First name of the user." },
+        "sobrenome": { "type": "string", "description": "Last name of the user." }
+      },
+      "required": ["uid", "email", "nome", "sobrenome"]
+    },
     "Cliente": {
-      "$schema": "http://json-schema.org/draft-07/schema#",
       "title": "Cliente",
       "type": "object",
-      "description": "Represents a customer in the system.",
+      "description": "Represents a customer of a specific workshop.",
       "properties": {
-        "id": {
-          "type": "string",
-          "description": "Unique identifier for the Cliente entity."
-        },
-        "nome": {
-          "type": "string",
-          "description": "The name of the customer."
-        },
-        "telefone": {
-          "type": "string",
-          "description": "The customer's phone number."
-        },
-        "email": {
-          "type": "string",
-          "description": "The customer's email address.",
-          "format": "email"
-        },
-        "endereco": {
-          "type": "string",
-          "description": "The customer's address."
-        }
+        "id": { "type": "string", "description": "Unique identifier for the Cliente entity." },
+        "userId": { "type": "string", "description": "The ID of the user (workshop owner) who owns this client data." },
+        "nome": { "type": "string", "description": "The name of the customer." },
+        "telefone": { "type": "string", "description": "The customer's phone number." },
+        "email": { "type": "string", "description": "The customer's email address.", "format": "email" },
+        "endereco": { "type": "string", "description": "The customer's address." }
       },
-      "required": [
-        "id",
-        "nome",
-        "telefone",
-        "email",
-        "endereco"
-      ]
+      "required": ["id", "userId", "nome", "telefone", "email", "endereco"]
     },
     "Veiculo": {
-      "$schema": "http://json-schema.org/draft-07/schema#",
       "title": "Veiculo",
       "type": "object",
       "description": "Represents a vehicle owned by a customer.",
       "properties": {
-        "id": {
-          "type": "string",
-          "description": "Unique identifier for the Veiculo entity."
-        },
-        "clienteId": {
-          "type": "string",
-          "description": "Reference to Cliente. (Relationship: Cliente 1:N Veiculo)"
-        },
-        "placa": {
-          "type": "string",
-          "description": "The vehicle's license plate number."
-        },
-        "marca": {
-          "type": "string",
-          "description": "The vehicle's make (e.g., Ford)."
-        },
-        "modelo": {
-          "type": "string",
-          "description": "The vehicle's model (e.g., Mustang)."
-        },
-        "ano": {
-          "type": "number",
-          "description": "The vehicle's year of manufacture."
-        },
-        "informacoesTecnicas": {
-          "type": "string",
-          "description": "Technical information about the vehicle."
-        }
+        "id": { "type": "string", "description": "Unique identifier for the Veiculo entity." },
+        "userId": { "type": "string", "description": "The ID of the user (workshop owner) who owns this vehicle data." },
+        "clienteId": { "type": "string", "description": "Reference to the client who owns the vehicle." },
+        "placa": { "type": "string", "description": "The vehicle's license plate number." },
+        "marca": { "type": "string", "description": "The vehicle's make." },
+        "modelo": { "type": "string", "description": "The vehicle's model." },
+        "ano": { "type": "number", "description": "The vehicle's year of manufacture." },
+        "informacoesTecnicas": { "type": "string", "description": "Technical information about the vehicle." }
       },
-      "required": [
-        "id",
-        "clienteId",
-        "placa",
-        "marca",
-        "modelo",
-        "ano",
-        "informacoesTecnicas"
-      ]
+      "required": ["id", "userId", "clienteId", "placa", "marca", "modelo", "ano"]
     },
     "Orcamento": {
-      "$schema": "http://json-schema.org/draft-07/schema#",
       "title": "Orcamento",
       "type": "object",
-      "description": "Represents a quotation for services and parts.",
+      "description": "Represents a quotation for services and parts for a specific workshop.",
       "properties": {
-        "id": {
-          "type": "string",
-          "description": "Unique identifier for the Orcamento entity."
-        },
-        "clienteId": {
-          "type": "string",
-          "description": "Reference to Cliente. (Relationship: Cliente 1:N Orcamento)"
-        },
-        "veiculoId": {
-          "type": "string",
-          "description": "Reference to Veiculo. (Relationship: Veiculo 1:N Orcamento)"
-        },
-        "dataCriacao": {
-          "type": "string",
-          "description": "The date the quotation was created.",
-          "format": "date-time"
-        },
-        "dataValidade": {
-          "type": "string",
-          "description": "The date the quotation is valid until.",
-          "format": "date-time"
-        },
-        "status": {
-          "type": "string",
-          "description": "The status of the quotation (pending, approved, rejected)."
-        },
-        "itens": {
-          "type": "array",
-          "description": "Array of items (services or parts) included in the quotation.",
-          "items": {
-            "type": "string"
-          }
-        },
-        "valorTotal": {
-          "type": "number",
-          "description": "The total value of the quotation."
-        },
-        "observacoes": {
-          "type": "string",
-          "description": "Additional notes or observations about the quotation."
-        },
-        "pdfUrl": {
-          "type": "string",
-          "description": "URL of the generated PDF document for the quotation.",
-          "format": "uri"
-        }
+        "id": { "type": "string", "description": "Unique identifier for the Orcamento entity." },
+        "userId": { "type": "string", "description": "The ID of the user (workshop owner) who owns this quote." },
+        "clienteId": { "type": "string", "description": "Reference to Cliente." },
+        "veiculoId": { "type": "string", "description": "Reference to Veiculo." },
+        "dataCriacao": { "type": "string", "format": "date-time" },
+        "dataValidade": { "type": "string", "format": "date-time" },
+        "status": { "type": "string" },
+        "itens": { "type": "array", "items": { "type": "string" } },
+        "valorTotal": { "type": "number" },
+        "observacoes": { "type": "string" }
       },
-      "required": [
-        "id",
-        "clienteId",
-        "veiculoId",
-        "dataCriacao",
-        "dataValidade",
-        "status",
-        "itens",
-        "valorTotal",
-        "observacoes"
-      ]
+      "required": ["id", "userId", "clienteId", "veiculoId", "dataCriacao", "dataValidade", "status", "itens", "valorTotal"]
     },
     "OrdemServico": {
-      "$schema": "http://json-schema.org/draft-07/schema#",
       "title": "OrdemServico",
       "type": "object",
-      "description": "Represents a service order for a vehicle.",
+      "description": "Represents a service order for a vehicle for a specific workshop.",
       "properties": {
-        "id": {
-          "type": "string",
-          "description": "Unique identifier for the OrdemServico entity."
-        },
-        "orcamentoId": {
-          "type": "string",
-          "description": "Reference to Orcamento. (Relationship: Orcamento 1:1 OrdemServico)"
-        },
-        "clienteId": {
-          "type": "string",
-          "description": "Reference to Cliente. (Relationship: Cliente 1:N OrdemServico)"
-        },
-        "veiculoId": {
-          "type": "string",
-          "description": "Reference to Veiculo. (Relationship: Veiculo 1:N OrdemServico)"
-        },
-        "status": {
-          "type": "string",
-          "description": "The status of the service order (pending, in progress, completed, cancelled)."
-        },
-        "dataEntrada": {
-          "type": "string",
-          "description": "The date the vehicle was brought in for service.",
-          "format": "date-time"
-        },
-        "dataPrevisao": {
-          "type": "string",
-          "description": "The estimated completion date for the service order.",
-          "format": "date-time"
-        },
-        "dataConclusao": {
-          "type": "string",
-          "description": "The date the service order was completed.",
-          "format": "date-time"
-        },
-        "mecanicoResponsavel": {
-          "type": "string",
-          "description": "The name of the mechanic responsible for the service order."
-        },
-        "servicos": {
-          "type": "array",
-          "description": "Array of services performed in the service order.",
-          "items": {
-            "type": "string"
-          }
-        },
-        "pecas": {
-          "type": "array",
-          "description": "Array of parts used in the service order.",
-          "items": {
-            "type": "string"
-          }
-        },
-        "valorTotal": {
-          "type": "number",
-          "description": "The total value of the service order."
-        },
-        "observacoes": {
-          "type": "string",
-          "description": "Additional notes or observations about the service order."
-        }
+        "id": { "type": "string" },
+        "userId": { "type": "string", "description": "The ID of the user (workshop owner) who owns this service order." },
+        "orcamentoId": { "type": "string" },
+        "clienteId": { "type": "string" },
+        "veiculoId": { "type": "string" },
+        "status": { "type": "string" },
+        "dataEntrada": { "type": "string", "format": "date-time" },
+        "dataPrevisao": { "type": "string", "format": "date-time" },
+        "mecanicoResponsavel": { "type": "string" },
+        "servicos": { "type": "array", "items": { "type": "string" } },
+        "pecas": { "type": "array", "items": { "type": "string" } },
+        "valorTotal": { "type": "number" },
+        "observacoes": { "type": "string" }
       },
-      "required": [
-        "id",
-        "clienteId",
-        "veiculoId",
-        "status",
-        "dataEntrada",
-        "dataPrevisao",
-        "mecanicoResponsavel",
-        "servicos",
-        "pecas",
-        "valorTotal",
-        "observacoes"
-      ]
+      "required": ["id", "userId", "clienteId", "veiculoId", "status", "dataEntrada", "dataPrevisao", "mecanicoResponsavel", "servicos", "pecas", "valorTotal"]
     },
     "Peca": {
-      "$schema": "http://json-schema.org/draft-07/schema#",
       "title": "Peca",
       "type": "object",
-      "description": "Represents a part in the inventory.",
+      "description": "Represents a part in a workshop's inventory.",
       "properties": {
-        "id": {
-          "type": "string",
-          "description": "Unique identifier for the Peca entity."
-        },
-        "codigo": {
-          "type": "string",
-          "description": "The part's code or part number."
-        },
-        "descricao": {
-          "type": "string",
-          "description": "A description of the part."
-        },
-        "quantidadeEstoque": {
-          "type": "number",
-          "description": "The quantity of the part currently in stock."
-        },
-        "quantidadeMinima": {
-          "type": "number",
-          "description": "The minimum quantity of the part that should be in stock."
-        },
-        "valorCompra": {
-          "type": "number",
-          "description": "The purchase price of the part."
-        },
-        "valorVenda": {
-          "type": "number",
-          "description": "The selling price of the part."
-        },
-        "fornecedor": {
-          "type": "string",
-          "description": "The name of the part's supplier."
-        },
-        "alertaEstoqueBaixo": {
-          "type": "boolean",
-          "description": "A flag indicating whether a low stock alert has been triggered for the part."
-        }
+        "id": { "type": "string" },
+        "userId": { "type": "string", "description": "The ID of the user (workshop owner) who owns this part." },
+        "codigo": { "type": "string" },
+        "descricao": { "type": "string" },
+        "quantidadeEstoque": { "type": "number" },
+        "valorVenda": { "type": "number" },
+        "fornecedor": { "type": "string" }
       },
-      "required": [
-        "id",
-        "codigo",
-        "descricao",
-        "quantidadeEstoque",
-        "quantidadeMinima",
-        "valorCompra",
-        "valorVenda",
-        "fornecedor",
-        "alertaEstoqueBaixo"
-      ]
+      "required": ["id", "userId", "codigo", "descricao", "quantidadeEstoque", "valorVenda", "fornecedor"]
     },
     "Servico": {
-      "$schema": "http://json-schema.org/draft-07/schema#",
       "title": "Servico",
       "type": "object",
-      "description": "Represents a service offered by the retifica.",
+      "description": "Represents a service offered by a workshop.",
       "properties": {
-        "id": {
-          "type": "string",
-          "description": "Unique identifier for the Servico entity."
-        },
-        "codigo": {
-          "type": "string",
-          "description": "The service's code."
-        },
-        "descricao": {
-          "type": "string",
-          "description": "A description of the service."
-        },
-        "valorPadrao": {
-          "type": "number",
-          "description": "The standard price for the service."
-        },
-        "tempoMedio": {
-          "type": "number",
-          "description": "The average time it takes to perform the service."
-        },
-        "categoria": {
-          "type": "string",
-          "description": "The category of the service."
-        },
-        "ativo": {
-          "type": "boolean",
-          "description": "A flag indicating whether the service is currently active."
-        }
+        "id": { "type": "string" },
+        "userId": { "type": "string", "description": "The ID of the user (workshop owner) who offers this service." },
+        "codigo": { "type": "string" },
+        "descricao": { "type": "string" },
+        "valorPadrao": { "type": "number" }
       },
-      "required": [
-        "id",
-        "codigo",
-        "descricao",
-        "valorPadrao",
-        "tempoMedio",
-        "categoria",
-        "ativo"
-      ]
+      "required": ["id", "userId", "codigo", "descricao", "valorPadrao"]
     }
   },
   "auth": {
-    "providers": [
-      "email",
-      "anonymous"
-    ]
+    "providers": ["email"]
   },
   "firestore": {
     "structure": [
       {
+        "path": "/users/{userId}",
+        "definition": {
+          "entityName": "UserProfile",
+          "schema": { "$ref": "#/backend/entities/UserProfile" },
+          "description": "Stores user profiles. The 'userId' is the document ID, which matches the Firebase Auth UID."
+        }
+      },
+      {
         "path": "/clientes/{clienteId}",
         "definition": {
           "entityName": "Cliente",
-          "schema": {
-            "$ref": "#/backend/entities/Cliente"
-          },
-          "description": "Stores customer profiles. The 'clienteId' is the document ID.",
-          "params": [
-            {
-              "name": "clienteId",
-              "description": "Unique identifier for the customer."
-            }
-          ]
+          "schema": { "$ref": "#/backend/entities/Cliente" },
+          "description": "Top-level collection for clients. Each document contains a 'userId' field to enforce ownership."
         }
       },
       {
         "path": "/clientes/{clienteId}/veiculos/{veiculoId}",
         "definition": {
           "entityName": "Veiculo",
-          "schema": {
-            "$ref": "#/backend/entities/Veiculo"
-          },
-          "description": "Stores vehicles owned by each customer. The 'clienteId' links to the customer, and 'veiculoId' is the vehicle's ID.",
-          "params": [
-            {
-              "name": "clienteId",
-              "description": "Unique identifier for the customer."
-            },
-            {
-              "name": "veiculoId",
-              "description": "Unique identifier for the vehicle."
-            }
-          ]
+          "schema": { "$ref": "#/backend/entities/Veiculo" },
+          "description": "Subcollection for vehicles under a specific client. Inherits ownership from the parent client."
         }
       },
       {
-        "path": "/clientes/{clienteId}/orcamentos/{orcamentoId}",
+        "path": "/orcamentos/{orcamentoId}",
         "definition": {
           "entityName": "Orcamento",
-          "schema": {
-            "$ref": "#/backend/entities/Orcamento"
-          },
-          "description": "Stores quotations associated with each customer. The 'clienteId' links to the customer, and 'orcamentoId' is the quotation's ID.",
-          "params": [
-            {
-              "name": "clienteId",
-              "description": "Unique identifier for the customer."
-            },
-            {
-              "name": "orcamentoId",
-              "description": "Unique identifier for the quotation."
-            }
-          ]
+          "schema": { "$ref": "#/backend/entities/Orcamento" },
+          "description": "Top-level collection for quotes. Each document has a 'userId' for ownership."
         }
       },
       {
-        "path": "/clientes/{clienteId}/ordensServico/{ordemServicoId}",
+        "path": "/ordensServico/{ordemServicoId}",
         "definition": {
           "entityName": "OrdemServico",
-          "schema": {
-            "$ref": "#/backend/entities/OrdemServico"
-          },
-          "description": "Stores service orders related to each customer. The 'clienteId' links to the customer, and 'ordemServicoId' is the service order's ID.",
-          "params": [
-            {
-              "name": "clienteId",
-              "description": "Unique identifier for the customer."
-            },
-            {
-              "name": "ordemServicoId",
-              "description": "Unique identifier for the service order."
-            }
-          ]
+          "schema": { "$ref": "#/backend/entities/OrdemServico" },
+          "description": "Top-level collection for service orders. Each document has a 'userId' for ownership."
         }
       },
       {
         "path": "/pecas/{pecaId}",
         "definition": {
           "entityName": "Peca",
-          "schema": {
-            "$ref": "#/backend/entities/Peca"
-          },
-          "description": "Stores inventory parts. The 'pecaId' is the part's ID.",
-          "params": [
-            {
-              "name": "pecaId",
-              "description": "Unique identifier for the part."
-            }
-          ]
+          "schema": { "$ref": "#/backend/entities/Peca" },
+          "description": "Top-level collection for parts. Each document has a 'userId' for ownership."
         }
       },
       {
         "path": "/servicos/{servicoId}",
         "definition": {
           "entityName": "Servico",
-          "schema": {
-            "$ref": "#/backend/entities/Servico"
-          },
-          "description": "Stores the services offered. The 'servicoId' is the service's ID.",
-          "params": [
-            {
-              "name": "servicoId",
-              "description": "Unique identifier for the service."
-            }
-          ]
+          "schema": { "$ref": "#/backend/entities/Servico" },
+          "description": "Top-level collection for services. Each document has a 'userId' for ownership."
         }
       }
     ],
-    "reasoning": "The Firestore data structure is designed to support the \"Retífica Ágil\" application, focusing on mobile-first design and a clear separation of concerns for enhanced security and scalability. The design adheres to the core principles of Authorization Independence, Clarity of Intent, DBAC, and QAPs. Authorization Independence is achieved by avoiding hierarchical authorization dependencies, ensuring that rules do not rely on `get()` calls, and all operations can be atomic.\n\nThe primary strategy is structural segregation, which means each collection contains documents with the same security requirements. The data model follows a consistent access modeling pattern for managing data ownership and collaboration. Private data is stored using path-based ownership (e.g., `/users/{userId}/data`). Collaborative data utilizes membership maps where applicable.\n\n*   `/clientes`: Stores customer profiles.\n*   `/clientes/{clienteId}/veiculos`: Stores vehicles owned by each customer, using a hierarchical path.\n*   `/clientes/{clienteId}/orcamentos`: Stores quotations associated with each customer, following path-based ownership.\n*   `/clientes/{clienteId}/ordensServico`: Stores service orders related to each customer, maintaining a clear hierarchy.\n*   `/pecas`: Stores inventory parts.\n*   `/servicos`: Stores the services offered.\n\nThis structure allows for simple and robust security rules. For example, to secure the `veiculos` subcollection, the rule checks if `request.auth.uid == resource.data.clienteId`. QAPs (Rules are not Filters) are supported by segregating data based on ownership and avoiding complex queries that act as filters. This structure supports the integrity of ownership, timestamps, and denormalized data, maintaining the desired invariants."
+    "reasoning": "The data model is designed for a multi-tenant SaaS application where each user (a workshop) owns their data. All primary data collections (clientes, orcamentos, ordensServico, pecas, servicos) are at the top level. Every document in these collections MUST contain a 'userId' field that links it to the owner in the '/users' collection. This structure allows for simple, scalable, and secure ownership-based security rules. For example, a rule on '/clientes/{clienteId}' will be `allow read, write: if request.auth.uid == resource.data.userId;`. This prevents any user from accessing another user's data. The 'veiculos' collection is a subcollection of 'clientes' as a vehicle is intrinsically linked to a single client."
   }
 }

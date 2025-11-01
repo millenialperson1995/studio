@@ -41,7 +41,7 @@ import { MoreHorizontal, Pencil, Trash2, FilePlus2, FileDown } from 'lucide-reac
 import type { Orcamento, Cliente, Veiculo, ItemServico, OrdemServico, Peca, Servico, ItemPeca } from '@/lib/types';
 import { deleteDocumentNonBlocking, addDocumentNonBlocking, updateDocumentNonBlocking } from '@/firebase/non-blocking-updates';
 import { doc, collection, serverTimestamp } from 'firebase/firestore';
-import { useFirestore } from '@/firebase';
+import { useFirestore, useUser } from '@/firebase';
 import { useToast } from '@/hooks/use-toast';
 import { EditOrcamentoForm } from './edit-orcamento-form';
 import { format } from 'date-fns';
@@ -76,6 +76,7 @@ export default function OrcamentoTable({
   pecas = [],
 }: OrcamentoTableProps) {
   const firestore = useFirestore();
+  const { user } = useUser();
   const { toast } = useToast();
   const router = useRouter();
 
@@ -131,7 +132,7 @@ export default function OrcamentoTable({
   };
   
   const handleGenerateOS = async (orcamento: Orcamento) => {
-    if (!firestore || !orcamento.clienteId || orcamento.ordemServicoId) return;
+    if (!firestore || !orcamento.clienteId || orcamento.ordemServicoId || !user) return;
 
     const osServicos: ItemServico[] = orcamento.itens
         .filter(item => item.tipo === 'servico')
@@ -148,8 +149,12 @@ export default function OrcamentoTable({
             valorUnitario: item.valorUnitario,
         }));
 
+    const osCollectionRef = collection(firestore, 'ordensServico');
+    const newOSRef = doc(osCollectionRef);
 
-    const newOrdemServico: Omit<OrdemServico, 'id' | 'cliente' | 'veiculo'> = {
+    const newOrdemServico: Omit<OrdemServico, 'id' | 'cliente' | 'veiculo'| 'createdAt'> = {
+        id: newOSRef.id,
+        userId: user.uid,
         orcamentoId: orcamento.id,
         clienteId: orcamento.clienteId,
         veiculoId: orcamento.veiculoId,
@@ -164,13 +169,10 @@ export default function OrcamentoTable({
     };
     
     try {
-        const ordensServicoCollectionRef = collection(firestore, 'clientes', orcamento.clienteId, 'ordensServico');
-        const newOSDoc = await addDocumentNonBlocking(ordensServicoCollectionRef, newOrdemServico);
+        await addDocumentNonBlocking(newOSRef, newOrdemServico);
 
-        if (newOSDoc) {
-             const orcamentoDocRef = doc(firestore, 'orcamentos', orcamento.id);
-             updateDocumentNonBlocking(orcamentoDocRef, { ordemServicoId: newOSDoc.id, status: 'aprovado' });
-        }
+        const orcamentoDocRef = doc(firestore, 'orcamentos', orcamento.id);
+        updateDocumentNonBlocking(orcamentoDocRef, { ordemServicoId: newOSRef.id, status: 'aprovado' });
        
         toast({
             title: 'Sucesso!',

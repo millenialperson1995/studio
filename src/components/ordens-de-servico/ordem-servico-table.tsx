@@ -98,7 +98,8 @@ export default function OrdemServicoTable({
 
   const handleDeleteConfirm = () => {
     if (selectedOrdem && firestore) {
-      const ordemDocRef = doc(firestore, 'clientes', selectedOrdem.clienteId, 'ordensServico', selectedOrdem.id);
+      // Ordens de Serviço are now in a top-level collection
+      const ordemDocRef = doc(firestore, 'ordensServico', selectedOrdem.id);
       deleteDocumentNonBlocking(ordemDocRef);
       toast({
         title: 'Ordem de Serviço excluída',

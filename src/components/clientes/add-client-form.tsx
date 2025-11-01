@@ -13,7 +13,7 @@ import {
   FormMessage,
 } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
-import { useAuth } from '@/firebase';
+import { useUser } from '@/firebase';
 import { addDocumentNonBlocking } from '@/firebase/non-blocking-updates';
 import { collection, serverTimestamp, doc } from 'firebase/firestore';
 import { useFirestore } from '@/firebase';
@@ -33,7 +33,7 @@ type AddClientFormProps = {
 };
 
 export function AddClientForm({ setDialogOpen }: AddClientFormProps) {
-  const auth = useAuth();
+  const { user } = useUser();
   const firestore = useFirestore();
   const { toast } = useToast();
 
@@ -48,7 +48,7 @@ export function AddClientForm({ setDialogOpen }: AddClientFormProps) {
   });
 
   async function onSubmit(values: z.infer<typeof formSchema>) {
-    if (!auth.currentUser) {
+    if (!user) {
       toast({
         variant: 'destructive',
         title: 'Erro de autenticação',
@@ -65,6 +65,7 @@ export function AddClientForm({ setDialogOpen }: AddClientFormProps) {
       const clienteData = {
         ...values,
         id: newClientRef.id,
+        userId: user.uid, // Associate data with the logged-in user
         createdAt: serverTimestamp(),
       };
 

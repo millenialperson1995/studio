@@ -1,26 +1,30 @@
-/**
- * @file This Firestore Security Rules file enforces a simple ownership-based model.
- *
- * Core Philosophy:
- *   - All authenticated users can read and write to most collections.
- *   - This is a simplified ruleset for initial development and should be
- *     tightened before production.
- */
 rules_version = '2';
+
 service cloud.firestore {
   match /databases/{database}/documents {
 
-    /**
-     * @description Checks if the user is signed in.
-     */
+    // Helper Functions
     function isSignedIn() {
       return request.auth != null;
     }
-    
-    // Default-deny all reads/writes and open up collections one by one.
-    
+
+    function isOwner(userId) {
+      return request.auth.uid == userId;
+    }
+
+    // Default deny all
     match /{document=**} {
-      allow read, write: if isSignedIn();
+      allow read, write: if false;
+    }
+
+    // Allow users to read and write their own data in any top-level collection
+    match /{collection}/{docId} {
+      allow read, write: if isSignedIn() && isOwner(resource.data.userId);
+    }
+
+    // Special rule for 'veiculos' as a subcollection
+    match /clientes/{clienteId}/veiculos/{veiculoId} {
+        allow read, write: if isSignedIn() && isOwner(resource.data.userId);
     }
   }
 }

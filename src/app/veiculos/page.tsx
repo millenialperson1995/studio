@@ -19,7 +19,7 @@ import {
 } from '@/components/ui/card';
 import { useCollection, useFirestore, useUser } from '@/firebase';
 import { useMemoFirebase } from '@/firebase/provider';
-import { collection, collectionGroup, query } from 'firebase/firestore';
+import { collection, collectionGroup, query, where } from 'firebase/firestore';
 import type { Cliente, Veiculo } from '@/lib/types';
 import {
   Dialog,
@@ -38,16 +38,16 @@ export default function VeiculosPage() {
   const firestore = useFirestore();
   const { user } = useUser();
 
-  // Query to get all vehicles from all clients
+  // Query to get all vehicles from all clients of the current user
   const vehiclesQuery = useMemoFirebase(
-    () => (firestore && user ? query(collectionGroup(firestore, 'veiculos')) : null),
+    () => (firestore && user ? query(collectionGroup(firestore, 'veiculos'), where('userId', '==', user.uid)) : null),
     [firestore, user]
   );
   const { data: vehicles, isLoading: isLoadingVehicles } = useCollection<Veiculo>(vehiclesQuery);
 
-  // Query to get all clients (for the select dropdown in the form)
+  // Query to get all clients of the current user (for the select dropdown in the form)
   const clientsCollectionRef = useMemoFirebase(
-    () => (firestore && user ? collection(firestore, 'clientes') : null),
+    () => (firestore && user ? query(collection(firestore, 'clientes'), where('userId', '==', user.uid)) : null),
     [firestore, user]
   );
   const { data: clients, isLoading: isLoadingClients } = useCollection<Cliente>(clientsCollectionRef);

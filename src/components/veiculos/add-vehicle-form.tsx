@@ -22,7 +22,7 @@ import {
 } from '@/components/ui/select';
 import { addDocumentNonBlocking } from '@/firebase/non-blocking-updates';
 import { collection, serverTimestamp, doc } from 'firebase/firestore';
-import { useFirestore } from '@/firebase';
+import { useFirestore, useUser } from '@/firebase';
 import { useToast } from '@/hooks/use-toast';
 import type { Cliente } from '@/lib/types';
 
@@ -45,6 +45,7 @@ export function AddVehicleForm({
   setDialogOpen,
 }: AddVehicleFormProps) {
   const firestore = useFirestore();
+  const { user } = useUser();
   const { toast } = useToast();
 
   const form = useForm<z.infer<typeof formSchema>>({
@@ -60,15 +61,17 @@ export function AddVehicleForm({
   });
 
   async function onSubmit(values: z.infer<typeof formSchema>) {
-    if (!firestore) return;
+    if (!firestore || !user) return;
 
     try {
+      // Note: Vehicles are now a subcollection of 'clientes'
       const vehiclesCollectionRef = collection(firestore, 'clientes', values.clienteId, 'veiculos');
       const newVehicleRef = doc(vehiclesCollectionRef);
 
       const vehicleData = {
         ...values,
         id: newVehicleRef.id,
+        userId: user.uid, // Associate data with the logged-in user
         createdAt: serverTimestamp(),
       };
       

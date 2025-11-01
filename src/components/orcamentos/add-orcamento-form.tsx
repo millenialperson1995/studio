@@ -23,7 +23,7 @@ import {
 import { Textarea } from '@/components/ui/textarea';
 import { addDocumentNonBlocking } from '@/firebase/non-blocking-updates';
 import { collection, serverTimestamp, doc } from 'firebase/firestore';
-import { useFirestore } from '@/firebase';
+import { useFirestore, useUser } from '@/firebase';
 import { useToast } from '@/hooks/use-toast';
 import type { Cliente, Veiculo, Peca, Servico } from '@/lib/types';
 import { Trash2, PlusCircle, CalendarIcon } from 'lucide-react';
@@ -71,6 +71,7 @@ export function AddOrcamentoForm({
   setDialogOpen,
 }: AddOrcamentoFormProps) {
   const firestore = useFirestore();
+  const { user } = useUser();
   const { toast } = useToast();
   const [selectedClientId, setSelectedClientId] = useState('');
 
@@ -108,7 +109,7 @@ export function AddOrcamentoForm({
   );
 
   async function onSubmit(values: z.infer<typeof formSchema>) {
-    if (!firestore) return;
+    if (!firestore || !user) return;
 
     try {
       const orcamentosCollectionRef = collection(firestore, 'orcamentos');
@@ -117,6 +118,7 @@ export function AddOrcamentoForm({
       const orcamentoData = {
         ...values,
         id: newOrcamentoRef.id,
+        userId: user.uid, // Associate data with the logged-in user
         itens: values.itens.map(item => ({...item, valorTotal: (item.quantidade || 0) * (item.valorUnitario || 0)})),
         dataCriacao: serverTimestamp(),
         createdAt: serverTimestamp(),

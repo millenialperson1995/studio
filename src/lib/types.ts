@@ -1,7 +1,8 @@
-export interface User {
+export interface UserProfile {
   uid: string;
-  email: string | null;
-  displayName: string | null;
+  email: string;
+  nome: string;
+  sobrenome: string;
   // Role has been removed for simplification
   photoURL?: string | null;
   disabled?: boolean;
@@ -21,16 +22,19 @@ export interface DashboardData {
 
 export interface Servico {
   id: string;
+  userId: string;
   codigo: string;
   descricao: string;
   valorPadrao: number;
   tempoMedio: number; // in hours
   categoria: string;
   ativo: boolean;
+  createdAt?: any;
 }
 
 export interface Veiculo {
   id: string;
+  userId: string;
   clienteId: string;
   placa: string;
   marca: string;
@@ -43,6 +47,7 @@ export interface Veiculo {
 
 export interface Cliente {
   id: string;
+  userId: string;
   nome: string;
   telefone: string;
   email: string;
@@ -61,6 +66,7 @@ export interface ItemOrcamento {
 
 export interface Orcamento {
   id: string;
+  userId: string;
   clienteId: string;
   veiculoId: string;
   dataCriacao: any; // Can be Date or Firestore Timestamp
@@ -91,6 +97,7 @@ export interface ItemPeca {
 
 export interface OrdemServico {
   id: string;
+  userId: string;
   orcamentoId?: string;
   clienteId: string;
   veiculoId: string;
@@ -110,6 +117,7 @@ export interface OrdemServico {
 
 export interface Peca {
   id: string;
+  userId: string;
   codigo: string;
   descricao: string;
   quantidadeEstoque: number;
