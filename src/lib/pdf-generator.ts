@@ -25,24 +25,27 @@ export const generateOrcamentoPDF = (
   doc.setFontSize(10);
   doc.text(`Orçamento #: ${orcamento.id.substring(0, 8)}`, 195, 25, { align: 'right' });
   
-  // Company Info (Placeholder)
+  // Company Info
   doc.setFontSize(12);
   doc.setFont('helvetica', 'bold');
-  doc.text('Retífica Ágil', 15, 30);
+  doc.text('REDÍFICA FIGUEIRÊDO', 15, 30);
   doc.setFont('helvetica', 'normal');
   doc.setFontSize(10);
-  doc.text('Rua Exemplo, 123 - Cidade, Estado', 15, 36);
-  doc.text('contato@retificaagil.com.br | (11) 5555-4444', 15, 41);
+  doc.text('CNPJ: 33.925-338/0001-74', 15, 36);
+  doc.text('Av. Presidente Kennedy, 1956, loja T.: Peixinhos', 15, 41);
+  doc.text('CEP: 53.230-650 - OLINDA-PE', 15, 46);
+  doc.text('Telefone: (81) 9.8836-6701', 15, 51);
+
 
   doc.setLineWidth(0.5);
-  doc.line(15, 45, 195, 45);
+  doc.line(15, 56, 195, 56);
 
   // 2. Client and Vehicle Info
   doc.setFontSize(12);
   doc.setFont('helvetica', 'bold');
-  doc.text('Informações do Cliente e Veículo', 15, 55);
+  doc.text('Informações do Cliente e Veículo', 15, 65);
   
-  const clientInfoY = 62;
+  const clientInfoY = 72;
   const vehicleInfoX = 110;
   
   doc.setFontSize(10);

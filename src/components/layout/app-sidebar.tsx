@@ -17,6 +17,7 @@ import {
     SidebarFooter,
     useSidebar,
   } from '../ui/sidebar';
+  import Image from 'next/image';
 
   const AppSidebar = () => {
     const { state } = useSidebar();
@@ -25,11 +26,11 @@ import {
       <>
         <SidebarHeader>
           <div className="flex items-center gap-2 p-2">
-            <Wrench className="h-8 w-8 text-primary shrink-0" />
+            <Image src="https://placehold.co/32x32/000000/FFFFFF/png?text=RF" alt="Logo Retífica Figueirêdo" width={32} height={32} className="shrink-0" />
             <h1
               className={`text-xl font-bold text-foreground transition-opacity duration-200 ${isCollapsed ? 'opacity-0' : 'opacity-100'}`}
             >
-              Retífica Ágil
+              RETÍFICA FIGUEIRÊDO
             </h1>
           </div>
         </SidebarHeader>
