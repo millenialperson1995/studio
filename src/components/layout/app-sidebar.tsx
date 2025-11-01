@@ -30,72 +30,72 @@ import {
         <SidebarContent className="p-2">
           <SidebarMenu>
             <SidebarMenuItem>
-              <Link href="/" legacyBehavior passHref>
-                <SidebarMenuButton isActive tooltip="Dashboard">
+              <SidebarMenuButton asChild isActive tooltip="Dashboard">
+                <Link href="/">
                   <LayoutDashboard />
                   Dashboard
-                </SidebarMenuButton>
-              </Link>
+                </Link>
+              </SidebarMenuButton>
             </SidebarMenuItem>
             <SidebarMenuItem>
-              <Link href="#" legacyBehavior passHref>
-                <SidebarMenuButton tooltip="Clientes">
+              <SidebarMenuButton asChild tooltip="Clientes">
+                <Link href="#">
                   <Users />
                   Clientes
-                </SidebarMenuButton>
-              </Link>
+                </Link>
+              </SidebarMenuButton>
             </SidebarMenuItem>
             <SidebarMenuItem>
-              <Link href="#" legacyBehavior passHref>
-                <SidebarMenuButton tooltip="Veículos">
+              <SidebarMenuButton asChild tooltip="Veículos">
+                <Link href="#">
                   <Car />
                   Veículos
-                </SidebarMenuButton>
-              </Link>
+                </Link>
+              </SidebarMenuButton>
             </SidebarMenuItem>
             <SidebarMenuItem>
-              <Link href="#" legacyBehavior passHref>
-                <SidebarMenuButton tooltip="Orçamentos">
+              <SidebarMenuButton asChild tooltip="Orçamentos">
+                <Link href="#">
                   <FileText />
                   Orçamentos
-                </SidebarMenuButton>
-              </Link>
+                </Link>
+              </SidebarMenuButton>
             </SidebarMenuItem>
             <SidebarMenuItem>
-              <Link href="#" legacyBehavior passHref>
-                <SidebarMenuButton tooltip="Ordens de Serviço">
+              <SidebarMenuButton asChild tooltip="Ordens de Serviço">
+                <Link href="#">
                   <Wrench />
                   Ordens de Serviço
-                </SidebarMenuButton>
-              </Link>
+                </Link>
+              </SidebarMenuButton>
             </SidebarMenuItem>
             <SidebarMenuItem>
-              <Link href="#" legacyBehavior passHref>
-                <SidebarMenuButton tooltip="Estoque">
+              <SidebarMenuButton asChild tooltip="Estoque">
+                <Link href="#">
                   <Package />
                   Estoque
-                </SidebarMenuButton>
-              </Link>
+                </Link>
+              </SidebarMenuButton>
             </SidebarMenuItem>
             <SidebarMenuItem>
-              <Link href="#" legacyBehavior passHref>
-                <SidebarMenuButton tooltip="Serviços">
+              <SidebarMenuButton asChild tooltip="Serviços">
+                <Link href="#">
                   <List />
                   Serviços
-                </SidebarMenuButton>
-              </Link>
+                </Link>
+              </SidebarMenuButton>
             </SidebarMenuItem>
           </SidebarMenu>
         </SidebarContent>
         <SidebarFooter className="p-2 border-t mt-auto">
             <SidebarMenu>
                 <SidebarMenuItem>
-                    <Link href="#" legacyBehavior passHref>
-                        <SidebarMenuButton tooltip="Configurações">
+                    <SidebarMenuButton asChild tooltip="Configurações">
+                        <Link href="#">
                             <Settings />
                             Configurações
-                        </SidebarMenuButton>
-                    </Link>
+                        </Link>
+                    </SidebarMenuButton>
                 </SidebarMenuItem>
             </SidebarMenu>
         </SidebarFooter>
