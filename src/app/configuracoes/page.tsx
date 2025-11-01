@@ -17,7 +17,7 @@ import {
   CardTitle,
   CardDescription,
 } from '@/components/ui/card';
-import { useCollection, useFirestore } from '@/firebase';
+import { useCollection, useFirestore, useUser } from '@/firebase';
 import { useMemoFirebase } from '@/firebase/provider';
 import { collection } from 'firebase/firestore';
 import type { User } from '@/lib/types';
@@ -37,10 +37,11 @@ import { AddUserForm } from '@/components/configuracoes/add-user-form';
 export default function ConfiguracoesPage() {
   const [isAddUserDialogOpen, setIsAddUserDialogOpen] = useState(false);
   const firestore = useFirestore();
+  const { user } = useUser();
 
   const usersCollectionRef = useMemoFirebase(
-    () => (firestore ? collection(firestore, 'users') : null),
-    [firestore]
+    () => (firestore && user ? collection(firestore, 'users') : null),
+    [firestore, user]
   );
   
   const { data: users, isLoading, error } = useCollection<User>(usersCollectionRef);
