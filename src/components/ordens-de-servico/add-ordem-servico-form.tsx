@@ -87,7 +87,7 @@ export function AddOrdemServicoForm({
       status: 'pendente',
       mecanicoResponsavel: '',
       observacoes: '',
-      servicos: [{ descricao: '', valor: 0 }],
+      servicos: [],
       pecas: [],
       valorTotal: 0,
     },
@@ -286,7 +286,7 @@ export function AddOrdemServicoForm({
                     />
                 </div>
                 <div className="w-full md:w-auto">
-                    <Button type="button" variant="destructive" size="icon" onClick={() => removeServico(index)} disabled={servicosFields.length <= 1} className="w-full md:w-10 h-10">
+                    <Button type="button" variant="destructive" size="icon" onClick={() => removeServico(index)} className="w-full md:w-10 h-10">
                         <Trash2 className="h-4 w-4" />
                         <span className="sr-only">Remover Serviço</span>
                     </Button>
@@ -369,3 +369,5 @@ export function AddOrdemServicoForm({
     </Form>
   );
 }
+
+    
