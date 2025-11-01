@@ -17,7 +17,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/com
 import { useToast } from '@/hooks/use-toast';
 import { useAuth, useUser } from '@/firebase';
 import { signInWithEmailAndPassword, createUserWithEmailAndPassword } from 'firebase/auth';
-import { setDoc, doc, getDoc } from 'firebase/firestore';
+import { setDoc, doc, getDocs, collection, query, where, limit } from 'firebase/firestore';
 import { useFirestore } from '@/firebase';
 import { useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
@@ -37,44 +37,6 @@ export default function LoginPage() {
   const { user, isUserLoading } = useUser();
   const [error, setError] = useState<string | null>(null);
 
-  // Seed o primeiro usuário admin
-  useEffect(() => {
-    const seedAdminUser = async () => {
-      if (auth && firestore) {
-        try {
-          // Tenta criar o usuário. Se já existir, vai dar um erro que será ignorado.
-          const userCredential = await createUserWithEmailAndPassword(auth, 'admin@retifica.com', '123456');
-          const user = userCredential.user;
-          // Cria o documento do usuário no Firestore
-           await setDoc(doc(firestore, "users", user.uid), {
-            uid: user.uid,
-            email: 'admin@retifica.com',
-            displayName: 'Admin Retífica',
-            role: 'admin',
-            disabled: false,
-          });
-          console.log("Usuário admin e perfil criados com sucesso.");
-        } catch (error: any) {
-          if (error.code === 'auth/email-already-in-use') {
-             console.log("Usuário admin de autenticação já existe.");
-             // Garante que o perfil do admin existe no firestore, mesmo que a autenticação já exista.
-             const adminEmail = 'admin@retifica.com';
-             // NOTE: Não há uma forma direta de obter o UID a partir do e-mail no lado do cliente
-             // sem fazer login. Como este é um script de seeding, a abordagem mais simples
-             // é ignorar a criação do perfil se a autenticação já existe. O admin real
-             // deve ser criado manualmente no console do Firebase ou por um script de admin.
-          } else {
-            console.error("Erro ao criar usuário admin:", error);
-          }
-        }
-      }
-    };
-
-    if (!isUserLoading) {
-        seedAdminUser();
-    }
-  }, [auth, firestore, isUserLoading]);
-
   useEffect(() => {
     if (!isUserLoading && user) {
       router.push('/');
@@ -91,7 +53,7 @@ export default function LoginPage() {
 
   async function onSubmit(values: z.infer<typeof formSchema>) {
     setError(null);
-    if (!auth) return;
+    if (!auth || !firestore) return;
     
     try {
       await signInWithEmailAndPassword(auth, values.email, values.password);
@@ -101,26 +63,63 @@ export default function LoginPage() {
       });
       router.push('/');
     } catch (error: any) {
-      let errorMessage = 'Ocorreu um erro desconhecido. Tente novamente.';
-      switch (error.code) {
-        case 'auth/user-not-found':
-        case 'auth/wrong-password':
-        case 'auth/invalid-credential':
-          errorMessage = 'E-mail ou senha inválidos.';
-          break;
-        case 'auth/invalid-email':
-          errorMessage = 'O formato do e-mail é inválido.';
-          break;
-        case 'auth/user-disabled':
-            errorMessage = 'Este usuário foi desativado.';
+       // Se o login falhar, tentamos criar o usuário
+       // Isso permite um fluxo de "login ou cadastre-se"
+      if (error.code === 'auth/user-not-found' || error.code === 'auth/invalid-credential' || error.code === 'auth/wrong-password') {
+        try {
+            const usersCollectionRef = collection(firestore, 'users');
+            const q = query(usersCollectionRef, where('role', '==', 'admin'), limit(1));
+            const adminSnapshot = await getDocs(q);
+            const isAdminSeedNeeded = adminSnapshot.empty;
+
+            const userCredential = await createUserWithEmailAndPassword(auth, values.email, values.password);
+            const newUser = userCredential.user;
+
+            const newUserRole = isAdminSeedNeeded ? 'admin' : 'recepcionista'; // O primeiro usuário é admin
+
+            await setDoc(doc(firestore, "users", newUser.uid), {
+                uid: newUser.uid,
+                email: newUser.email,
+                displayName: newUser.email, // Default display name
+                role: newUserRole,
+                disabled: false,
+            });
+
+            toast({
+                title: `Cadastro realizado com sucesso!`,
+                description: `Bem-vindo! Você foi definido como ${newUserRole}.`,
+            });
+             router.push('/');
+
+        } catch (creationError: any) {
+            let errorMessage = 'Ocorreu um erro desconhecido. Tente novamente.';
+            if (creationError.code === 'auth/email-already-in-use') {
+                errorMessage = 'Este e-mail já está em uso, mas a senha está incorreta.';
+            }
+             setError(errorMessage);
+            toast({
+                variant: 'destructive',
+                title: 'Erro',
+                description: errorMessage,
+            });
+        }
+      } else {
+        let errorMessage = 'Ocorreu um erro desconhecido. Tente novamente.';
+        switch (error.code) {
+          case 'auth/invalid-email':
+            errorMessage = 'O formato do e-mail é inválido.';
             break;
+          case 'auth/user-disabled':
+              errorMessage = 'Este usuário foi desativado.';
+              break;
+        }
+        setError(errorMessage);
+         toast({
+          variant: 'destructive',
+          title: 'Erro no Login',
+          description: errorMessage,
+        });
       }
-      setError(errorMessage);
-       toast({
-        variant: 'destructive',
-        title: 'Erro no Login',
-        description: errorMessage,
-      });
     }
   }
   
@@ -134,7 +133,7 @@ export default function LoginPage() {
        <div className="w-full max-w-sm mx-auto flex flex-col items-center text-center">
             <Wrench className="h-12 w-12 text-primary mb-4" />
             <h1 className="text-3xl font-bold text-gray-900 dark:text-gray-50">Retífica Ágil</h1>
-            <p className="text-gray-500 dark:text-gray-400 mb-8">Faça login para gerenciar sua oficina</p>
+            <p className="text-gray-500 dark:text-gray-400 mb-8">Faça login ou cadastre-se para começar</p>
       <Card className="w-full">
         <CardHeader>
           <CardTitle>Login</CardTitle>
@@ -150,7 +149,7 @@ export default function LoginPage() {
                   <FormItem>
                     <FormLabel>Email</FormLabel>
                     <FormControl>
-                      <Input type="email" placeholder="email@exemplo.com" {...field} />
+                      <Input type="email" placeholder="seu@email.com" {...field} />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -171,7 +170,7 @@ export default function LoginPage() {
               />
               {error && <p className="text-sm font-medium text-destructive">{error}</p>}
               <Button type="submit" className="w-full" disabled={form.formState.isSubmitting}>
-                {form.formState.isSubmitting ? 'Entrando...' : 'Entrar'}
+                {form.formState.isSubmitting ? 'Entrando...' : 'Entrar / Cadastrar'}
               </Button>
             </form>
           </Form>
