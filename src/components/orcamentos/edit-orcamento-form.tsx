@@ -227,24 +227,29 @@ export function EditOrcamentoForm({
                 className="grid grid-cols-12 gap-x-2 gap-y-2 items-start"
               >
                 <div className="col-span-12 md:col-span-5">
-                   <ItemSelector 
-                        pecas={pecas} 
-                        servicos={servicos} 
-                        onSelect={(item, type) => handleItemSelect(index, item, type)}
-                        trigger={
-                           <FormField
-                              control={form.control}
-                              name={`itens.${index}.descricao`}
-                              render={({ field }) => (
-                                <FormItem className="w-full">
-                                   <FormControl>
-                                      <Input placeholder="Selecione ou digite um item" {...field} />
-                                   </FormControl>
-                                   <FormMessage />
-                                </FormItem>
-                              )}
-                            />
-                        }
+                   <FormField
+                      control={form.control}
+                      name={`itens.${index}.descricao`}
+                      render={({ field }) => (
+                        <FormItem className="w-full">
+                          <ItemSelector
+                            pecas={pecas}
+                            servicos={servicos}
+                            onSelect={(item, type) =>
+                              handleItemSelect(index, item, type)
+                            }
+                            trigger={
+                              <FormControl>
+                                <Input
+                                  placeholder="Selecione ou digite um item"
+                                  {...field}
+                                />
+                              </FormControl>
+                            }
+                          />
+                           <FormMessage />
+                        </FormItem>
+                      )}
                     />
                 </div>
                  <div className="col-span-6 md:col-span-2">
