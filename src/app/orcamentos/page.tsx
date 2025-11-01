@@ -20,7 +20,7 @@ import {
 import { useCollection, useFirestore } from '@/firebase';
 import { useMemoFirebase } from '@/firebase/provider';
 import { collection, collectionGroup, query } from 'firebase/firestore';
-import type { Orcamento, Cliente, Veiculo } from '@/lib/types';
+import type { Orcamento, Cliente, Veiculo, Servico, Peca } from '@/lib/types';
 import {
   Dialog,
   DialogContent,
@@ -50,6 +50,15 @@ export default function OrcamentosPage() {
     () => (firestore ? query(collectionGroup(firestore, 'veiculos')) : null),
     [firestore]
   );
+  const servicosCollectionRef = useMemoFirebase(
+    () => (firestore ? collection(firestore, 'servicos') : null),
+    [firestore]
+  );
+  const pecasCollectionRef = useMemoFirebase(
+    () => (firestore ? collection(firestore, 'pecas') : null),
+    [firestore]
+  );
+
 
   // Data fetching
   const { data: orcamentos, isLoading: isLoadingOrcamentos } =
@@ -58,8 +67,12 @@ export default function OrcamentosPage() {
     useCollection<Cliente>(clientesCollectionRef);
   const { data: vehicles, isLoading: isLoadingVehicles } =
     useCollection<Veiculo>(veiculosQuery);
+  const { data: servicos, isLoading: isLoadingServicos } =
+    useCollection<Servico>(servicosCollectionRef);
+  const { data: pecas, isLoading: isLoadingPecas } =
+    useCollection<Peca>(pecasCollectionRef);
 
-  const isLoading = isLoadingOrcamentos || isLoadingClients || isLoadingVehicles;
+  const isLoading = isLoadingOrcamentos || isLoadingClients || isLoadingVehicles || isLoadingServicos || isLoadingPecas;
 
   return (
     <SidebarProvider>
@@ -88,6 +101,8 @@ export default function OrcamentosPage() {
                 <AddOrcamentoForm
                   clients={clients || []}
                   vehicles={vehicles || []}
+                  servicos={servicos || []}
+                  pecas={pecas || []}
                   setDialogOpen={setIsAddDialogOpen}
                 />
               </DialogContent>
@@ -114,6 +129,8 @@ export default function OrcamentosPage() {
                   orcamentos={orcamentos || []}
                   clients={clients || []}
                   vehicles={vehicles || []}
+                  servicos={servicos || []}
+                  pecas={pecas || []}
                 />
               )}
             </CardContent>

@@ -38,8 +38,8 @@ import {
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { MoreHorizontal, Pencil, Trash2, FilePlus2 } from 'lucide-react';
-import type { Orcamento, Cliente, Veiculo, ItemServico, OrdemServico } from '@/lib/types';
-import { deleteDocumentNonBlocking, addDocumentNonBlocking } from '@/firebase/non-blocking-updates';
+import type { Orcamento, Cliente, Veiculo, ItemServico, OrdemServico, Peca, Servico } from '@/lib/types';
+import { deleteDocumentNonBlocking, addDocumentNonBlocking, updateDocumentNonBlocking } from '@/firebase/non-blocking-updates';
 import { doc, collection, serverTimestamp } from 'firebase/firestore';
 import { useFirestore } from '@/firebase';
 import { useToast } from '@/hooks/use-toast';
@@ -50,6 +50,8 @@ interface OrcamentoTableProps {
   orcamentos: Orcamento[];
   clients: Cliente[];
   vehicles: Veiculo[];
+  servicos: Servico[];
+  pecas: Peca[];
 }
 
 const statusVariantMap: { [key: string]: 'default' | 'secondary' | 'destructive' | 'outline' } = {
@@ -69,6 +71,8 @@ export default function OrcamentoTable({
   orcamentos = [],
   clients = [],
   vehicles = [],
+  servicos = [],
+  pecas = [],
 }: OrcamentoTableProps) {
   const firestore = useFirestore();
   const { toast } = useToast();
@@ -107,12 +111,23 @@ export default function OrcamentoTable({
   };
   
   const handleGenerateOS = async (orcamento: Orcamento) => {
-    if (!firestore) return;
+    if (!firestore || orcamento.ordemServicoId) return;
 
-    const servicos: ItemServico[] = orcamento.itens.map(item => ({
-        descricao: item.descricao,
-        valor: item.valorUnitario * item.quantidade,
-    }));
+    const osServicos: ItemServico[] = orcamento.itens
+        .filter(item => item.tipo === 'servico')
+        .map(item => ({
+            descricao: item.descricao,
+            valor: item.valorTotal,
+        }));
+    
+    const osPecas = orcamento.itens
+        .filter(item => item.tipo === 'peca')
+        .map(item => ({
+            descricao: item.descricao,
+            quantidade: item.quantidade,
+            valorUnitario: item.valorUnitario,
+        }));
+
 
     const newOrdemServico: Omit<OrdemServico, 'id' | 'cliente' | 'veiculo'> = {
         orcamentoId: orcamento.id,
@@ -122,15 +137,21 @@ export default function OrcamentoTable({
         dataEntrada: serverTimestamp(),
         dataPrevisao: new Date(new Date().setDate(new Date().getDate() + 7)), // Default to 7 days from now
         mecanicoResponsavel: 'A definir',
-        servicos: servicos,
-        pecas: [],
+        servicos: osServicos,
+        pecas: osPecas,
         valorTotal: orcamento.valorTotal,
         observacoes: orcamento.observacoes,
     };
     
     try {
         const ordensServicoCollectionRef = collection(firestore, 'clientes', orcamento.clienteId, 'ordensServico');
-        await addDocumentNonBlocking(ordensServicoCollectionRef, newOrdemServico);
+        const newOSDoc = await addDocumentNonBlocking(ordensServicoCollectionRef, newOrdemServico);
+
+        if (newOSDoc) {
+             const orcamentoDocRef = doc(firestore, 'orcamentos', orcamento.id);
+             updateDocumentNonBlocking(orcamentoDocRef, { ordemServicoId: newOSDoc.id });
+        }
+       
         toast({
             title: 'Sucesso!',
             description: 'Ordem de Serviço gerada a partir do orçamento.',
@@ -208,9 +229,9 @@ export default function OrcamentoTable({
                         {orcamento.status === 'aprovado' && (
                             <>
                                 <DropdownMenuSeparator />
-                                <DropdownMenuItem onClick={() => handleGenerateOS(orcamento)}>
+                                <DropdownMenuItem onClick={() => handleGenerateOS(orcamento)} disabled={!!orcamento.ordemServicoId}>
                                     <FilePlus2 className="mr-2 h-4 w-4" />
-                                    Gerar Ordem de Serviço
+                                    {orcamento.ordemServicoId ? 'OS Gerada' : 'Gerar Ordem de Serviço'}
                                 </DropdownMenuItem>
                                 <DropdownMenuSeparator />
                             </>
@@ -275,6 +296,8 @@ export default function OrcamentoTable({
               orcamento={selectedOrcamento}
               clients={clients}
               vehicles={vehicles}
+              servicos={servicos}
+              pecas={pecas}
               setDialogOpen={setIsEditDialogOpen}
             />
           )}

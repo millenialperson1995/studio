@@ -41,6 +41,8 @@ export interface Cliente {
 }
 
 export interface ItemOrcamento {
+  itemId?: string; // ID from Peca or Servico
+  tipo?: 'peca' | 'servico';
   descricao: string;
   quantidade: number;
   valorUnitario: number;
@@ -60,6 +62,7 @@ export interface Orcamento {
   pdfUrl?: string;
   cliente?: Cliente;
   veiculo?: Veiculo;
+  ordemServicoId?: string;
 }
 
 

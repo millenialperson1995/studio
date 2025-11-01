@@ -1,7 +1,7 @@
 'use client';
 
 import { zodResolver } from '@hookform/resolvers/zod';
-import { useForm, useFieldArray, Controller } from 'react-hook-form';
+import { useForm, useFieldArray } from 'react-hook-form';
 import { z } from 'zod';
 import { Button } from '@/components/ui/button';
 import {
@@ -25,16 +25,18 @@ import { updateDocumentNonBlocking } from '@/firebase/non-blocking-updates';
 import { doc } from 'firebase/firestore';
 import { useFirestore } from '@/firebase';
 import { useToast } from '@/hooks/use-toast';
-import type { Orcamento, Cliente, Veiculo } from '@/lib/types';
-import { Trash2, PlusCircle } from 'lucide-react';
+import type { Orcamento, Cliente, Veiculo, Peca, Servico } from '@/lib/types';
+import { Trash2, PlusCircle, CalendarIcon } from 'lucide-react';
 import { useState, useEffect } from 'react';
 import { Popover, PopoverContent, PopoverTrigger } from '../ui/popover';
-import { CalendarIcon } from 'lucide-react';
 import { Calendar } from '../ui/calendar';
 import { cn } from '@/lib/utils';
 import { format } from 'date-fns';
+import { ItemSelector } from './item-selector';
 
 const itemSchema = z.object({
+  itemId: z.string().optional(),
+  tipo: z.enum(['peca', 'servico']).optional(),
   descricao: z.string().min(1, 'A descrição é obrigatória.'),
   quantidade: z.coerce.number().min(0.1, 'A quantidade deve ser maior que 0.'),
   valorUnitario: z.coerce.number().min(0, 'O valor deve ser positivo.'),
@@ -57,6 +59,8 @@ type EditOrcamentoFormProps = {
   orcamento: Orcamento;
   clients: Cliente[];
   vehicles: Veiculo[];
+  servicos: Servico[];
+  pecas: Peca[];
   setDialogOpen: (open: boolean) => void;
 };
 
@@ -64,6 +68,8 @@ export function EditOrcamentoForm({
   orcamento,
   clients,
   vehicles,
+  servicos,
+  pecas,
   setDialogOpen,
 }: EditOrcamentoFormProps) {
   const firestore = useFirestore();
@@ -78,7 +84,7 @@ export function EditOrcamentoForm({
     },
   });
 
-  const { fields, append, remove } = useFieldArray({
+  const { fields, append, remove, update } = useFieldArray({
     control: form.control,
     name: 'itens',
   });
@@ -125,6 +131,16 @@ export function EditOrcamentoForm({
           'Não foi possível atualizar o orçamento. Tente novamente.',
       });
     }
+  }
+
+  const handleItemSelect = (index: number, item: Peca | Servico, type: 'peca' | 'servico') => {
+    update(index, {
+        ...form.getValues(`itens.${index}`),
+        itemId: item.id,
+        tipo: type,
+        descricao: item.descricao,
+        valorUnitario: type === 'peca' ? (item as Peca).valorVenda : (item as Servico).valorPadrao
+    })
   }
 
   return (
@@ -194,6 +210,12 @@ export function EditOrcamentoForm({
 
         <div className="space-y-4 rounded-md border p-4">
           <h3 className="font-medium">Itens do Orçamento</h3>
+           <div className="grid grid-cols-12 gap-x-2 text-sm font-medium text-muted-foreground px-1">
+             <div className="col-span-12 md:col-span-5">Item/Descrição</div>
+             <div className="col-span-6 md:col-span-2">Qtd.</div>
+             <div className="col-span-6 md:col-span-2">Vlr. Unitário</div>
+             <div className="col-span-10 md:col-span-2">Subtotal</div>
+          </div>
           {fields.map((field, index) => {
             const qty = form.watch(`itens.${index}.quantidade`) || 0;
             const price = form.watch(`itens.${index}.valorUnitario`) || 0;
@@ -202,25 +224,30 @@ export function EditOrcamentoForm({
             return (
               <div
                 key={field.id}
-                className="grid grid-cols-12 gap-x-2 gap-y-4 items-start"
+                className="grid grid-cols-12 gap-x-2 gap-y-2 items-start"
               >
                 <div className="col-span-12 md:col-span-5">
-                  <FormLabel className={cn(index !== 0 && "sr-only")}>Descrição</FormLabel>
-                   <FormField
-                      control={form.control}
-                      name={`itens.${index}.descricao`}
-                      render={({ field }) => (
-                        <FormItem className="w-full">
-                           <FormControl>
-                              <Input placeholder="Ex: Troca de óleo" {...field} />
-                           </FormControl>
-                           <FormMessage />
-                        </FormItem>
-                      )}
+                   <ItemSelector 
+                        pecas={pecas} 
+                        servicos={servicos} 
+                        onSelect={(item, type) => handleItemSelect(index, item, type)}
+                        trigger={
+                           <FormField
+                              control={form.control}
+                              name={`itens.${index}.descricao`}
+                              render={({ field }) => (
+                                <FormItem className="w-full">
+                                   <FormControl>
+                                      <Input placeholder="Selecione ou digite um item" {...field} />
+                                   </FormControl>
+                                   <FormMessage />
+                                </FormItem>
+                              )}
+                            />
+                        }
                     />
                 </div>
                  <div className="col-span-6 md:col-span-2">
-                    <FormLabel className={cn(index !== 0 && "sr-only")}>Qtd.</FormLabel>
                     <FormField
                       control={form.control}
                       name={`itens.${index}.quantidade`}
@@ -235,7 +262,6 @@ export function EditOrcamentoForm({
                     />
                 </div>
                 <div className="col-span-6 md:col-span-2">
-                    <FormLabel className={cn(index !== 0 && "sr-only")}>Vlr. Unitário</FormLabel>
                     <FormField
                       control={form.control}
                       name={`itens.${index}.valorUnitario`}
@@ -250,7 +276,6 @@ export function EditOrcamentoForm({
                     />
                 </div>
                 <div className="col-span-10 md:col-span-2">
-                    <FormLabel className={cn(index !== 0 && "sr-only")}>Subtotal</FormLabel>
                     <Input readOnly disabled value={total.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })} />
                 </div>
                 <div className="col-span-2 md:col-span-1 flex items-end h-full">
@@ -260,7 +285,7 @@ export function EditOrcamentoForm({
                         size="icon"
                         onClick={() => remove(index)}
                         disabled={fields.length <= 1}
-                        className={cn(index !== 0 && "mt-auto")}
+                        className="h-10 w-10"
                     >
                         <Trash2 className="h-4 w-4" />
                     </Button>
