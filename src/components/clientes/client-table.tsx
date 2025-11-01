@@ -26,6 +26,13 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+} from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { MoreHorizontal, Pencil, Trash2 } from 'lucide-react';
 import type { Cliente } from '@/lib/types';
@@ -33,6 +40,7 @@ import { deleteDocumentNonBlocking } from '@/firebase/non-blocking-updates';
 import { doc } from 'firebase/firestore';
 import { useFirestore } from '@/firebase';
 import { useToast } from '@/hooks/use-toast';
+import { EditClientForm } from './edit-client-form';
 
 interface ClientTableProps {
   clients: Cliente[];
@@ -41,8 +49,15 @@ interface ClientTableProps {
 export default function ClientTable({ clients = [] }: ClientTableProps) {
   const firestore = useFirestore();
   const { toast } = useToast();
+  
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
+  const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const [selectedClient, setSelectedClient] = useState<Cliente | null>(null);
+
+  const handleEditClick = (client: Cliente) => {
+    setSelectedClient(client);
+    setIsEditDialogOpen(true);
+  };
 
   const handleDeleteClick = (client: Cliente) => {
     setSelectedClient(client);
@@ -97,7 +112,7 @@ export default function ClientTable({ clients = [] }: ClientTableProps) {
                       </DropdownMenuTrigger>
                       <DropdownMenuContent align="end">
                         <DropdownMenuLabel>Ações</DropdownMenuLabel>
-                        <DropdownMenuItem disabled>
+                        <DropdownMenuItem onClick={() => handleEditClick(client)}>
                           <Pencil className="mr-2 h-4 w-4" />
                           Editar
                         </DropdownMenuItem>
@@ -144,6 +159,23 @@ export default function ClientTable({ clients = [] }: ClientTableProps) {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
+        <DialogContent className="sm:max-w-[425px]">
+          <DialogHeader>
+            <DialogTitle>Editar Cliente</DialogTitle>
+            <DialogDescription>
+              Altere os dados do cliente abaixo.
+            </DialogDescription>
+          </DialogHeader>
+          {selectedClient && (
+            <EditClientForm
+              client={selectedClient}
+              setDialogOpen={setIsEditDialogOpen}
+            />
+          )}
+        </DialogContent>
+      </Dialog>
     </>
   );
 }
