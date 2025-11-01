@@ -14,6 +14,7 @@ import {
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuLabel,
+  DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import {
@@ -35,10 +36,10 @@ import {
 } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { MoreHorizontal, Pencil, Trash2 } from 'lucide-react';
-import type { Orcamento, Cliente, Veiculo } from '@/lib/types';
-import { deleteDocumentNonBlocking } from '@/firebase/non-blocking-updates';
-import { doc } from 'firebase/firestore';
+import { MoreHorizontal, Pencil, Trash2, FilePlus2 } from 'lucide-react';
+import type { Orcamento, Cliente, Veiculo, ItemServico, OrdemServico } from '@/lib/types';
+import { deleteDocumentNonBlocking, addDocumentNonBlocking } from '@/firebase/non-blocking-updates';
+import { doc, collection, serverTimestamp } from 'firebase/firestore';
 import { useFirestore } from '@/firebase';
 import { useToast } from '@/hooks/use-toast';
 import { EditOrcamentoForm } from './edit-orcamento-form';
@@ -103,6 +104,46 @@ export default function OrcamentoTable({
     setSelectedOrcamento(null);
   };
   
+  const handleGenerateOS = async (orcamento: Orcamento) => {
+    if (!firestore) return;
+
+    // Convert items from budget to services and parts for the service order
+    const servicos: ItemServico[] = orcamento.itens.map(item => ({
+        descricao: item.descricao,
+        valor: item.valorUnitario * item.quantidade, // We'll put the total for the line item here
+    }));
+
+    const newOrdemServico: Omit<OrdemServico, 'id' | 'cliente' | 'veiculo'> = {
+        orcamentoId: orcamento.id,
+        clienteId: orcamento.clienteId,
+        veiculoId: orcamento.veiculoId,
+        status: 'pendente',
+        dataEntrada: serverTimestamp(),
+        dataPrevisao: new Date(new Date().setDate(new Date().getDate() + 7)), // Default to 7 days from now
+        mecanicoResponsavel: 'A definir',
+        servicos: servicos,
+        pecas: [], // We are assuming all items are services for now
+        valorTotal: orcamento.valorTotal,
+        observacoes: orcamento.observacoes,
+    };
+    
+    try {
+        const ordensServicoCollectionRef = collection(firestore, 'ordensServico');
+        await addDocumentNonBlocking(ordensServicoCollectionRef, newOrdemServico);
+        toast({
+            title: 'Sucesso!',
+            description: 'Ordem de Serviço gerada a partir do orçamento.',
+        });
+    } catch (error) {
+        console.error("Error generating service order: ", error);
+        toast({
+            variant: 'destructive',
+            title: 'Erro',
+            description: 'Não foi possível gerar a Ordem de Serviço.',
+        });
+    }
+  };
+
   const formatDate = (date: any) => {
       if (!date) return 'N/A';
       // It might be a Firestore Timestamp, so convert to Date
@@ -163,6 +204,16 @@ export default function OrcamentoTable({
                           <Pencil className="mr-2 h-4 w-4" />
                           Editar
                         </DropdownMenuItem>
+                        {orcamento.status === 'aprovado' && (
+                            <>
+                                <DropdownMenuSeparator />
+                                <DropdownMenuItem onClick={() => handleGenerateOS(orcamento)}>
+                                    <FilePlus2 className="mr-2 h-4 w-4" />
+                                    Gerar Ordem de Serviço
+                                </DropdownMenuItem>
+                                <DropdownMenuSeparator />
+                            </>
+                        )}
                         <DropdownMenuItem
                           className="text-destructive focus:text-destructive focus:bg-destructive/10"
                           onClick={() => handleDeleteClick(orcamento)}
