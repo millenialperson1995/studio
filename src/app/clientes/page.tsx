@@ -18,7 +18,8 @@ import {
   CardTitle,
   CardDescription,
 } from '@/components/ui/card';
-import { useCollection, useFirestore, useMemoFirebase } from '@/firebase';
+import { useCollection, useFirestore } from '@/firebase';
+import { useMemoFirebase } from '@/firebase/provider';
 import { collection } from 'firebase/firestore';
 import type { Cliente } from '@/lib/types';
 import {
@@ -36,7 +37,7 @@ export default function ClientesPage() {
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const firestore = useFirestore();
   const clientesCollectionRef = useMemoFirebase(
-    () => collection(firestore, 'clientes'),
+    () => (firestore ? collection(firestore, 'clientes') : null),
     [firestore]
   );
   const {
@@ -92,7 +93,7 @@ export default function ClientesPage() {
               {!isLoading && <ClientTable clients={clients || []} />}
               {error && (
                 <div className="text-destructive text-center p-4">
-                  Ocorreu um erro ao carregar os clientes.
+                  Ocorreu um erro ao carregar os clientes. Tente novamente mais tarde.
                 </div>
               )}
             </CardContent>
