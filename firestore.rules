@@ -47,14 +47,14 @@ service cloud.firestore {
     }
 
     match /clientes/{clienteId} {
-      allow get: if isSignedIn();
-      allow list: if isSignedIn();
-      allow create: if isOwner(clienteId) || isSignedIn();
-      allow update: if isOwner(clienteId) || isSignedIn();
-      allow delete: if isOwner(clienteId) || isSignedIn();
+      allow read, write: if isSignedIn();
     }
 
     match /clientes/{clienteId}/veiculos/{veiculoId} {
+      allow read, write: if isSignedIn();
+    }
+    
+    match /orcamentos/{orcamentoId} {
       allow read, write: if isSignedIn();
     }
 

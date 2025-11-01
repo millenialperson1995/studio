@@ -40,20 +40,21 @@ export interface Cliente {
   createdAt?: any;
 }
 
+export interface ItemOrcamento {
+  descricao: string;
+  quantidade: number;
+  valorUnitario: number;
+  valorTotal: number;
+}
+
 export interface Orcamento {
   id: string;
   clienteId: string;
   veiculoId: string;
-  dataCriacao: Date;
-  dataValidade: Date;
+  dataCriacao: any; // Can be Date or Firestore Timestamp
+  dataValidade: any; // Can be Date or Firestore Timestamp
   status: 'pendente' | 'aprovado' | 'rejeitado';
-  itens: Array<{
-    tipo: 'servico' | 'peca';
-    descricao: string;
-    quantidade: number;
-    valorUnitario: number;
-    valorTotal: number;
-  }>;
+  itens: ItemOrcamento[];
   valorTotal: number;
   observacoes: string;
   pdfUrl?: string;
