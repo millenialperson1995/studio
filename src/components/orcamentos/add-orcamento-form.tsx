@@ -153,13 +153,13 @@ export function AddOrcamentoForm({
 
   return (
     <Form {...form}>
-      <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+      <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6 max-h-[80vh] overflow-y-auto p-1 pr-4">
+        <div className="flex flex-col md:flex-row gap-4">
           <FormField
             control={form.control}
             name="clienteId"
             render={({ field }) => (
-              <FormItem>
+              <FormItem className="flex-1">
                 <FormLabel>Cliente</FormLabel>
                 <Select
                   onValueChange={(value) => {
@@ -190,7 +190,7 @@ export function AddOrcamentoForm({
             control={form.control}
             name="veiculoId"
             render={({ field }) => (
-              <FormItem>
+              <FormItem className="flex-1">
                 <FormLabel>Veículo</FormLabel>
                 <Select
                   onValueChange={field.onChange}
@@ -218,11 +218,11 @@ export function AddOrcamentoForm({
 
         <div className="space-y-4 rounded-md border p-4">
           <h3 className="font-medium">Itens do Orçamento</h3>
-          <div className="grid grid-cols-12 gap-x-2 text-sm font-medium text-muted-foreground px-1">
-             <div className="col-span-12 md:col-span-5">Item/Descrição</div>
-             <div className="col-span-6 md:col-span-2">Qtd.</div>
-             <div className="col-span-6 md:col-span-2">Vlr. Unitário</div>
-             <div className="col-span-10 md:col-span-2">Subtotal</div>
+          <div className="hidden md:grid grid-cols-12 gap-x-2 text-sm font-medium text-muted-foreground px-1">
+             <div className="col-span-5">Item/Descrição</div>
+             <div className="col-span-2">Qtd.</div>
+             <div className="col-span-2">Vlr. Unitário</div>
+             <div className="col-span-2">Subtotal</div>
           </div>
           {fields.map((field, index) => {
             const qty = form.watch(`itens.${index}.quantidade`) || 0;
@@ -232,9 +232,10 @@ export function AddOrcamentoForm({
             return (
               <div
                 key={field.id}
-                className="grid grid-cols-12 gap-x-2 gap-y-2 items-start"
+                className="flex flex-col md:grid md:grid-cols-12 gap-2 md:gap-x-2 items-start border-b md:border-none pb-4 md:pb-0 mb-4 md:mb-0"
               >
-                <div className="col-span-12 md:col-span-5">
+                <div className="col-span-12 md:col-span-5 w-full">
+                  <FormLabel className="text-xs md:hidden">Item/Descrição</FormLabel>
                   <FormField
                     control={form.control}
                     name={`itens.${index}.descricao`}
@@ -260,7 +261,8 @@ export function AddOrcamentoForm({
                     )}
                   />
                 </div>
-                 <div className="col-span-6 md:col-span-2">
+                 <div className="col-span-12 md:col-span-2 w-full">
+                    <FormLabel className="text-xs md:hidden">Qtd.</FormLabel>
                     <FormField
                       control={form.control}
                       name={`itens.${index}.quantidade`}
@@ -274,7 +276,8 @@ export function AddOrcamentoForm({
                       )}
                     />
                 </div>
-                <div className="col-span-6 md:col-span-2">
+                <div className="col-span-12 md:col-span-2 w-full">
+                    <FormLabel className="text-xs md:hidden">Vlr. Unitário</FormLabel>
                     <FormField
                       control={form.control}
                       name={`itens.${index}.valorUnitario`}
@@ -288,19 +291,21 @@ export function AddOrcamentoForm({
                       )}
                     />
                 </div>
-                <div className="col-span-10 md:col-span-2">
+                <div className="col-span-10 md:col-span-2 w-full">
+                    <FormLabel className="text-xs md:hidden">Subtotal</FormLabel>
                     <Input readOnly disabled value={total.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })} />
                 </div>
-                <div className="col-span-2 md:col-span-1 flex items-end h-full">
+                <div className="col-span-2 md:col-span-1 flex items-end h-full w-full">
                     <Button
                         type="button"
                         variant="destructive"
                         size="icon"
                         onClick={() => remove(index)}
                         disabled={fields.length <= 1}
-                        className="h-10 w-10"
+                        className="h-10 w-full"
                     >
                         <Trash2 className="h-4 w-4" />
+                        <span className="sr-only">Remover Item</span>
                     </Button>
                 </div>
               </div>
@@ -317,12 +322,12 @@ export function AddOrcamentoForm({
           </Button>
         </div>
         
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div className="flex flex-col md:flex-row gap-4">
              <FormField
                 control={form.control}
                 name="dataValidade"
                 render={({ field }) => (
-                  <FormItem className="flex flex-col">
+                  <FormItem className="flex flex-col flex-1">
                     <FormLabel>Data de Validade</FormLabel>
                     <Popover>
                       <PopoverTrigger asChild>
@@ -362,7 +367,7 @@ export function AddOrcamentoForm({
                 control={form.control}
                 name="status"
                 render={({ field }) => (
-                  <FormItem>
+                  <FormItem className="flex-1">
                     <FormLabel>Status</FormLabel>
                     <Select onValueChange={field.onChange} defaultValue={field.value}>
                       <FormControl>
@@ -401,8 +406,8 @@ export function AddOrcamentoForm({
           )}
         />
         
-        <div className="flex items-center justify-between pt-4">
-            <div className="text-lg font-semibold">
+        <div className="flex flex-col-reverse sm:flex-row items-center justify-between pt-4">
+            <div className="text-lg font-semibold mt-4 sm:mt-0">
                 <span>Valor Total: </span>
                 <span>{form.watch('valorTotal').toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}</span>
             </div>

@@ -146,6 +146,7 @@ export function AddOrdemServicoForm({
             ...form.getValues(`pecas.${index}`),
             descricao: item.descricao,
             valorUnitario: (item as Peca).valorVenda,
+            quantidade: 1,
         })
     }
   }
@@ -154,12 +155,12 @@ export function AddOrdemServicoForm({
   return (
     <Form {...form}>
       <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6 max-h-[80vh] overflow-y-auto p-1 pr-4">
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div className="flex flex-col md:flex-row gap-4">
           <FormField
             control={form.control}
             name="clienteId"
             render={({ field }) => (
-              <FormItem>
+              <FormItem className="flex-1">
                 <FormLabel>Cliente</FormLabel>
                 <Select
                   onValueChange={(value) => {
@@ -186,7 +187,7 @@ export function AddOrdemServicoForm({
             control={form.control}
             name="veiculoId"
             render={({ field }) => (
-              <FormItem>
+              <FormItem className="flex-1">
                 <FormLabel>Veículo</FormLabel>
                 <Select onValueChange={field.onChange} value={field.value} disabled={!selectedClientId}>
                   <FormControl>
@@ -206,9 +207,9 @@ export function AddOrdemServicoForm({
           />
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div className="flex flex-col md:flex-row gap-4">
             <FormField name="dataEntrada" control={form.control} render={({ field }) => (
-                <FormItem className="flex flex-col"><FormLabel>Data de Entrada</FormLabel>
+                <FormItem className="flex flex-col flex-1"><FormLabel>Data de Entrada</FormLabel>
                     <Popover><PopoverTrigger asChild><FormControl>
                         <Button variant={'outline'} className={cn('w-full pl-3 text-left font-normal',!field.value && 'text-muted-foreground')}>
                             {field.value ? format(field.value, 'PPP') : <span>Escolha uma data</span>}
@@ -221,7 +222,7 @@ export function AddOrdemServicoForm({
                 </FormItem>)}
             />
             <FormField name="dataPrevisao" control={form.control} render={({ field }) => (
-                <FormItem className="flex flex-col"><FormLabel>Previsão de Conclusão</FormLabel>
+                <FormItem className="flex flex-col flex-1"><FormLabel>Previsão de Conclusão</FormLabel>
                     <Popover><PopoverTrigger asChild><FormControl>
                         <Button variant={'outline'} className={cn('w-full pl-3 text-left font-normal',!field.value && 'text-muted-foreground')}>
                             {field.value ? format(field.value, 'PPP') : <span>Escolha uma data</span>}
@@ -235,14 +236,14 @@ export function AddOrdemServicoForm({
             />
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div className="flex flex-col md:flex-row gap-4">
             <FormField control={form.control} name="mecanicoResponsavel" render={({ field }) => (
-                <FormItem><FormLabel>Mecânico Responsável</FormLabel>
+                <FormItem className="flex-1"><FormLabel>Mecânico Responsável</FormLabel>
                 <FormControl><Input placeholder="Nome do mecânico" {...field} /></FormControl>
                 <FormMessage /></FormItem>)}
             />
             <FormField control={form.control} name="status" render={({ field }) => (
-              <FormItem><FormLabel>Status</FormLabel>
+              <FormItem className="flex-1"><FormLabel>Status</FormLabel>
                 <Select onValueChange={field.onChange} defaultValue={field.value}>
                   <FormControl><SelectTrigger><SelectValue placeholder="Selecione o status" /></SelectTrigger></FormControl>
                   <SelectContent>
@@ -259,10 +260,11 @@ export function AddOrdemServicoForm({
         <div className="space-y-4 rounded-md border p-4">
           <h3 className="font-medium">Serviços</h3>
           {servicosFields.map((field, index) => (
-              <div key={field.id} className="grid grid-cols-12 gap-x-2 gap-y-4 items-start">
-                <div className="col-span-12 md:col-span-8"><FormLabel className={cn(index !== 0 && "sr-only")}>Descrição</FormLabel>
+              <div key={field.id} className="flex flex-col md:flex-row items-end gap-2 border-b md:border-none pb-4 md:pb-0 mb-4 md:mb-0">
+                <div className="flex-1 w-full">
+                  <FormLabel className={cn(index !== 0 && "sr-only md:not-sr-only", "text-xs md:hidden")}>Descrição</FormLabel>
                    <FormField control={form.control} name={`servicos.${index}.descricao`} render={({ field }) => (
-                        <FormItem className="w-full">
+                        <FormItem>
                            <ItemSelector
                                 pecas={[]}
                                 servicos={servicos}
@@ -277,14 +279,16 @@ export function AddOrdemServicoForm({
                         </FormItem>)}
                     />
                 </div>
-                 <div className="col-span-10 md:col-span-3"><FormLabel className={cn(index !== 0 && "sr-only")}>Valor</FormLabel>
+                 <div className="flex-grow-0 flex-shrink-0 basis-1/3 w-full md:w-auto">
+                    <FormLabel className={cn(index !== 0 && "sr-only md:not-sr-only", "text-xs md:hidden")}>Valor</FormLabel>
                     <FormField control={form.control} name={`servicos.${index}.valor`} render={({ field }) => (
                         <FormItem><FormControl><Input type="number" placeholder="400.00" {...field} /></FormControl><FormMessage /></FormItem>)}
                     />
                 </div>
-                <div className="col-span-2 md:col-span-1 flex items-end h-full">
-                    <Button type="button" variant="destructive" size="icon" onClick={() => removeServico(index)} disabled={servicosFields.length <= 1} className={cn(index !== 0 && "mt-auto")}>
+                <div className="w-full md:w-auto">
+                    <Button type="button" variant="destructive" size="icon" onClick={() => removeServico(index)} disabled={servicosFields.length <= 1} className="w-full md:w-10 h-10">
                         <Trash2 className="h-4 w-4" />
+                        <span className="sr-only">Remover Serviço</span>
                     </Button>
                 </div>
               </div>
@@ -297,10 +301,11 @@ export function AddOrdemServicoForm({
         <div className="space-y-4 rounded-md border p-4">
           <h3 className="font-medium">Peças</h3>
           {pecasFields.map((field, index) => (
-              <div key={field.id} className="grid grid-cols-12 gap-x-2 gap-y-4 items-start">
-                <div className="col-span-12 md:col-span-5"><FormLabel className={cn(index !== 0 && "sr-only")}>Descrição</FormLabel>
+              <div key={field.id} className="flex flex-col md:grid md:grid-cols-12 gap-2 md:gap-x-2 items-start border-b md:border-none pb-4 md:pb-0 mb-4 md:mb-0">
+                <div className="col-span-12 md:col-span-5 w-full">
+                    <FormLabel className="text-xs md:hidden">Descrição</FormLabel>
                    <FormField control={form.control} name={`pecas.${index}.descricao`} render={({ field }) => (
-                        <FormItem className="w-full">
+                        <FormItem>
                             <ItemSelector
                                 pecas={pecas}
                                 servicos={[]}
@@ -315,22 +320,26 @@ export function AddOrdemServicoForm({
                         </FormItem>)}
                     />
                 </div>
-                 <div className="col-span-6 md:col-span-2"><FormLabel className={cn(index !== 0 && "sr-only")}>Qtd.</FormLabel>
+                 <div className="col-span-6 md:col-span-2 w-full">
+                    <FormLabel className="text-xs md:hidden">Qtd.</FormLabel>
                     <FormField control={form.control} name={`pecas.${index}.quantidade`} render={({ field }) => (
                         <FormItem><FormControl><Input type="number" placeholder="1" {...field} /></FormControl><FormMessage /></FormItem>)}
                     />
                 </div>
-                <div className="col-span-6 md:col-span-2"><FormLabel className={cn(index !== 0 && "sr-only")}>Vlr. Unitário</FormLabel>
+                <div className="col-span-6 md:col-span-2 w-full">
+                    <FormLabel className="text-xs md:hidden">Vlr. Unitário</FormLabel>
                     <FormField control={form.control} name={`pecas.${index}.valorUnitario`} render={({ field }) => (
                         <FormItem><FormControl><Input type="number" placeholder="100.00" {...field} /></FormControl><FormMessage /></FormItem>)}
                     />
                 </div>
-                <div className="col-span-10 md:col-span-2"><FormLabel className={cn(index !== 0 && "sr-only")}>Subtotal</FormLabel>
+                <div className="col-span-10 md:col-span-2 w-full">
+                     <FormLabel className="text-xs md:hidden">Subtotal</FormLabel>
                     <Input readOnly disabled value={((form.watch(`pecas.${index}.quantidade`) || 0) * (form.watch(`pecas.${index}.valorUnitario`) || 0)).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })} />
                 </div>
-                <div className="col-span-2 md:col-span-1 flex items-end h-full">
-                    <Button type="button" variant="destructive" size="icon" onClick={() => removePeca(index)}>
+                <div className="col-span-2 md:col-span-1 flex items-end h-full w-full">
+                    <Button type="button" variant="destructive" size="icon" onClick={() => removePeca(index)} className="w-full h-10">
                         <Trash2 className="h-4 w-4" />
+                        <span className="sr-only">Remover Peça</span>
                     </Button>
                 </div>
               </div>
@@ -347,8 +356,8 @@ export function AddOrdemServicoForm({
             </FormItem>)}
         />
         
-        <div className="flex items-center justify-between pt-4 sticky bottom-0 bg-background/95 pb-4">
-            <div className="text-lg font-semibold">
+        <div className="flex flex-col-reverse sm:flex-row items-center justify-between pt-4 sticky bottom-0 bg-background/95 pb-4">
+            <div className="text-lg font-semibold mt-4 sm:mt-0">
                 <span>Valor Total: </span>
                 <span>{form.watch('valorTotal').toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}</span>
             </div>
