@@ -20,12 +20,20 @@ interface RevenueChartCardProps {
     data: { month: string; revenue: number }[];
 }
 
+const formatCurrency = (value: number) => {
+    if (value >= 1000) {
+        return `R$${(value / 1000).toLocaleString('pt-BR', { minimumFractionDigits: 1, maximumFractionDigits: 1 })}k`;
+    }
+    return `R$${value.toLocaleString('pt-BR')}`;
+}
+
+
 export default function RevenueChartCard({ data }: RevenueChartCardProps) {
   return (
     <Card>
       <CardHeader>
         <CardTitle>Visão Geral da Receita</CardTitle>
-        <CardDescription>Receita dos últimos 6 meses</CardDescription>
+        <CardDescription>Receita dos últimos 3 meses</CardDescription>
       </CardHeader>
       <CardContent>
         <ChartContainer config={chartConfig} className="h-[300px] w-full">
@@ -43,7 +51,7 @@ export default function RevenueChartCard({ data }: RevenueChartCardProps) {
                 fontSize={12}
                 tickLine={false}
                 axisLine={false}
-                tickFormatter={(value) => `R$${Number(value) / 1000}k`}
+                tickFormatter={(value) => formatCurrency(Number(value))}
               />
               <Tooltip
                 cursor={false}

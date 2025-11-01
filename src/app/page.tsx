@@ -90,11 +90,11 @@ export default function Home() {
         c.createdAt && toDate(c.createdAt) >= startOfMonth
     ).length;
 
-    // Revenue Chart (Last 6 months)
+    // Revenue Chart (Last 3 months)
     const monthlyRevenue: { [key: string]: number } = {};
     const monthNames = ["Jan", "Fev", "Mar", "Abr", "Mai", "Jun", "Jul", "Ago", "Set", "Out", "Nov", "Dez"];
     
-    for (let i = 5; i >= 0; i--) {
+    for (let i = 2; i >= 0; i--) {
         const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
         const monthKey = `${monthNames[d.getMonth()]}`;
         monthlyRevenue[monthKey] = 0;
@@ -104,7 +104,7 @@ export default function Home() {
         if (os.status === 'concluida' && os.dataConclusao) {
             const conclusionDate = toDate(os.dataConclusao);
             const monthDiff = (now.getFullYear() - conclusionDate.getFullYear()) * 12 + (now.getMonth() - conclusionDate.getMonth());
-            if (monthDiff >= 0 && monthDiff < 6) {
+            if (monthDiff >= 0 && monthDiff < 3) {
                  const monthKey = `${monthNames[conclusionDate.getMonth()]}`;
                  monthlyRevenue[monthKey] += os.valorTotal;
             }
