@@ -117,8 +117,13 @@ export function EditOrdemServicoForm({
     if (!firestore) return;
 
     try {
-      const ordemDocRef = doc(firestore, 'clientes', values.clienteId, 'ordensServico', ordemServico.id);
-      updateDocumentNonBlocking(ordemDocRef, values);
+      const finalValues = {
+        ...values,
+        dataConclusao: values.dataConclusao || null,
+      };
+
+      const ordemDocRef = doc(firestore, 'clientes', finalValues.clienteId, 'ordensServico', ordemServico.id);
+      updateDocumentNonBlocking(ordemDocRef, finalValues);
 
       toast({
         title: 'Sucesso!',
@@ -379,3 +384,5 @@ export function EditOrdemServicoForm({
     </Form>
   );
 }
+
+    
