@@ -16,15 +16,24 @@ service cloud.firestore {
     match /{document=**} {
       allow read, write: if false;
     }
-
-    // Allow users to read and write their own data in any top-level collection
+    
+    // Allow users to CUD their own user profile, but anyone can see the profile
+    // to get name/photo for display purposes.
+    match /users/{userId} {
+        allow read: if isSignedIn();
+        allow create: if isSignedIn() && request.auth.uid == userId;
+        allow update, delete: if isSignedIn() && isOwner(userId);
+    }
+    
+    // Allow users to read and write their own data in any top-level collection owned by them.
     match /{collection}/{docId} {
       allow read, write: if isSignedIn() && isOwner(resource.data.userId);
     }
 
-    // Special rule for 'veiculos' as a subcollection
+    // Special rule for 'veiculos' as a subcollection.
+    // Allow read/write if the user owns the parent 'cliente' document.
     match /clientes/{clienteId}/veiculos/{veiculoId} {
-        allow read, write: if isSignedIn() && isOwner(resource.data.userId);
+        allow read, write: if isSignedIn() && get(/databases/$(database)/documents/clientes/$(clienteId)).data.userId == request.auth.uid;
     }
   }
 }
