@@ -36,7 +36,7 @@ service cloud.firestore {
     // --- Generic Rules for Top-level User-Owned Collections ---
     // This applies to: clientes, orcamentos, ordensServico, pecas, servicos, notificacoes
     match /{collection}/{docId} 
-        where collection in ['clientes', 'orcamentos', 'ordensServico', 'pecas', 'servicos', 'notificacoes'] {
+        where collection in ['clientes', 'orcamentos', 'ordensServico', 'pecas', 'servicos'] {
       // Users can read/write documents if the document's 'userId' field matches their auth UID.
       // This is secure for list queries as long as the client query includes `where('userId', '==', auth.currentUser.uid)`.
       allow read, write: if isSignedIn() && isOwner(resource.data.userId);

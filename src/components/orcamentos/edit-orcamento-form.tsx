@@ -21,8 +21,8 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
-import { updateDocumentNonBlocking, addDocumentNonBlocking } from '@/firebase/non-blocking-updates';
-import { doc, collection, serverTimestamp } from 'firebase/firestore';
+import { updateDocumentNonBlocking } from '@/firebase/non-blocking-updates';
+import { doc } from 'firebase/firestore';
 import { useFirestore, useUser } from '@/firebase';
 import { useToast } from '@/hooks/use-toast';
 import type { Orcamento, Cliente, Veiculo, Peca, Servico } from '@/lib/types';
@@ -158,24 +158,6 @@ export function EditOrcamentoForm({
       };
       
       updateDocumentNonBlocking(orcamentoDocRef, orcamentoData);
-
-      // Create notification if status changed
-      if (values.status !== orcamento.status) {
-        const notificacoesRef = collection(firestore, 'notificacoes');
-        const newNotifRef = doc(notificacoesRef);
-        const notificacao = {
-          id: newNotifRef.id,
-          userId: user.uid,
-          title: `Orçamento ${values.status === 'aprovado' ? 'Aprovado' : 'Rejeitado'}`,
-          description: `O orçamento #${orcamento.id.substring(0, 4)} para o cliente ${clients.find(c=>c.id === values.clienteId)?.nome} foi ${values.status}.`,
-          type: 'orcamento',
-          referenceId: orcamento.id,
-          isRead: false,
-          createdAt: serverTimestamp(),
-        };
-        addDocumentNonBlocking(newNotifRef, notificacao);
-      }
-
 
       toast({
         title: 'Sucesso!',
@@ -472,5 +454,3 @@ export function EditOrcamentoForm({
     </Form>
   );
 }
-
-    

@@ -13,8 +13,8 @@ import {
   FormMessage,
 } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
-import { updateDocumentNonBlocking, addDocumentNonBlocking } from '@/firebase/non-blocking-updates';
-import { doc, collection, serverTimestamp } from 'firebase/firestore';
+import { updateDocumentNonBlocking } from '@/firebase/non-blocking-updates';
+import { doc } from 'firebase/firestore';
 import { useFirestore, useUser } from '@/firebase';
 import { useToast } from '@/hooks/use-toast';
 import type { Peca } from '@/lib/types';
@@ -59,24 +59,6 @@ export function EditPecaForm({ peca, setDialogOpen }: EditPecaFormProps) {
         alertaEstoqueBaixo: isEstoqueBaixo,
       };
       updateDocumentNonBlocking(pecaDocRef, pecaData);
-
-      // Check if stock was not low before and is now
-      if (isEstoqueBaixo && !peca.alertaEstoqueBaixo) {
-        const notificacoesRef = collection(firestore, 'notificacoes');
-        const newNotifRef = doc(notificacoesRef);
-        const notificacao = {
-          id: newNotifRef.id,
-          userId: user.uid,
-          title: 'Estoque Baixo',
-          description: `A peça "${values.descricao}" (${values.codigo}) atingiu o estoque mínimo.`,
-          type: 'estoque',
-          referenceId: peca.id,
-          isRead: false,
-          createdAt: serverTimestamp(),
-        };
-        addDocumentNonBlocking(newNotifRef, notificacao);
-      }
-
 
       toast({
         title: 'Sucesso!',
@@ -174,5 +156,3 @@ export function EditPecaForm({ peca, setDialogOpen }: EditPecaFormProps) {
     </Form>
   );
 }
-
-    

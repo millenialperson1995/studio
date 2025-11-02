@@ -156,16 +156,3 @@ export interface Peca {
   alertaEstoqueBaixo: boolean;
   createdAt?: any;
 }
-
-export interface Notificacao {
-  id: string;
-  userId: string;
-  title: string;
-  description: string;
-  type: 'estoque' | 'orcamento' | 'os';
-  referenceId: string; // ID of the related entity (e.g., pecaId, orcamentoId)
-  isRead: boolean;
-  createdAt: any;
-}
-
-    

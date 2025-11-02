@@ -21,11 +21,10 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
-import { updateDocumentNonBlocking, addDocumentNonBlocking } from '@/firebase/non-blocking-updates';
-import { doc, runTransaction, Transaction, serverTimestamp, getDoc, collection, getDocs, query, where } from 'firebase/firestore';
+import { doc, runTransaction, Transaction, getDoc, collection, getDocs, query, where } from 'firebase/firestore';
 import { useFirestore, useUser } from '@/firebase';
 import { useToast } from '@/hooks/use-toast';
-import type { OrdemServico, Cliente, Veiculo, Peca, Servico, ItemOrcamento } from '@/lib/types';
+import type { OrdemServico, Cliente, Veiculo, Peca, Servico } from '@/lib/types';
 import { Trash2, PlusCircle, CalendarIcon } from 'lucide-react';
 import { useState, useEffect } from 'react';
 import { Popover, PopoverContent, PopoverTrigger } from '../ui/popover';
@@ -230,23 +229,6 @@ export function EditOrdemServicoForm({
             };
 
             transaction.update(ordemDocRef, finalValues);
-
-            // Create notification if status changed
-            if (values.status !== ordemServico.status) {
-              const notificacoesRef = collection(firestore, 'notificacoes');
-              const newNotifRef = doc(notificacoesRef);
-              const notificacao = {
-                id: newNotifRef.id,
-                userId: user.uid,
-                title: `OS ${values.status.charAt(0).toUpperCase() + values.status.slice(1)}`,
-                description: `A OS #${ordemServico.id.substring(0, 4)} para ${clients.find(c=>c.id === values.clienteId)?.nome} foi atualizada para "${values.status}".`,
-                type: 'os',
-                referenceId: ordemServico.id,
-                isRead: false,
-                createdAt: serverTimestamp(),
-              };
-              addDocumentNonBlocking(newNotifRef, notificacao);
-            }
         });
 
         toast({
@@ -547,5 +529,3 @@ export function EditOrdemServicoForm({
     </Form>
   );
 }
-
-    
