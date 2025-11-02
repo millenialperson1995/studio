@@ -36,14 +36,15 @@ import {
 } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { MoreHorizontal, Pencil, Trash2, DollarSign } from 'lucide-react';
-import type { OrdemServico, Cliente, Veiculo, Peca, Servico } from '@/lib/types';
+import { MoreHorizontal, Pencil, Trash2, DollarSign, FileDown } from 'lucide-react';
+import type { OrdemServico, Cliente, Veiculo, Peca, Servico, Oficina } from '@/lib/types';
 import { deleteDocumentNonBlocking, updateDocumentNonBlocking } from '@/firebase/non-blocking-updates';
-import { doc, serverTimestamp } from 'firebase/firestore';
-import { useFirestore } from '@/firebase';
+import { doc, getDoc, serverTimestamp } from 'firebase/firestore';
+import { useFirestore, useUser } from '@/firebase';
 import { useToast } from '@/hooks/use-toast';
 import { EditOrdemServicoForm } from './edit-ordem-servico-form';
 import { format } from 'date-fns';
+import { generateOrdemServicoPDF } from '@/lib/pdf-generator';
 
 interface OrdemServicoTableProps {
   ordensServico: OrdemServico[];
@@ -88,6 +89,7 @@ export default function OrdemServicoTable({
   servicos = [],
 }: OrdemServicoTableProps) {
   const firestore = useFirestore();
+  const { user } = useUser();
   const { toast } = useToast();
 
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
@@ -96,8 +98,8 @@ export default function OrdemServicoTable({
     null
   );
 
-  const clientsMap = useMemo(() => new Map(clients.map((c) => [c.id, c.nome])), [clients]);
-  const vehiclesMap = useMemo(() => new Map(vehicles.map((v) => [v.id, `${v.fabricante} ${v.modelo} (${v.placa})`])), [vehicles]);
+  const clientsMap = useMemo(() => new Map(clients.map((c) => [c.id, c])), [clients]);
+  const vehiclesMap = useMemo(() => new Map(vehicles.map((v) => [v.id, v])), [vehicles]);
 
   const handleEditClick = (ordem: OrdemServico) => {
     setSelectedOrdem(ordem);
@@ -122,6 +124,40 @@ export default function OrdemServicoTable({
     });
   };
 
+  const handleDownloadPDF = async (ordem: OrdemServico) => {
+    if (!firestore || !user) return;
+    
+    const cliente = clientsMap.get(ordem.clienteId);
+    const veiculo = vehiclesMap.get(ordem.veiculoId);
+    
+    try {
+      const oficinaDocRef = doc(firestore, 'oficinas', user.uid);
+      const oficinaSnap = await getDoc(oficinaDocRef);
+      const oficina = oficinaSnap.exists() ? (oficinaSnap.data() as Oficina) : null;
+      
+      if (cliente && veiculo) {
+        generateOrdemServicoPDF(ordem, cliente, veiculo, oficina);
+        toast({
+          title: 'PDF Gerado',
+          description: 'O download do seu PDF foi iniciado.',
+        });
+      } else {
+        toast({
+          variant: 'destructive',
+          title: 'Erro',
+          description: 'Não foi possível encontrar os dados do cliente ou veículo para gerar o PDF.',
+        });
+      }
+    } catch (error) {
+       console.error("Error fetching workshop details for PDF: ", error);
+       toast({
+          variant: 'destructive',
+          title: 'Erro ao gerar PDF',
+          description: 'Não foi possível buscar as informações da oficina. Tente novamente.',
+        });
+    }
+  };
+
   const handleDeleteConfirm = () => {
     if (selectedOrdem && firestore) {
       // Ordens de Serviço are now in a top-level collection
@@ -143,11 +179,15 @@ export default function OrdemServicoTable({
   }
 
   const enrichedOrdens = useMemo(() => {
-    return ordensServico.map((ordem) => ({
-      ...ordem,
-      clienteNome: clientsMap.get(ordem.clienteId) || 'Desconhecido',
-      veiculoDesc: vehiclesMap.get(ordem.veiculoId) || 'Desconhecido',
-    }));
+    return ordensServico.map((ordem) => {
+      const cliente = clientsMap.get(ordem.clienteId);
+      const veiculo = vehiclesMap.get(ordem.veiculoId);
+      return {
+        ...ordem,
+        clienteNome: cliente?.nome || 'Desconhecido',
+        veiculoDesc: veiculo ? `${veiculo.fabricante} ${veiculo.modelo} (${veiculo.placa})` : 'Desconhecido',
+      }
+    });
   }, [ordensServico, clientsMap, vehiclesMap]);
 
   return (
@@ -198,6 +238,10 @@ export default function OrdemServicoTable({
                       </DropdownMenuTrigger>
                       <DropdownMenuContent align="end">
                         <DropdownMenuLabel>Ações</DropdownMenuLabel>
+                        <DropdownMenuItem onClick={() => handleDownloadPDF(ordem)}>
+                            <FileDown className="mr-2 h-4 w-4" />
+                            Baixar PDF
+                        </DropdownMenuItem>
                         <DropdownMenuItem
                           onClick={() => handleEditClick(ordem)}
                         >
