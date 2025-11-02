@@ -46,7 +46,7 @@ function ServicosContent() {
 
   if (isLoading) {
     return (
-      <main className="flex-1 space-y-6 p-4 md:p-6 lg:p-8">
+      <main className="flex-1 space-y-6 p-4 md:p-6 lg:p-8 overflow-hidden">
         <div className="flex items-center justify-between">
           <Skeleton className="h-8 w-32" />
           <Skeleton className="h-10 w-44" />
@@ -71,7 +71,7 @@ function ServicosContent() {
   }
 
   return (
-    <main className="flex-1 space-y-6 p-4 md:p-6 lg:p-8">
+    <main className="flex-1 space-y-6 p-4 md:p-6 lg:p-8 overflow-hidden">
       <div className="flex items-center justify-between">
         <h1 className="text-2xl font-semibold">Serviços</h1>
         <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
@@ -129,7 +129,7 @@ export default function ServicosPage() {
         <Sidebar><AppSidebar /></Sidebar>
         <SidebarInset>
           <AppHeader />
-          <main className="flex-1 space-y-6 p-4 md:p-6 lg:p-8">
+          <main className="flex-1 space-y-6 p-4 md:p-6 lg:p-8 overflow-hidden">
             <div className="flex items-center justify-between">
               <Skeleton className="h-8 w-32" />
               <Skeleton className="h-10 w-44" />
