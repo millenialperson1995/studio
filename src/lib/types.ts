@@ -167,27 +167,27 @@ export interface Notificacao {
     createdAt: any;
 }
 
-// AI Diagnosis Schemas
-const ItemSchema = z.object({
+
+// Schema for AI diagnosis - types only
+// The actual Zod schemas are in the flow file to prevent "use server" conflicts.
+const ItemAIType = z.object({
   codigo: z.string(),
   descricao: z.string(),
 });
 
-export const DiagnosticoMotorInputSchema = z.object({
-  sintomas: z.string().describe('Os sintomas observados no motor, descritos pelo mecânico ou cliente.'),
-  motorInfo: z.string().describe('Informações sobre o motor (ex: VW AP 1.8, Fiat Fire 1.0).'),
-  servicosDisponiveis: z.array(ItemSchema).describe('A lista de todos os serviços que a retífica oferece.'),
-  pecasDisponiveis: z.array(ItemSchema).describe('A lista de todas as peças disponíveis no catálogo.'),
-});
-export type DiagnosticoMotorInput = z.infer<typeof DiagnosticoMotorInputSchema>;
+export type DiagnosticoMotorInput = {
+  sintomas: string;
+  motorInfo: string;
+  servicosDisponiveis: z.infer<typeof ItemAIType>[];
+  pecasDisponiveis: z.infer<typeof ItemAIType>[];
+};
 
-export const DiagnosticoMotorOutputSchema = z.object({
-  diagnosticoProvavel: z.string().describe('Um resumo técnico das causas mais prováveis para os sintomas, em uma ou duas frases.'),
-  planoDeAcao: z.array(z.object({
-      passo: z.string().describe('Ação de verificação ou diagnóstico a ser tomada.'),
-      isCritico: z.boolean().describe('Indica se o passo é crítico para o diagnóstico.'),
-  })).describe('Uma lista de passos investigativos para confirmar o diagnóstico.'),
-  servicosSugeridos: z.array(ItemSchema).describe('Uma lista de serviços da retífica sugeridos para corrigir o problema. Deve usar APENAS itens da lista de `servicosDisponiveis`.'),
-  pecasSugeridas: z.array(ItemSchema).describe('Uma lista de peças que provavelmente serão necessárias. Deve usar APENAS itens da lista de `pecasDisponiveis`.'),
-});
-export type DiagnosticoMotorOutput = z.infer<typeof DiagnosticoMotorOutputSchema>;
+export type DiagnosticoMotorOutput = {
+  diagnosticoProvavel: string;
+  planoDeAcao: {
+    passo: string;
+    isCritico: boolean;
+  }[];
+  servicosSugeridos: z.infer<typeof ItemAIType>[];
+  pecasSugeridas: z.infer<typeof ItemAIType>[];
+};
