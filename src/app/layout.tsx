@@ -1,4 +1,4 @@
-import type { Metadata } from 'next';
+import type { Metadata, Viewport } from 'next';
 import { PT_Sans } from 'next/font/google';
 import './globals.css';
 import { Toaster } from '@/components/ui/toaster';
@@ -8,7 +8,12 @@ import { FirebaseClientProvider } from '@/firebase';
 export const metadata: Metadata = {
   title: 'Retífica Figueirêdo',
   description: 'Sistema de Gestão para Retíficas',
+  manifest: '/manifest.json',
 };
+
+export const viewport: Viewport = {
+  themeColor: '#111827',
+}
 
 const ptSans = PT_Sans({
   subsets: ['latin'],
