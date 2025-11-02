@@ -156,21 +156,3 @@ export interface Peca {
   alertaEstoqueBaixo: boolean;
   createdAt?: any;
 }
-
-// Tipos para o fluxo de IA, para que possam ser usados no frontend sem importar o Zod
-export type DiagnosticoMotorInput = {
-  sintomas: string;
-  motorInfo: string;
-  servicosDisponiveis: { codigo: string; descricao: string }[];
-  pecasDisponiveis: { codigo: string; descricao: string }[];
-};
-
-export type DiagnosticoMotorOutput = {
-  diagnosticoProvavel: string;
-  planoDeAcao: {
-    passo: string;
-    isCritico: boolean;
-  }[];
-  servicosSugeridos: { codigo: string; descricao: string }[];
-  pecasSugeridas: { codigo: string; descricao: string }[];
-};
