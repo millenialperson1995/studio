@@ -91,7 +91,7 @@ export default function VehicleTable({ vehicles = [], clients = [] }: VehicleTab
 
   return (
     <>
-      <div className="rounded-md border">
+      <div className="relative w-full overflow-auto rounded-md border">
         <Table>
           <TableHeader>
             <TableRow>
@@ -108,7 +108,7 @@ export default function VehicleTable({ vehicles = [], clients = [] }: VehicleTab
               enrichedVehicles.map((vehicle) => (
                 <TableRow key={vehicle.id}>
                   <TableCell className="font-medium">{vehicle.placa}</TableCell>
-                  <TableCell>{vehicle.marca} {vehicle.modelo} ({vehicle.ano})</TableCell>
+                  <TableCell>{vehicle.fabricante} {vehicle.modelo} ({vehicle.ano})</TableCell>
                   <TableCell className="hidden md:table-cell text-muted-foreground">
                     {vehicle.cliente.nome}
                   </TableCell>
@@ -171,7 +171,7 @@ export default function VehicleTable({ vehicles = [], clients = [] }: VehicleTab
       </AlertDialog>
 
       <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
-        <DialogContent className="sm:max-w-[425px]">
+        <DialogContent className="sm:max-w-md">
           <DialogHeader>
             <DialogTitle>Editar Veículo</DialogTitle>
             <DialogDescription>
@@ -189,3 +189,5 @@ export default function VehicleTable({ vehicles = [], clients = [] }: VehicleTab
     </>
   );
 }
+
+    

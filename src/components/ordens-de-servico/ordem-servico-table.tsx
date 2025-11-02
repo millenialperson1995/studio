@@ -84,7 +84,7 @@ export default function OrdemServicoTable({
   );
 
   const clientsMap = useMemo(() => new Map(clients.map((c) => [c.id, c.nome])), [clients]);
-  const vehiclesMap = useMemo(() => new Map(vehicles.map((v) => [v.id, `${v.marca} ${v.modelo} (${v.placa})`])), [vehicles]);
+  const vehiclesMap = useMemo(() => new Map(vehicles.map((v) => [v.id, `${v.fabricante} ${v.modelo} (${v.placa})`])), [vehicles]);
 
   const handleEditClick = (ordem: OrdemServico) => {
     setSelectedOrdem(ordem);
@@ -126,7 +126,7 @@ export default function OrdemServicoTable({
 
   return (
     <>
-      <div className="rounded-md border">
+      <div className="relative w-full overflow-auto rounded-md border">
         <Table>
           <TableHeader>
             <TableRow>
@@ -244,3 +244,5 @@ export default function OrdemServicoTable({
     </>
   );
 }
+
+    

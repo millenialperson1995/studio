@@ -37,10 +37,12 @@ export interface Veiculo {
   userId: string;
   clienteId: string;
   placa: string;
-  marca: string;
+  fabricante: string;
   modelo: string;
   ano: number;
-  informacoesTecnicas: string;
+  motor?: string;
+  cilindros?: string;
+  numeroChassi?: string;
   cliente?: Cliente; // Optional for denormalization
   createdAt?: any;
 }
@@ -134,3 +136,5 @@ export interface Peca {
   alertaEstoqueBaixo: boolean;
   createdAt?: any;
 }
+
+    

@@ -21,10 +21,12 @@ import type { Veiculo } from '@/lib/types';
 
 const formSchema = z.object({
   placa: z.string().min(7, 'A placa deve ter 7 caracteres.'),
-  marca: z.string().min(2, 'A marca deve ter pelo menos 2 caracteres.'),
+  fabricante: z.string().min(2, 'O fabricante deve ter pelo menos 2 caracteres.'),
   modelo: z.string().min(2, 'O modelo deve ter pelo menos 2 caracteres.'),
   ano: z.coerce.number().min(1900, 'Ano inválido.').max(new Date().getFullYear() + 1, 'Ano inválido.'),
-  informacoesTecnicas: z.string().optional(),
+  motor: z.string().optional(),
+  cilindros: z.string().optional(),
+  numeroChassi: z.string().optional(),
 });
 
 type EditVehicleFormProps = {
@@ -40,10 +42,12 @@ export function EditVehicleForm({ vehicle, setDialogOpen }: EditVehicleFormProps
     resolver: zodResolver(formSchema),
     defaultValues: {
       placa: vehicle.placa,
-      marca: vehicle.marca,
+      fabricante: vehicle.fabricante,
       modelo: vehicle.modelo,
       ano: vehicle.ano,
-      informacoesTecnicas: vehicle.informacoesTecnicas || '',
+      motor: vehicle.motor || '',
+      cilindros: vehicle.cilindros || '',
+      numeroChassi: vehicle.numeroChassi || '',
     },
   });
 
@@ -72,7 +76,7 @@ export function EditVehicleForm({ vehicle, setDialogOpen }: EditVehicleFormProps
 
   return (
     <Form {...form}>
-      <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+      <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4 max-h-[80vh] overflow-y-auto p-1 pr-4">
         <FormField
           control={form.control}
           name="placa"
@@ -80,38 +84,40 @@ export function EditVehicleForm({ vehicle, setDialogOpen }: EditVehicleFormProps
             <FormItem>
               <FormLabel>Placa</FormLabel>
               <FormControl>
-                <Input placeholder="ABC-1234" {...field} />
+                <Input placeholder="ABC1D23" {...field} />
               </FormControl>
               <FormMessage />
             </FormItem>
           )}
         />
-        <FormField
-          control={form.control}
-          name="marca"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>Marca</FormLabel>
-              <FormControl>
-                <Input placeholder="Ex: Volkswagen" {...field} />
-              </FormControl>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
-        <FormField
-          control={form.control}
-          name="modelo"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>Modelo</FormLabel>
-              <FormControl>
-                <Input placeholder="Ex: Gol" {...field} />
-              </FormControl>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <FormField
+            control={form.control}
+            name="fabricante"
+            render={({ field }) => (
+                <FormItem>
+                <FormLabel>Fabricante</FormLabel>
+                <FormControl>
+                    <Input placeholder="Ex: Volkswagen" {...field} />
+                </FormControl>
+                <FormMessage />
+                </FormItem>
+            )}
+            />
+            <FormField
+            control={form.control}
+            name="modelo"
+            render={({ field }) => (
+                <FormItem>
+                <FormLabel>Modelo</FormLabel>
+                <FormControl>
+                    <Input placeholder="Ex: Gol" {...field} />
+                </FormControl>
+                <FormMessage />
+                </FormItem>
+            )}
+            />
+        </div>
         <FormField
           control={form.control}
           name="ano"
@@ -125,14 +131,42 @@ export function EditVehicleForm({ vehicle, setDialogOpen }: EditVehicleFormProps
             </FormItem>
           )}
         />
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <FormField
+            control={form.control}
+            name="motor"
+            render={({ field }) => (
+                <FormItem>
+                <FormLabel>Motor</FormLabel>
+                <FormControl>
+                    <Input placeholder="Ex: 1.6 MSI" {...field} />
+                </FormControl>
+                <FormMessage />
+                </FormItem>
+            )}
+            />
+            <FormField
+            control={form.control}
+            name="cilindros"
+            render={({ field }) => (
+                <FormItem>
+                <FormLabel>Cilindros</FormLabel>
+                <FormControl>
+                    <Input placeholder="Ex: 4" {...field} />
+                </FormControl>
+                <FormMessage />
+                </FormItem>
+            )}
+            />
+        </div>
          <FormField
           control={form.control}
-          name="informacoesTecnicas"
+          name="numeroChassi"
           render={({ field }) => (
             <FormItem>
-              <FormLabel>Informações Técnicas (Opcional)</FormLabel>
+              <FormLabel>Número do Chassi (Opcional)</FormLabel>
               <FormControl>
-                <Input placeholder="Ex: Motor 1.6 MSI" {...field} />
+                <Input placeholder="9BW..." {...field} />
               </FormControl>
               <FormMessage />
             </FormItem>
@@ -147,3 +181,5 @@ export function EditVehicleForm({ vehicle, setDialogOpen }: EditVehicleFormProps
     </Form>
   );
 }
+
+    

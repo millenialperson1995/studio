@@ -205,7 +205,7 @@ export default function OrcamentoTable({
 
   return (
     <>
-      <div className="rounded-md border">
+      <div className="relative w-full overflow-auto rounded-md border">
         <Table>
           <TableHeader>
             <TableRow>
@@ -229,7 +229,7 @@ export default function OrcamentoTable({
                        {statusLabelMap[orcamento.status]}
                     </div>
                   </TableCell>
-                   <TableCell className="hidden md:table-cell text-muted-foreground">{orcamento.veiculo ? `${orcamento.veiculo.marca} ${orcamento.veiculo.modelo}` : 'Desconhecido'}</TableCell>
+                   <TableCell className="hidden md:table-cell text-muted-foreground">{orcamento.veiculo ? `${orcamento.veiculo.fabricante} ${orcamento.veiculo.modelo}` : 'Desconhecido'}</TableCell>
                    <TableCell className="hidden sm:table-cell text-muted-foreground">{formatDate(orcamento.dataCriacao)}</TableCell>
                   <TableCell>{`R$ ${orcamento.valorTotal.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`}</TableCell>
                    <TableCell className="hidden sm:table-cell">
@@ -337,3 +337,5 @@ export default function OrcamentoTable({
     </>
   );
 }
+
+    

@@ -28,11 +28,13 @@ import type { Cliente } from '@/lib/types';
 
 const formSchema = z.object({
   clienteId: z.string().min(1, 'Selecione um cliente.'),
-  placa: z.string().min(7, 'A placa deve ter 7 caracteres.'),
-  marca: z.string().min(2, 'A marca deve ter pelo menos 2 caracteres.'),
+  placa: z.string().min(7, 'A placa deve ter pelo menos 7 caracteres.'),
+  fabricante: z.string().min(2, 'O fabricante deve ter pelo menos 2 caracteres.'),
   modelo: z.string().min(2, 'O modelo deve ter pelo menos 2 caracteres.'),
   ano: z.coerce.number().min(1900, 'Ano inválido.').max(new Date().getFullYear() + 1, 'Ano inválido.'),
-  informacoesTecnicas: z.string().optional(),
+  motor: z.string().optional(),
+  cilindros: z.string().optional(),
+  numeroChassi: z.string().optional(),
 });
 
 type AddVehicleFormProps = {
@@ -53,10 +55,12 @@ export function AddVehicleForm({
     defaultValues: {
       clienteId: '',
       placa: '',
-      marca: '',
+      fabricante: '',
       modelo: '',
       ano: new Date().getFullYear(),
-      informacoesTecnicas: '',
+      motor: '',
+      cilindros: '',
+      numeroChassi: '',
     },
   });
 
@@ -64,14 +68,13 @@ export function AddVehicleForm({
     if (!firestore || !user) return;
 
     try {
-      // Note: Vehicles are now a subcollection of 'clientes'
       const vehiclesCollectionRef = collection(firestore, 'clientes', values.clienteId, 'veiculos');
       const newVehicleRef = doc(vehiclesCollectionRef);
 
       const vehicleData = {
         ...values,
         id: newVehicleRef.id,
-        userId: user.uid, // Associate data with the logged-in user
+        userId: user.uid,
         createdAt: serverTimestamp(),
       };
       
@@ -95,7 +98,7 @@ export function AddVehicleForm({
 
   return (
     <Form {...form}>
-      <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+      <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4 max-h-[80vh] overflow-y-auto p-1 pr-4">
         <FormField
           control={form.control}
           name="clienteId"
@@ -127,38 +130,40 @@ export function AddVehicleForm({
             <FormItem>
               <FormLabel>Placa</FormLabel>
               <FormControl>
-                <Input placeholder="ABC-1234" {...field} />
+                <Input placeholder="ABC1D23" {...field} />
               </FormControl>
               <FormMessage />
             </FormItem>
           )}
         />
-        <FormField
-          control={form.control}
-          name="marca"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>Marca</FormLabel>
-              <FormControl>
-                <Input placeholder="Ex: Volkswagen" {...field} />
-              </FormControl>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
-        <FormField
-          control={form.control}
-          name="modelo"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>Modelo</FormLabel>
-              <FormControl>
-                <Input placeholder="Ex: Gol" {...field} />
-              </FormControl>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <FormField
+            control={form.control}
+            name="fabricante"
+            render={({ field }) => (
+                <FormItem>
+                <FormLabel>Fabricante</FormLabel>
+                <FormControl>
+                    <Input placeholder="Ex: Volkswagen" {...field} />
+                </FormControl>
+                <FormMessage />
+                </FormItem>
+            )}
+            />
+            <FormField
+            control={form.control}
+            name="modelo"
+            render={({ field }) => (
+                <FormItem>
+                <FormLabel>Modelo</FormLabel>
+                <FormControl>
+                    <Input placeholder="Ex: Gol" {...field} />
+                </FormControl>
+                <FormMessage />
+                </FormItem>
+            )}
+            />
+        </div>
         <FormField
           control={form.control}
           name="ano"
@@ -172,14 +177,42 @@ export function AddVehicleForm({
             </FormItem>
           )}
         />
+         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <FormField
+            control={form.control}
+            name="motor"
+            render={({ field }) => (
+                <FormItem>
+                <FormLabel>Motor</FormLabel>
+                <FormControl>
+                    <Input placeholder="Ex: 1.6 MSI" {...field} />
+                </FormControl>
+                <FormMessage />
+                </FormItem>
+            )}
+            />
+            <FormField
+            control={form.control}
+            name="cilindros"
+            render={({ field }) => (
+                <FormItem>
+                <FormLabel>Cilindros</FormLabel>
+                <FormControl>
+                    <Input placeholder="Ex: 4" {...field} />
+                </FormControl>
+                <FormMessage />
+                </FormItem>
+            )}
+            />
+        </div>
          <FormField
           control={form.control}
-          name="informacoesTecnicas"
+          name="numeroChassi"
           render={({ field }) => (
             <FormItem>
-              <FormLabel>Informações Técnicas (Opcional)</FormLabel>
+              <FormLabel>Número do Chassi (Opcional)</FormLabel>
               <FormControl>
-                <Input placeholder="Ex: Motor 1.6 MSI" {...field} />
+                <Input placeholder="9BW..." {...field} />
               </FormControl>
               <FormMessage />
             </FormItem>
@@ -194,3 +227,5 @@ export function AddVehicleForm({
     </Form>
   );
 }
+
+    

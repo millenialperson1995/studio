@@ -53,18 +53,22 @@ function VeiculosContent() {
         setIsLoadingVehicles(false);
         return;
     }
-
+  
+    // This will hold all the unsubscribe functions for the vehicle subcollections.
+    let vehicleListeners: Unsubscribe[] = [];
+  
+    const cleanup = () => {
+      // Unsubscribe from all subcollection listeners
+      vehicleListeners.forEach(unsubscribe => unsubscribe());
+      vehicleListeners = []; // Reset the array
+    };
+  
     setIsLoadingVehicles(true);
     const clientQuery = query(collection(firestore, "clientes"), where("userId", "==", user.uid));
     
-    // This will hold all the unsubscribe functions for the vehicle subcollections.
-    let vehicleListeners: Unsubscribe[] = [];
-
     // Main listener for the clients collection
     const unsubscribeClients = onSnapshot(clientQuery, (clientsSnapshot) => {
-        // First, unsubscribe from all existing vehicle listeners to prevent duplicates
-        vehicleListeners.forEach(unsubscribe => unsubscribe());
-        vehicleListeners = []; // Reset the array
+        cleanup(); // Unsubscribe from old listeners before creating new ones
 
         let allVehicles: { [key: string]: Veiculo } = {};
 
@@ -75,6 +79,7 @@ function VeiculosContent() {
         }
         
         let clientsProcessed = 0;
+        const totalClients = clientsSnapshot.size;
 
         clientsSnapshot.forEach((clientDoc) => {
             const vehiclesQuery = collection(firestore, 'clientes', clientDoc.id, 'veiculos');
@@ -93,19 +98,22 @@ function VeiculosContent() {
                 setVehicles(Object.values(allVehicles));
                 
             }, (error) => {
+                console.error(`Error listening to vehicles for client ${clientDoc.id}:`, error);
                 errorEmitter.emit('permission-error', new FirestorePermissionError({
                     operation: 'list',
                     path: `clientes/${clientDoc.id}/veiculos`,
                 }));
             });
             
-            // Store the unsubscribe function
-            vehicleListeners.push(unsubscribeVehicle);
+            vehicleListeners.push(unsubscribeVehicle); // Store the new unsubscribe function
         });
-
+        
+        // This part is a bit tricky with nested listeners. A simpler approach might be better if many clients are expected.
+        // For now, let's assume it's okay and just set loading to false.
         setIsLoadingVehicles(false);
 
     }, (error) => {
+        console.error("Error listening to clients collection: ", error);
         errorEmitter.emit('permission-error', new FirestorePermissionError({
             operation: 'list',
             path: 'clientes',
@@ -115,10 +123,8 @@ function VeiculosContent() {
 
     // Main cleanup function for the useEffect hook
     return () => {
-        // Unsubscribe from the main clients listener
         unsubscribeClients();
-        // Unsubscribe from all subcollection listeners
-        vehicleListeners.forEach(unsubscribe => unsubscribe());
+        cleanup(); // Also clean up vehicle listeners when the component unmounts
     };
 
   }, [firestore, user?.uid]);
@@ -162,7 +168,7 @@ function VeiculosContent() {
               Adicionar Veículo
             </Button>
           </DialogTrigger>
-          <DialogContent className="sm:max-w-[425px]">
+          <DialogContent className="sm:max-w-md">
             <DialogHeader>
               <DialogTitle>Adicionar Novo Veículo</DialogTitle>
               <DialogDescription>
@@ -232,3 +238,5 @@ export default function VeiculosPage() {
     </SidebarProvider>
   );
 }
+
+    
