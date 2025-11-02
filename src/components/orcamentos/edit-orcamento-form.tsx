@@ -197,7 +197,7 @@ export function EditOrcamentoForm({
                   <SelectContent>
                     {filteredVehicles.map((vehicle) => (
                       <SelectItem key={vehicle.id} value={vehicle.id}>
-                        {`${vehicle.marca} ${vehicle.modelo} (${vehicle.placa})`}
+                        {`${vehicle.fabricante} ${vehicle.modelo} (${vehicle.placa})`}
                       </SelectItem>
                     ))}
                   </SelectContent>

@@ -63,10 +63,12 @@ export const generateOrcamentoPDF = (
   }
 
   // Veículo
-  doc.text(`Veículo: ${veiculo.marca} ${veiculo.modelo}`, vehicleInfoX, clientInfoY);
+  doc.text(`Veículo: ${veiculo.fabricante} ${veiculo.modelo}`, vehicleInfoX, clientInfoY);
   doc.text(`Placa: ${veiculo.placa}`, vehicleInfoX, clientInfoY + 5);
   doc.text(`Ano: ${veiculo.ano}`, vehicleInfoX, clientInfoY + 10);
-  doc.text(`Info. Técnicas: ${veiculo.informacoesTecnicas}`, vehicleInfoX, clientInfoY + 15);
+  const infoTecnicas = `Motor: ${veiculo.motor || 'N/A'}, Cilindros: ${veiculo.cilindros || 'N/A'}`;
+  doc.text(infoTecnicas, vehicleInfoX, clientInfoY + 15);
+
 
   doc.line(15, clientInfoY + 25, 195, clientInfoY + 25);
 
