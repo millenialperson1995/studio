@@ -13,8 +13,8 @@ import {
   FormMessage,
 } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
-import { updateDocumentNonBlocking } from '@/firebase/non-blocking-updates';
-import { doc } from 'firebase/firestore';
+import { updateDocumentNonBlocking, addDocumentNonBlocking } from '@/firebase/non-blocking-updates';
+import { doc, collection, serverTimestamp, query, where, getDocs } from 'firebase/firestore';
 import { useFirestore, useUser } from '@/firebase';
 import { useToast } from '@/hooks/use-toast';
 import type { Peca } from '@/lib/types';
@@ -59,6 +59,34 @@ export function EditPecaForm({ peca, setDialogOpen }: EditPecaFormProps) {
         alertaEstoqueBaixo: isEstoqueBaixo,
       };
       updateDocumentNonBlocking(pecaDocRef, pecaData);
+
+      // Check if low stock alert needs to be created
+      if (isEstoqueBaixo && !peca.alertaEstoqueBaixo) {
+        // First check if an unread notification for this part already exists
+        const q = query(
+            collection(firestore, 'notificacoes'),
+            where('userId', '==', user.uid),
+            where('tipo', '==', 'estoque'),
+            where('descricao', 'like', `%${peca.descricao}%`),
+            where('lida', '==', false)
+        );
+        const existingNotif = await getDocs(q);
+
+        if(existingNotif.empty) {
+            const notificacoesCollectionRef = collection(firestore, 'notificacoes');
+            const newNotificacaoRef = doc(notificacoesCollectionRef);
+            const notificacaoData = {
+                id: newNotificacaoRef.id,
+                userId: user.uid,
+                titulo: 'Estoque Baixo',
+                descricao: `A peça "${peca.descricao}" (Cód: ${peca.codigo}) atingiu o estoque mínimo.`,
+                tipo: 'estoque',
+                lida: false,
+                createdAt: serverTimestamp()
+            };
+            await addDocumentNonBlocking(newNotificacaoRef, notificacaoData);
+        }
+      }
 
       toast({
         title: 'Sucesso!',
@@ -156,3 +184,5 @@ export function EditPecaForm({ peca, setDialogOpen }: EditPecaFormProps) {
     </Form>
   );
 }
+
+    

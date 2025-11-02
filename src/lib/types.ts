@@ -156,3 +156,15 @@ export interface Peca {
   alertaEstoqueBaixo: boolean;
   createdAt?: any;
 }
+
+export interface Notificacao {
+    id: string;
+    userId: string;
+    titulo: string;
+    descricao: string;
+    tipo: 'estoque'; // Add more types later if needed
+    lida: boolean;
+    createdAt: any;
+}
+
+    
