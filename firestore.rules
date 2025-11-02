@@ -16,11 +16,6 @@ service cloud.firestore {
       return request.resource.data.userId == request.auth.uid;
     }
 
-    // --- Default deny all ---
-    match /{document=**} {
-      allow read, write: if false;
-    }
-    
     // --- User Profiles ---
     match /users/{userId} {
         allow read: if isSignedIn();
@@ -36,33 +31,39 @@ service cloud.firestore {
     // --- Top-level collections owned by a user ---
     match /clientes/{docId} {
       allow read, write: if isSignedIn() && isOwner(resource.data.userId);
+      allow create: if isSignedIn() && isCreatingOwnedResource();
     }
     
     match /orcamentos/{docId} {
       allow read, write: if isSignedIn() && isOwner(resource.data.userId);
+      allow create: if isSignedIn() && isCreatingOwnedResource();
     }
 
     match /ordensServico/{docId} {
       allow read, write: if isSignedIn() && isOwner(resource.data.userId);
+      allow create: if isSignedIn() && isCreatingOwnedResource();
     }
 
     match /pecas/{docId} {
       allow read, write: if isSignedIn() && isOwner(resource.data.userId);
+      allow create: if isSignedIn() && isCreatingOwnedResource();
     }
 
     match /servicos/{docId} {
       allow read, write: if isSignedIn() && isOwner(resource.data.userId);
+      allow create: if isSignedIn() && isCreatingOwnedResource();
     }
 
     match /notificacoes/{docId} {
       allow read, write: if isSignedIn() && isOwner(resource.data.userId);
+      allow create: if isSignedIn() && isCreatingOwnedResource();
     }
     
     // --- Subcollections ---
     // Rule for 'veiculos' as a subcollection.
-    // Allow read/write if the user owns the parent 'cliente' document.
+    // Allow read/write/create if the user owns the parent 'cliente' document.
     match /clientes/{clienteId}/veiculos/{veiculoId} {
-        allow read, write: if isSignedIn() && get(/databases/$(database)/documents/clientes/$(clienteId)).data.userId == request.auth.uid;
+        allow read, write, create: if isSignedIn() && get(/databases/$(database)/documents/clientes/$(clienteId)).data.userId == request.auth.uid;
     }
   }
 }
