@@ -42,7 +42,7 @@ export interface Veiculo {
   ano: number;
   motor?: string;
   cilindros?: string;
-  numeroChassi?: string;
+  numeroMotor?: string;
   cliente?: Cliente; // Optional for denormalization
   createdAt?: any;
 }

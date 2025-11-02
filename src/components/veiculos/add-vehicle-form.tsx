@@ -34,7 +34,7 @@ const formSchema = z.object({
   ano: z.coerce.number().min(1900, 'Ano inválido.').max(new Date().getFullYear() + 1, 'Ano inválido.'),
   motor: z.string().optional(),
   cilindros: z.string().optional(),
-  numeroChassi: z.string().optional(),
+  numeroMotor: z.string().optional(),
 });
 
 type AddVehicleFormProps = {
@@ -60,7 +60,7 @@ export function AddVehicleForm({
       ano: new Date().getFullYear(),
       motor: '',
       cilindros: '',
-      numeroChassi: '',
+      numeroMotor: '',
     },
   });
 
@@ -207,10 +207,10 @@ export function AddVehicleForm({
         </div>
          <FormField
           control={form.control}
-          name="numeroChassi"
+          name="numeroMotor"
           render={({ field }) => (
             <FormItem>
-              <FormLabel>Número do Chassi (Opcional)</FormLabel>
+              <FormLabel>Número do Motor (Opcional)</FormLabel>
               <FormControl>
                 <Input placeholder="9BW..." {...field} />
               </FormControl>
@@ -227,5 +227,3 @@ export function AddVehicleForm({
     </Form>
   );
 }
-
-    

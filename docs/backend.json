@@ -46,7 +46,7 @@
         "ano": { "type": "number", "description": "The vehicle's year of manufacture." },
         "motor": { "type": "string", "description": "Engine information, e.g., '1.6 MSI'." },
         "cilindros": { "type": "string", "description": "Number of cylinders, e.g., '4'." },
-        "numeroChassi": { "type": "string", "description": "Vehicle's chassis number (VIN)." }
+        "numeroMotor": { "type": "string", "description": "Vehicle's engine number." }
       },
       "required": ["id", "userId", "clienteId", "placa", "fabricante", "modelo", "ano"]
     },
@@ -183,5 +183,3 @@
     "reasoning": "The data model is designed for a multi-tenant SaaS application where each user (a workshop) owns their data. All primary data collections (clientes, orcamentos, ordensServico, pecas, servicos) are at the top level. Every document in these collections MUST contain a 'userId' field that links it to the owner in the '/users' collection. This structure allows for simple, scalable, and secure ownership-based security rules. For example, a rule on '/clientes/{clienteId}' will be `allow read, write: if request.auth.uid == resource.data.userId;`. This prevents any user from accessing another user's data. The 'veiculos' collection is a subcollection of 'clientes' as a vehicle is intrinsically linked to a single client."
   }
 }
-
-    

@@ -26,7 +26,7 @@ const formSchema = z.object({
   ano: z.coerce.number().min(1900, 'Ano inválido.').max(new Date().getFullYear() + 1, 'Ano inválido.'),
   motor: z.string().optional(),
   cilindros: z.string().optional(),
-  numeroChassi: z.string().optional(),
+  numeroMotor: z.string().optional(),
 });
 
 type EditVehicleFormProps = {
@@ -47,7 +47,7 @@ export function EditVehicleForm({ vehicle, setDialogOpen }: EditVehicleFormProps
       ano: vehicle.ano,
       motor: vehicle.motor || '',
       cilindros: vehicle.cilindros || '',
-      numeroChassi: vehicle.numeroChassi || '',
+      numeroMotor: vehicle.numeroMotor || '',
     },
   });
 
@@ -161,10 +161,10 @@ export function EditVehicleForm({ vehicle, setDialogOpen }: EditVehicleFormProps
         </div>
          <FormField
           control={form.control}
-          name="numeroChassi"
+          name="numeroMotor"
           render={({ field }) => (
             <FormItem>
-              <FormLabel>Número do Chassi (Opcional)</FormLabel>
+              <FormLabel>Número do Motor (Opcional)</FormLabel>
               <FormControl>
                 <Input placeholder="9BW..." {...field} />
               </FormControl>
@@ -181,5 +181,3 @@ export function EditVehicleForm({ vehicle, setDialogOpen }: EditVehicleFormProps
     </Form>
   );
 }
-
-    
