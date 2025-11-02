@@ -19,7 +19,7 @@ import {
 } from '@/components/ui/card';
 import { useCollection, useFirestore, useUser } from '@/firebase';
 import { useMemoFirebase } from '@/firebase/provider';
-import { collection, collectionGroup, query, where } from 'firebase/firestore';
+import { collection, collectionGroup, query, where, getDocs } from 'firebase/firestore';
 import type { Orcamento, Cliente, Veiculo, Servico, Peca } from '@/lib/types';
 import {
   Dialog,
@@ -37,7 +37,9 @@ import { useRouter } from 'next/navigation';
 function OrcamentosContent() {
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
   const firestore = useFirestore();
-  const { user } = useUser();
+  const { user, isUserLoading } = useUser();
+  const [vehicles, setVehicles] = useState<Veiculo[]>([]);
+  const [isLoadingVehicles, setIsLoadingVehicles] = useState(true);
 
   const orcamentosCollectionRef = useMemoFirebase(
     () => (firestore && user?.uid ? query(collection(firestore, 'orcamentos'), where('userId', '==', user.uid)) : null),
@@ -45,10 +47,6 @@ function OrcamentosContent() {
   );
   const clientesCollectionRef = useMemoFirebase(
     () => (firestore && user?.uid ? query(collection(firestore, 'clientes'), where('userId', '==', user.uid)) : null),
-    [firestore, user?.uid]
-  );
-  const veiculosQuery = useMemoFirebase(
-    () => (firestore && user?.uid ? query(collectionGroup(firestore, 'veiculos'), where('userId', '==', user.uid)) : null),
     [firestore, user?.uid]
   );
   const servicosCollectionRef = useMemoFirebase(
@@ -60,12 +58,33 @@ function OrcamentosContent() {
     [firestore, user?.uid]
   );
 
+  useEffect(() => {
+    if (isUserLoading || !firestore || !user?.uid) return;
+
+    setIsLoadingVehicles(true);
+    const fetchVehicles = async () => {
+        try {
+            const q = query(collectionGroup(firestore, 'veiculos'), where('userId', '==', user.uid));
+            const querySnapshot = await getDocs(q);
+            const allVehicles: Veiculo[] = [];
+            querySnapshot.forEach((doc) => {
+                allVehicles.push(doc.data() as Veiculo);
+            });
+            setVehicles(allVehicles);
+        } catch (error) {
+            console.error("Error fetching vehicles for orcamentos: ", error);
+        } finally {
+            setIsLoadingVehicles(false);
+        }
+    };
+    fetchVehicles();
+  }, [firestore, user?.uid, isUserLoading]);
+
+
   const { data: orcamentos, isLoading: isLoadingOrcamentos } =
     useCollection<Orcamento>(orcamentosCollectionRef);
   const { data: clients, isLoading: isLoadingClients } =
     useCollection<Cliente>(clientesCollectionRef);
-  const { data: vehicles, isLoading: isLoadingVehicles } =
-    useCollection<Veiculo>(veiculosQuery);
   const { data: servicos, isLoading: isLoadingServicos } =
     useCollection<Servico>(servicosCollectionRef);
   const { data: pecas, isLoading: isLoadingPecas } =

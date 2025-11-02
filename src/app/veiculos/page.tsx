@@ -19,7 +19,7 @@ import {
 } from '@/components/ui/card';
 import { useCollection, useFirestore, useUser } from '@/firebase';
 import { useMemoFirebase } from '@/firebase/provider';
-import { collection, collectionGroup, query, where } from 'firebase/firestore';
+import { collection, collectionGroup, query, where, getDocs, Query } from 'firebase/firestore';
 import type { Cliente, Veiculo } from '@/lib/types';
 import {
   Dialog,
@@ -37,19 +37,43 @@ import { useRouter } from 'next/navigation';
 function VeiculosContent() {
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const firestore = useFirestore();
-  const { user } = useUser();
-
-  const vehiclesQuery = useMemoFirebase(
-    () => (firestore && user?.uid ? query(collectionGroup(firestore, 'veiculos'), where('userId', '==', user.uid)) : null),
-    [firestore, user?.uid]
-  );
-  const { data: vehicles, isLoading: isLoadingVehicles } = useCollection<Veiculo>(vehiclesQuery);
+  const { user, isUserLoading } = useUser();
+  const [vehicles, setVehicles] = useState<Veiculo[]>([]);
+  const [isLoadingVehicles, setIsLoadingVehicles] = useState(true);
 
   const clientsCollectionRef = useMemoFirebase(
     () => (firestore && user?.uid ? query(collection(firestore, 'clientes'), where('userId', '==', user.uid)) : null),
     [firestore, user?.uid]
   );
   const { data: clients, isLoading: isLoadingClients } = useCollection<Cliente>(clientsCollectionRef);
+
+  useEffect(() => {
+    if (isUserLoading || !firestore || !user?.uid) {
+        // Wait for user to be loaded
+        return;
+    }
+
+    setIsLoadingVehicles(true);
+
+    const fetchVehicles = async () => {
+        try {
+            const allVehicles: Veiculo[] = [];
+            // This query is now safe because it will only run when firestore and user.uid are available
+            const q = query(collectionGroup(firestore, 'veiculos'), where('userId', '==', user.uid));
+            const querySnapshot = await getDocs(q);
+            querySnapshot.forEach((doc) => {
+                allVehicles.push(doc.data() as Veiculo);
+            });
+            setVehicles(allVehicles);
+        } catch (error) {
+            console.error("Error fetching vehicles: ", error);
+        } finally {
+            setIsLoadingVehicles(false);
+        }
+    };
+
+    fetchVehicles();
+  }, [firestore, user?.uid, isUserLoading]);
   
   const isLoading = isLoadingVehicles || isLoadingClients;
 
