@@ -83,6 +83,7 @@
         "dataEntrada": { "type": "string", "format": "date-time" },
         "dataPrevisao": { "type": "string", "format": "date-time" },
         "dataPagamento": { "type": "string", "format": "date-time" },
+        "dataConclusao": { "type": "string", "format": "date-time" },
         "mecanicoResponsavel": { "type": "string" },
         "servicos": { "type": "array", "items": { "type": "string" } },
         "pecas": { "type": "array", "items": { "type": "string" } },

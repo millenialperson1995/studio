@@ -2,6 +2,7 @@ import {
     Car,
     FileText,
     LayoutDashboard,
+    LineChart,
     List,
     Package,
     Settings,
@@ -42,6 +43,12 @@ import {
                 <SidebarMenuButton href="/" tooltip="Dashboard">
                     <LayoutDashboard />
                     {!isCollapsed && 'Dashboard'}
+                </SidebarMenuButton>
+            </SidebarMenuItem>
+             <SidebarMenuItem>
+                <SidebarMenuButton href="/relatorios" tooltip="Relatórios">
+                    <LineChart />
+                    {!isCollapsed && 'Relatórios'}
                 </SidebarMenuButton>
             </SidebarMenuItem>
             <SidebarMenuItem>
