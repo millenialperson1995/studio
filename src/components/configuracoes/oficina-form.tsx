@@ -20,9 +20,56 @@ import { useToast } from '@/hooks/use-toast';
 import type { Oficina } from '@/lib/types';
 import { useEffect } from 'react';
 
+// --- CNPJ Validation and Formatting ---
+const validateCNPJ = (cnpj: string): boolean => {
+  const cnpjClean = cnpj.replace(/[^\d]+/g, '');
+
+  if (cnpjClean === '' || cnpjClean.length !== 14) return false;
+
+  // Elimina CNPJs invalidos conhecidos
+  if (/^(\d)\1+$/.test(cnpjClean)) return false;
+
+  // Valida DVs
+  let size = cnpjClean.length - 2;
+  let numbers = cnpjClean.substring(0, size);
+  const digits = cnpjClean.substring(size);
+  let sum = 0;
+  let pos = size - 7;
+  for (let i = size; i >= 1; i--) {
+    sum += parseInt(numbers.charAt(size - i)) * pos--;
+    if (pos < 2) pos = 9;
+  }
+  let result = sum % 11 < 2 ? 0 : 11 - (sum % 11);
+  if (result !== parseInt(digits.charAt(0))) return false;
+
+  size = size + 1;
+  numbers = cnpjClean.substring(0, size);
+  sum = 0;
+  pos = size - 7;
+  for (let i = size; i >= 1; i--) {
+    sum += parseInt(numbers.charAt(size - i)) * pos--;
+    if (pos < 2) pos = 9;
+  }
+  result = sum % 11 < 2 ? 0 : 11 - (sum % 11);
+  if (result !== parseInt(digits.charAt(1))) return false;
+
+  return true;
+};
+
+const formatCNPJ = (value: string): string => {
+  if (!value) return '';
+  value = value.replace(/\D/g, ''); // Remove tudo que não é dígito
+  value = value.replace(/^(\d{2})(\d)/, '$1.$2');
+  value = value.replace(/^(\d{2})\.(\d{3})(\d)/, '$1.$2.$3');
+  value = value.replace(/\.(\d{3})(\d)/, '.$1/$2');
+  value = value.replace(/(\d{4})(\d)/, '$1-$2');
+  return value.substring(0, 18); // Limita o tamanho
+};
+
+
 const formSchema = z.object({
   nomeEmpresa: z.string().min(2, 'O nome da empresa é obrigatório.'),
-  cnpj: z.string().min(14, 'O CNPJ deve ter 14 ou 18 caracteres.').max(18, 'O CNPJ deve ter 14 ou 18 caracteres.'),
+  cnpj: z.string().refine(validateCNPJ, 'CNPJ inválido.'),
   telefone: z.string().min(10, 'O telefone deve ter pelo menos 10 dígitos.'),
   email: z.string().email('Formato de e-mail inválido.').optional().or(z.literal('')),
   cep: z.string().min(8, 'O CEP deve ter 8 ou 9 caracteres.').max(9, 'O CEP deve ter no máximo 9 caracteres.'),
@@ -52,6 +99,7 @@ export function OficinaForm({ oficina }: OficinaFormProps) {
       cidade: oficina?.cidade || '',
       uf: oficina?.uf || '',
     },
+    mode: 'onChange' // Validate on change to show CNPJ error immediately
   });
 
   const cepValue = form.watch('cep');
@@ -139,7 +187,14 @@ export function OficinaForm({ oficina }: OficinaFormProps) {
                 <FormItem>
                 <FormLabel>CNPJ</FormLabel>
                 <FormControl>
-                    <Input placeholder="00.000.000/0001-00" {...field} />
+                    <Input 
+                      placeholder="00.000.000/0001-00" 
+                      {...field}
+                      onChange={(e) => {
+                        const formatted = formatCNPJ(e.target.value);
+                        field.onChange(formatted);
+                      }}
+                    />
                 </FormControl>
                 <FormMessage />
                 </FormItem>
