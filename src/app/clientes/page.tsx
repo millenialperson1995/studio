@@ -87,7 +87,7 @@ function ClientesContent() {
               Adicionar Cliente
             </Button>
           </DialogTrigger>
-          <DialogContent className="sm:max-w-[425px]">
+          <DialogContent className="sm:max-w-md">
             <DialogHeader>
               <DialogTitle>Adicionar Novo Cliente</DialogTitle>
               <DialogDescription>
