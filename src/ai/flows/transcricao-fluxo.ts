@@ -25,7 +25,8 @@ export async function transcreverAudio(input: z.infer<typeof TranscricaoInputSch
 const transcricaoPrompt = ai.definePrompt({
   name: 'transcricaoAudioPrompt',
   input: { schema: TranscricaoInputSchema },
-  prompt: 'Transcreva o seguinte áudio para texto em português: {{media url=audioDataUri}}',
+  output: { schema: TranscricaoOutputSchema },
+  prompt: 'Transcreva o seguinte áudio para texto em português do Brasil: {{media url=audioDataUri}}',
 });
 
 const transcricaoFlow = ai.defineFlow(
@@ -35,12 +36,10 @@ const transcricaoFlow = ai.defineFlow(
     outputSchema: TranscricaoOutputSchema,
   },
   async (input) => {
-    const { text } = await ai.generate({
-      prompt: `Transcreva o seguinte áudio para texto em português.`,
-      history: [{ role: 'user', content: [{ media: { url: input.audioDataUri } }] }],
-      model: 'googleai/gemini-2.5-flash',
-    });
-
-    return { texto: text };
+    const { output } = await transcricaoPrompt(input);
+    if (!output) {
+      throw new Error('A IA não conseguiu gerar uma transcrição válida.');
+    }
+    return { texto: output.texto };
   }
 );
