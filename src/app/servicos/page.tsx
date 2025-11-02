@@ -44,6 +44,32 @@ function ServicosContent() {
   );
   const { data: servicos, isLoading, error } = useCollection<Servico>(servicosCollectionRef);
 
+  if (isLoading) {
+    return (
+      <main className="flex-1 space-y-6 p-4 md:p-6 lg:p-8">
+        <div className="flex items-center justify-between">
+          <Skeleton className="h-8 w-32" />
+          <Skeleton className="h-10 w-44" />
+        </div>
+        <Card>
+          <CardHeader>
+            <CardTitle>Lista de Serviços</CardTitle>
+            <CardDescription>
+              Gerencie os serviços prestados pela sua retífica.
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-2">
+              <Skeleton className="h-12 w-full" />
+              <Skeleton className="h-12 w-full" />
+              <Skeleton className="h-12 w-full" />
+            </div>
+          </CardContent>
+        </Card>
+      </main>
+    );
+  }
+
   return (
     <main className="flex-1 space-y-6 p-4 md:p-6 lg:p-8">
       <div className="flex items-center justify-between">
@@ -75,14 +101,7 @@ function ServicosContent() {
           </CardDescription>
         </CardHeader>
         <CardContent>
-          {isLoading && (
-            <div className="space-y-2">
-              <Skeleton className="h-12 w-full" />
-              <Skeleton className="h-12 w-full" />
-              <Skeleton className="h-12 w-full" />
-            </div>
-          )}
-          {!isLoading && <ServicoTable servicos={servicos || []} />}
+          <ServicoTable servicos={servicos || []} />
           {error && (
             <div className="text-destructive text-center p-4">
               Ocorreu um erro ao carregar os serviços. Tente novamente.

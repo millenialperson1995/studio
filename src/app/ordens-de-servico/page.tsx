@@ -17,7 +17,7 @@ import {
   CardTitle,
   CardDescription,
 } from '@/components/ui/card';
-import { useCollection, useFirestore, useUser } from '@/firebase';
+import { useCollection, useFirestore, useUser, errorEmitter, FirestorePermissionError } from '@/firebase';
 import { useMemoFirebase } from '@/firebase/provider';
 import { collection, collectionGroup, query, where, getDocs } from 'firebase/firestore';
 import type { OrdemServico, Cliente, Veiculo, Peca, Servico } from '@/lib/types';
@@ -37,7 +37,7 @@ import { useRouter } from 'next/navigation';
 function OrdensDeServicoContent() {
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
   const firestore = useFirestore();
-  const { user, isUserLoading } = useUser();
+  const { user } = useUser();
   const [vehicles, setVehicles] = useState<Veiculo[]>([]);
   const [isLoadingVehicles, setIsLoadingVehicles] = useState(true);
 
@@ -60,26 +60,33 @@ function OrdensDeServicoContent() {
   );
 
   useEffect(() => {
-    if (isUserLoading || !firestore || !user?.uid) return;
+    if (!firestore || !user?.uid) return;
 
     setIsLoadingVehicles(true);
     const fetchVehicles = async () => {
-        try {
-            const q = query(collectionGroup(firestore, 'veiculos'), where('userId', '==', user.uid));
-            const querySnapshot = await getDocs(q);
-            const allVehicles: Veiculo[] = [];
-            querySnapshot.forEach((doc) => {
-                allVehicles.push(doc.data() as Veiculo);
-            });
-            setVehicles(allVehicles);
-        } catch (error) {
-            console.error("Error fetching vehicles for service orders: ", error);
-        } finally {
-            setIsLoadingVehicles(false);
+      try {
+        const clientesSnapshot = await getDocs(query(collection(firestore, 'clientes'), where('userId', '==', user.uid)));
+        const allVehicles: Veiculo[] = [];
+        for (const clienteDoc of clientesSnapshot.docs) {
+          const veiculosSnapshot = await getDocs(collection(firestore, 'clientes', clienteDoc.id, 'veiculos'));
+          veiculosSnapshot.forEach((doc) => {
+            allVehicles.push(doc.data() as Veiculo);
+          });
         }
+        setVehicles(allVehicles);
+      } catch (error) {
+        console.error("Error fetching vehicles for service orders: ", error);
+         const contextualError = new FirestorePermissionError({
+          operation: 'list',
+          path: 'veiculos (subcollection)',
+        });
+        errorEmitter.emit('permission-error', contextualError);
+      } finally {
+        setIsLoadingVehicles(false);
+      }
     };
     fetchVehicles();
-  }, [firestore, user?.uid, isUserLoading]);
+  }, [firestore, user?.uid]);
 
 
   // Data fetching
@@ -93,6 +100,32 @@ function OrdensDeServicoContent() {
     useCollection<Peca>(pecasCollectionRef);
 
   const isLoading = isLoadingOrdens || isLoadingClients || isLoadingVehicles || isLoadingServicos || isLoadingPecas;
+
+  if (isLoading) {
+    return (
+      <main className="flex-1 space-y-6 p-4 md:p-6 lg:p-8">
+        <div className="flex items-center justify-between">
+          <Skeleton className="h-8 w-32" />
+          <Skeleton className="h-10 w-40" />
+        </div>
+        <Card>
+          <CardHeader>
+            <CardTitle>Lista de Ordens de Serviço</CardTitle>
+            <CardDescription>
+              Gerencie as ordens de serviço da sua retífica.
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-2">
+              <Skeleton className="h-12 w-full" />
+              <Skeleton className="h-12 w-full" />
+              <Skeleton className="h-12 w-full" />
+            </div>
+          </CardContent>
+        </Card>
+      </main>
+    );
+  }
 
   return (
     <main className="flex-1 space-y-6 p-4 md:p-6 lg:p-8">
@@ -131,22 +164,13 @@ function OrdensDeServicoContent() {
           </CardDescription>
         </CardHeader>
         <CardContent>
-          {isLoading && (
-            <div className="space-y-2">
-              <Skeleton className="h-12 w-full" />
-              <Skeleton className="h-12 w-full" />
-              <Skeleton className="h-12 w-full" />
-            </div>
-          )}
-          {!isLoading && (
-            <OrdemServicoTable
-              ordensServico={ordensServico || []}
-              clients={clients || []}
-              vehicles={vehicles || []}
-              pecas={pecas || []}
-              servicos={servicos || []}
-            />
-          )}
+          <OrdemServicoTable
+            ordensServico={ordensServico || []}
+            clients={clients || []}
+            vehicles={vehicles || []}
+            pecas={pecas || []}
+            servicos={servicos || []}
+          />
         </CardContent>
       </Card>
     </main>

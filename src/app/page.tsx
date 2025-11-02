@@ -23,7 +23,7 @@ import { useRouter } from 'next/navigation';
 
 function DashboardPage() {
   const firestore = useFirestore();
-  const { user } = useUser(); // No need for isUserLoading here, handled by parent
+  const { user } = useUser();
 
   // --- Data Fetching (Scoped to current user) ---
   const clientesRef = useMemoFirebase(
@@ -49,7 +49,12 @@ function DashboardPage() {
       if (!timestamp) return new Date(0);
       if (timestamp.toDate) return timestamp.toDate();
       if (timestamp instanceof Date) return timestamp;
-      return new Date(timestamp);
+      // Handle cases where timestamp might be a string or number
+      if (typeof timestamp === 'string' || typeof timestamp === 'number') {
+        const d = new Date(timestamp);
+        if (!isNaN(d.getTime())) return d;
+      }
+      return new Date(0);
   }
 
   // --- Data Processing & Calculations ---

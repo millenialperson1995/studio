@@ -44,6 +44,32 @@ function EstoqueContent() {
   );
   const { data: pecas, isLoading, error } = useCollection<Peca>(pecasCollectionRef);
 
+  if (isLoading) {
+    return (
+      <main className="flex-1 space-y-6 p-4 md:p-6 lg:p-8">
+        <div className="flex items-center justify-between">
+          <Skeleton className="h-8 w-48" />
+          <Skeleton className="h-10 w-36" />
+        </div>
+        <Card>
+          <CardHeader>
+            <CardTitle>Controle de Estoque</CardTitle>
+            <CardDescription>
+              Gerencie as peças e produtos da sua retífica.
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-2">
+              <Skeleton className="h-12 w-full" />
+              <Skeleton className="h-12 w-full" />
+              <Skeleton className="h-12 w-full" />
+            </div>
+          </CardContent>
+        </Card>
+      </main>
+    );
+  }
+
   return (
     <main className="flex-1 space-y-6 p-4 md:p-6 lg:p-8">
       <div className="flex items-center justify-between">
@@ -75,14 +101,7 @@ function EstoqueContent() {
           </CardDescription>
         </CardHeader>
         <CardContent>
-          {isLoading && (
-            <div className="space-y-2">
-              <Skeleton className="h-12 w-full" />
-              <Skeleton className="h-12 w-full" />
-              <Skeleton className="h-12 w-full" />
-            </div>
-          )}
-          {!isLoading && <PecaTable pecas={pecas || []} />}
+          <PecaTable pecas={pecas || []} />
           {error && (
             <div className="text-destructive text-center p-4">
               Ocorreu um erro ao carregar as peças. Tente novamente.

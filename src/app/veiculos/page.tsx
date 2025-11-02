@@ -17,7 +17,7 @@ import {
   CardTitle,
   CardDescription,
 } from '@/components/ui/card';
-import { useCollection, useFirestore, useUser } from '@/firebase';
+import { useCollection, useFirestore, useUser, errorEmitter, FirestorePermissionError } from '@/firebase';
 import { useMemoFirebase } from '@/firebase/provider';
 import { collection, collectionGroup, query, where, getDocs, Query } from 'firebase/firestore';
 import type { Cliente, Veiculo } from '@/lib/types';
@@ -37,7 +37,7 @@ import { useRouter } from 'next/navigation';
 function VeiculosContent() {
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const firestore = useFirestore();
-  const { user, isUserLoading } = useUser();
+  const { user } = useUser();
   const [vehicles, setVehicles] = useState<Veiculo[]>([]);
   const [isLoadingVehicles, setIsLoadingVehicles] = useState(true);
 
@@ -48,8 +48,7 @@ function VeiculosContent() {
   const { data: clients, isLoading: isLoadingClients } = useCollection<Cliente>(clientsCollectionRef);
 
   useEffect(() => {
-    if (isUserLoading || !firestore || !user?.uid) {
-        // Wait for user to be loaded
+    if (!firestore || !user?.uid) {
         return;
     }
 
@@ -58,24 +57,56 @@ function VeiculosContent() {
     const fetchVehicles = async () => {
         try {
             const allVehicles: Veiculo[] = [];
-            // This query is now safe because it will only run when firestore and user.uid are available
-            const q = query(collectionGroup(firestore, 'veiculos'), where('userId', '==', user.uid));
-            const querySnapshot = await getDocs(q);
-            querySnapshot.forEach((doc) => {
-                allVehicles.push(doc.data() as Veiculo);
-            });
+            const clientesSnapshot = await getDocs(query(collection(firestore, 'clientes'), where('userId', '==', user.uid)));
+            for (const clienteDoc of clientesSnapshot.docs) {
+              const veiculosSnapshot = await getDocs(collection(firestore, 'clientes', clienteDoc.id, 'veiculos'));
+              veiculosSnapshot.forEach((doc) => {
+                  allVehicles.push(doc.data() as Veiculo);
+              });
+            }
             setVehicles(allVehicles);
         } catch (error) {
             console.error("Error fetching vehicles: ", error);
+             const contextualError = new FirestorePermissionError({
+              operation: 'list',
+              path: 'veiculos (subcollection)',
+            });
+            errorEmitter.emit('permission-error', contextualError);
         } finally {
             setIsLoadingVehicles(false);
         }
     };
 
     fetchVehicles();
-  }, [firestore, user?.uid, isUserLoading]);
+  }, [firestore, user?.uid]);
   
   const isLoading = isLoadingVehicles || isLoadingClients;
+
+  if (isLoading) {
+    return (
+      <main className="flex-1 space-y-6 p-4 md:p-6 lg:p-8">
+        <div className="flex items-center justify-between">
+          <Skeleton className="h-8 w-32" />
+          <Skeleton className="h-10 w-40" />
+        </div>
+        <Card>
+          <CardHeader>
+            <CardTitle>Lista de Veículos</CardTitle>
+            <CardDescription>
+              Gerencie os veículos da sua retífica.
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-2">
+                <Skeleton className="h-12 w-full" />
+                <Skeleton className="h-12 w-full" />
+                <Skeleton className="h-12 w-full" />
+            </div>
+          </CardContent>
+        </Card>
+      </main>
+    );
+  }
 
   return (
     <main className="flex-1 space-y-6 p-4 md:p-6 lg:p-8">
@@ -111,14 +142,7 @@ function VeiculosContent() {
           </CardDescription>
         </CardHeader>
         <CardContent>
-          {isLoading && (
-            <div className="space-y-2">
-              <Skeleton className="h-12 w-full" />
-              <Skeleton className="h-12 w-full" />
-              <Skeleton className="h-12 w-full" />
-            </div>
-          )}
-          {!isLoading && <VehicleTable vehicles={vehicles || []} clients={clients || []} />}
+          <VehicleTable vehicles={vehicles || []} clients={clients || []} />
         </CardContent>
       </Card>
     </main>

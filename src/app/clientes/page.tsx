@@ -50,6 +50,32 @@ function ClientesContent() {
     error,
   } = useCollection<Cliente>(clientesCollectionRef);
 
+  if (isLoading) {
+     return (
+      <main className="flex-1 space-y-6 p-4 md:p-6 lg:p-8">
+        <div className="flex items-center justify-between">
+          <Skeleton className="h-8 w-32" />
+          <Skeleton className="h-10 w-40" />
+        </div>
+        <Card>
+          <CardHeader>
+            <CardTitle>Lista de Clientes</CardTitle>
+            <CardDescription>
+              Gerencie os clientes da sua retífica.
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-2">
+              <Skeleton className="h-12 w-full" />
+              <Skeleton className="h-12 w-full" />
+              <Skeleton className="h-12 w-full" />
+            </div>
+          </CardContent>
+        </Card>
+      </main>
+    );
+  }
+
   return (
     <main className="flex-1 space-y-6 p-4 md:p-6 lg:p-8">
       <div className="flex items-center justify-between">
@@ -81,14 +107,7 @@ function ClientesContent() {
           </CardDescription>
         </CardHeader>
         <CardContent>
-          {isLoading && (
-            <div className="space-y-2">
-              <Skeleton className="h-12 w-full" />
-              <Skeleton className="h-12 w-full" />
-              <Skeleton className="h-12 w-full" />
-            </div>
-          )}
-          {!isLoading && <ClientTable clients={clients || []} />}
+          <ClientTable clients={clients || []} />
           {error && (
             <div className="text-destructive text-center p-4">
               Ocorreu um erro ao carregar os clientes. Tente novamente mais tarde.
