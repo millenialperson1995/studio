@@ -80,7 +80,7 @@ const diagnosticoMotorFlow = ai.defineFlow(
     outputSchema: DiagnosticoMotorOutputSchema,
   },
   async (input) => {
-    const { output } = await diagnosticoPrompt(input);
+    const { output } = await diagnosticoPrompt(input, {model: googleAI.model('gemini-1.5-pro-latest')});
     
     if (!output) {
       throw new Error("A IA não conseguiu gerar um diagnóstico válido.");
