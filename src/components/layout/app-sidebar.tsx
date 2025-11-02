@@ -17,8 +17,9 @@ import {
     SidebarFooter,
     useSidebar,
   } from '../ui/sidebar';
-  import { Logo } from '../logo';
   import { cn } from '@/lib/utils';
+  import { Wrench as Logo } from 'lucide-react';
+
 
   const AppSidebar = () => {
     const { state } = useSidebar();

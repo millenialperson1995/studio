@@ -4,8 +4,6 @@ import jsPDF from 'jspdf';
 import 'jspdf-autotable';
 import type { Orcamento, Cliente, Veiculo } from './types';
 import { format } from 'date-fns';
-import { logoSvg } from './logo';
-
 
 // Extend the jsPDF interface to include autoTable
 declare module 'jspdf' {
@@ -25,33 +23,30 @@ export const generateOrcamentoPDF = (
   const margin = 15;
   let currentY = 20;
 
-  // 1. Header with Logo
-  const logoWidth = 30;
-  const logoHeight = 30;
-  
-  doc.addFileToVFS('logo.svg', logoSvg);
-  doc.addImage('logo.svg', 'SVG', margin, 15, logoWidth, logoHeight);
-
-  doc.setFontSize(20);
+  // 1. Header
+  doc.setFontSize(22);
   doc.setFont('helvetica', 'bold');
-  doc.text('RETÍFICA FIGUEIRÊDO', pageWidth / 2, 25, { align: 'center' });
-  
-  // Company Info moved slightly
+  doc.text('RETÍFICA FIGUEIRÊDO', pageWidth / 2, currentY, { align: 'center' });
+  currentY += 8;
+
   doc.setFontSize(10);
   doc.setFont('helvetica', 'normal');
-  const companyInfoLines = [
-    `Orçamento #: ${orcamento.id.substring(0, 8)}`,
-    'CNPJ: 33.925-338/0001-74',
-    'Av. Presidente Kennedy, 1956, loja T.: Peixinhos',
-    'CEP: 53.230-650 - OLINDA-PE',
-    'Telefone: (81) 9.8836-6701'
-  ];
-  doc.text(companyInfoLines, pageWidth - margin, 20, { align: 'right' });
+  const companyInfo = 'CNPJ: 33.925-338/0001-74 · Av. Presidente Kennedy, 1956, Peixinhos, OLINDA-PE · (81) 9.8836-6701';
+  doc.text(companyInfo, pageWidth / 2, currentY, { align: 'center' });
+  currentY += 10;
   
-  currentY = 15 + logoHeight + 10; // Position below logo
   doc.setLineWidth(0.5);
   doc.line(margin, currentY, pageWidth - margin, currentY);
   currentY += 8;
+
+  // Orçamento Info
+  doc.setFontSize(10);
+  doc.setFont('helvetica', 'bold');
+  doc.text(`Orçamento #: ${orcamento.id.substring(0, 8)}`, margin, currentY);
+  const dataValidade = orcamento.dataValidade?.toDate ? orcamento.dataValidade.toDate() : new Date();
+  doc.text(`Válido até: ${format(dataValidade, 'dd/MM/yyyy')}`, pageWidth - margin, currentY, { align: 'right' });
+  currentY += 10;
+
 
   // 2. Client and Vehicle Info
   doc.setFontSize(12);
@@ -139,10 +134,9 @@ export const generateOrcamentoPDF = (
     doc.setPage(i);
     doc.line(margin, footerY - 5, pageWidth - margin, footerY - 5);
     const dataCriacao = orcamento.dataCriacao?.toDate ? orcamento.dataCriacao.toDate() : new Date();
-    const dataValidade = orcamento.dataValidade?.toDate ? orcamento.dataValidade.toDate() : new Date();
 
     doc.setFontSize(8);
-    doc.text(`Orçamento gerado em: ${format(dataCriacao, 'dd/MM/yyyy')}. Válido até: ${format(dataValidade, 'dd/MM/yyyy')}`, margin, footerY);
+    doc.text(`Orçamento gerado em: ${format(dataCriacao, 'dd/MM/yyyy')}.`, margin, footerY);
     doc.text(`Página ${i} de ${pageCount}`, pageWidth - margin, footerY, { align: 'right' });
   }
 
