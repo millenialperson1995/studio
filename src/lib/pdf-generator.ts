@@ -4,6 +4,7 @@ import jsPDF from 'jspdf';
 import 'jspdf-autotable';
 import type { Orcamento, Cliente, Veiculo } from './types';
 import { format } from 'date-fns';
+import { logoBase64 } from './logo-base64';
 
 // Extend the jsPDF interface to include autoTable
 declare module 'jspdf' {
@@ -22,28 +23,31 @@ export const generateOrcamentoPDF = (
   const pageWidth = doc.internal.pageSize.getWidth();
   const margin = 15;
   const contentWidth = pageWidth - margin * 2;
-  let currentY = 0;
+  let currentY = 20;
 
-  // 1. Header
-  doc.setFontSize(20);
-  doc.text('Orçamento de Serviços', pageWidth / 2, 20, { align: 'center' });
-  doc.setFontSize(10);
-  doc.text(`Orçamento #: ${orcamento.id.substring(0, 8)}`, pageWidth - margin, 25, { align: 'right' });
+  // 1. Header with Logo
+  doc.addImage(logoBase64, 'PNG', margin, 15, 30, 30);
   
-  // Company Info
+  doc.setFontSize(20);
+  doc.text('Orçamento de Serviços', pageWidth / 2, 25, { align: 'center' });
+  doc.setFontSize(10);
+  doc.text(`Orçamento #: ${orcamento.id.substring(0, 8)}`, pageWidth - margin, 20, { align: 'right' });
+  
+  // Company Info (to the right of the logo)
+  const companyInfoX = margin + 40;
   doc.setFontSize(12);
   doc.setFont('helvetica', 'bold');
-  doc.text('REDÍFICA FIGUEIRÊDO', margin, 30);
+  doc.text('REDÍFICA FIGUEIRÊDO', companyInfoX, 30);
   doc.setFont('helvetica', 'normal');
   doc.setFontSize(10);
-  doc.text('CNPJ: 33.925-338/0001-74', margin, 36);
-  doc.text('Av. Presidente Kennedy, 1956, loja T.: Peixinhos', margin, 41);
-  doc.text('CEP: 53.230-650 - OLINDA-PE', margin, 46);
-  doc.text('Telefone: (81) 9.8836-6701', margin, 51);
+  doc.text('CNPJ: 33.925-338/0001-74', companyInfoX, 36);
+  doc.text('Av. Presidente Kennedy, 1956, loja T.: Peixinhos', companyInfoX, 41);
+  doc.text('CEP: 53.230-650 - OLINDA-PE', companyInfoX, 46);
+  doc.text('Telefone: (81) 9.8836-6701', companyInfoX, 51);
 
   doc.setLineWidth(0.5);
-  doc.line(margin, 56, pageWidth - margin, 56);
-  currentY = 65;
+  doc.line(margin, 60, pageWidth - margin, 60);
+  currentY = 68;
 
   // 2. Client and Vehicle Info
   doc.setFontSize(12);
