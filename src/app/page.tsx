@@ -170,43 +170,53 @@ function DashboardPage() {
     );
   }
   
+  const stats = [
+    { 
+      title: "Receita Mensal", 
+      value: `R$ ${dashboardStats.receitaMensal.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`, 
+      icon: <CircleDollarSign className="h-6 w-6 text-muted-foreground" />,
+      description: "Receita do mês atual"
+    },
+    { 
+      title: "Ordens em Andamento", 
+      value: dashboardStats.ordensAndamento.toString(),
+      icon: <Clock className="h-6 w-6 text-muted-foreground" />,
+      description: "Serviços ativos no momento"
+    },
+    { 
+      title: "Ordens Concluídas", 
+      value: dashboardStats.ordensConcluidasMes.toString(),
+      icon: <Wrench className="h-6 w-6 text-muted-foreground" />,
+      description: "Ordens finalizadas este mês"
+    },
+    { 
+      title: "Orçamentos Pendentes", 
+      value: dashboardStats.orcamentosPendentes.toString(),
+      icon: <FileText className="h-6 w-6 text-muted-foreground" />,
+      description: "Aguardando aprovação do cliente"
+    },
+    { 
+      title: "Total de Clientes", 
+      value: dashboardStats.totalClientes.toString(),
+      icon: <Users className="h-6 w-6 text-muted-foreground" />,
+      description: `${dashboardStats.novosClientesMes} novos este mês`
+    }
+  ];
 
   return (
     <main className="flex-1 space-y-6 p-4 md:p-6 lg:p-8">
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-4">
-            <StatCard
-            title="Receita Mensal"
-            value={`R$ ${dashboardStats.receitaMensal.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`}
-            icon={<CircleDollarSign className="h-6 w-6 text-muted-foreground" />}
-            description="Receita do mês atual"
-            />
-            <StatCard
-            title="Ordens em Andamento"
-            value={dashboardStats.ordensAndamento.toString()}
-            icon={<Clock className="h-6 w-6 text-muted-foreground" />}
-            description="Serviços ativos no momento"
-            />
-            <StatCard
-            title="Ordens Concluídas"
-            value={dashboardStats.ordensConcluidasMes.toString()}
-            icon={<Wrench className="h-6 w-6 text-muted-foreground" />}
-            description="Ordens finalizadas este mês"
-            />
-            <StatCard
-            title="Orçamentos Pendentes"
-            value={dashboardStats.orcamentosPendentes.toString()}
-            icon={<FileText className="h-6 w-6 text-muted-foreground" />}
-            description="Aguardando aprovação do cliente"
-            />
-            <StatCard
-            title="Total de Clientes"
-            value={dashboardStats.totalClientes.toString()}
-            icon={<Users className="h-6 w-6 text-muted-foreground" />}
-            description={`${dashboardStats.novosClientesMes} novos este mês`}
-            />
+            {stats.map(stat => (
+              <StatCard
+                key={stat.title}
+                title={stat.title}
+                value={stat.value}
+                icon={stat.icon}
+                description={stat.description}
+              />
+            ))}
         </div>
       
-
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
         <div className="lg:col-span-2">
           <RevenueChartCard data={dashboardStats.revenueData} />

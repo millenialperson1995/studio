@@ -37,8 +37,8 @@ import {
 } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { MoreHorizontal, Pencil, Trash2, FilePlus2, FileDown } from 'lucide-react';
-import type { Orcamento, Cliente, Veiculo, ItemServico, OrdemServico, Peca, Servico, Oficina, ItemOrcamento } from '@/lib/types';
+import { MoreHorizontal, Pencil, Trash2, FilePlus2, FileDown, Loader2 } from 'lucide-react';
+import type { Orcamento, Cliente, Veiculo, ItemServico, OrdemServico, Peca, Servico, Oficina, ItemOrcamento, ItemPeca } from '@/lib/types';
 import { deleteDocumentNonBlocking, addDocumentNonBlocking, updateDocumentNonBlocking } from '@/firebase/non-blocking-updates';
 import { doc, collection, serverTimestamp, getDoc, runTransaction, Transaction } from 'firebase/firestore';
 import { useFirestore, useUser } from '@/firebase';
@@ -85,6 +85,7 @@ export default function OrcamentoTable({
   const [selectedOrcamento, setSelectedOrcamento] = useState<Orcamento | null>(
     null
   );
+  const [isGeneratingOS, setIsGeneratingOS] = useState<string | null>(null);
 
   const clientsMap = useMemo(() => new Map(clients.map((c) => [c.id, c])), [clients]);
   const vehiclesMap = useMemo(() => new Map(vehicles.map((v) => [v.id, v])), [vehicles]);
@@ -149,6 +150,8 @@ export default function OrcamentoTable({
   
   const handleGenerateOS = async (orcamento: Orcamento) => {
     if (!firestore || !user || !orcamento.clienteId || orcamento.ordemServicoId) return;
+    
+    setIsGeneratingOS(orcamento.id);
 
     try {
       await runTransaction(firestore, async (transaction: Transaction) => {
@@ -156,7 +159,9 @@ export default function OrcamentoTable({
         
         // 1. Check stock availability for all parts in the transaction
         for (const itemPeca of pecasDoOrcamento) {
-          const pecaRef = doc(firestore, 'pecas', itemPeca.itemId!);
+          if (!itemPeca.itemId) throw new Error(`A peça ${itemPeca.descricao} não possui um ID de item válido.`);
+          
+          const pecaRef = doc(firestore, 'pecas', itemPeca.itemId);
           const pecaDoc = await transaction.get(pecaRef);
 
           if (!pecaDoc.exists()) {
@@ -188,6 +193,7 @@ export default function OrcamentoTable({
             .map(item => ({ descricao: item.descricao, valor: item.valorTotal }));
         
         const osPecas: ItemPeca[] = pecasDoOrcamento.map(item => ({
+            itemId: item.itemId, // Carry over the itemId
             descricao: item.descricao,
             quantidade: item.quantidade,
             valorUnitario: item.valorUnitario,
@@ -196,7 +202,7 @@ export default function OrcamentoTable({
         const osCollectionRef = collection(firestore, 'ordensServico');
         const newOSRef = doc(osCollectionRef);
 
-        const newOrdemServico = {
+        const newOrdemServico: OrdemServico = {
             id: newOSRef.id,
             userId: user.uid,
             orcamentoId: orcamento.id,
@@ -235,6 +241,8 @@ export default function OrcamentoTable({
             description: error.message || 'Não foi possível gerar a Ordem de Serviço ou reservar o estoque.',
             duration: 7000,
         });
+    } finally {
+        setIsGeneratingOS(null);
     }
   };
 
@@ -309,9 +317,13 @@ export default function OrcamentoTable({
                         {orcamento.status === 'aprovado' && (
                             <>
                                 <DropdownMenuSeparator />
-                                <DropdownMenuItem onClick={() => handleGenerateOS(orcamento)} disabled={!!orcamento.ordemServicoId}>
-                                    <FilePlus2 className="mr-2 h-4 w-4" />
-                                    {orcamento.ordemServicoId ? 'OS Gerada' : 'Gerar Ordem de Serviço'}
+                                <DropdownMenuItem onClick={() => handleGenerateOS(orcamento)} disabled={!!orcamento.ordemServicoId || isGeneratingOS === orcamento.id}>
+                                    {isGeneratingOS === orcamento.id ? (
+                                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                                    ) : (
+                                        <FilePlus2 className="mr-2 h-4 w-4" />
+                                    )}
+                                    {orcamento.ordemServicoId ? 'OS Gerada' : (isGeneratingOS === orcamento.id ? 'Gerando...' : 'Gerar Ordem de Serviço')}
                                 </DropdownMenuItem>
                             </>
                         )}

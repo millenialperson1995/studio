@@ -155,28 +155,6 @@ export function EditOrdemServicoForm({
 
   async function onSubmit(values: z.infer<typeof formSchema>) {
     if (!firestore || !user) return;
-    
-    // Final stock check before submission
-    for (const item of values.pecas) {
-        if (item.itemId) {
-            const pecaRef = doc(firestore, 'pecas', item.itemId);
-            const pecaDoc = await getDoc(pecaRef);
-            if (pecaDoc.exists()) {
-                const pecaData = pecaDoc.data() as Peca;
-                const estoqueDisponivel = pecaData.quantidadeEstoque - (pecaData.quantidadeReservada || 0);
-                if (item.quantidade > estoqueDisponivel) {
-                    toast({
-                        variant: 'destructive',
-                        title: 'Erro de Estoque',
-                        description: `A peça "${item.descricao}" não tem estoque suficiente. Ação cancelada.`,
-                        duration: 7000,
-                    });
-                    return; // Abort submission
-                }
-            }
-        }
-    }
-
 
     try {
         await runTransaction(firestore, async (transaction: Transaction) => {
@@ -190,16 +168,18 @@ export function EditOrdemServicoForm({
             // Logic for status change
             if (originalOrdem.status !== values.status) {
                 // From any status to "CONCLUÍDA"
-                if (values.status === 'concluida') {
+                if (values.status === 'concluida' && originalOrdem.status !== 'concluida') {
                     for (const itemPeca of originalOrdem.pecas) {
-                        const pecaSnapshot = await getDocs(query(collection(firestore, 'pecas'), where('userId', '==', originalOrdem.userId), where('descricao', '==', itemPeca.descricao)));
-                        if (!pecaSnapshot.empty) {
-                            const pecaDoc = pecaSnapshot.docs[0];
-                            const pecaRef = pecaDoc.ref;
+                        if (!itemPeca.itemId) continue; // Skip if no ID
+                        const pecaRef = doc(firestore, 'pecas', itemPeca.itemId);
+                        const pecaDoc = await transaction.get(pecaRef);
+                        if(pecaDoc.exists()){
                             const pecaData = pecaDoc.data() as Peca;
                             transaction.update(pecaRef, {
                                 quantidadeEstoque: pecaData.quantidadeEstoque - itemPeca.quantidade,
-                                quantidadeReservada: (pecaData.quantidadeReservada || 0) - itemPeca.quantidade
+                                quantidadeReservada: (pecaData.quantidadeReservada || 0) > 0 
+                                    ? (pecaData.quantidadeReservada || 0) - itemPeca.quantidade 
+                                    : 0
                             });
                         }
                     }
@@ -207,18 +187,21 @@ export function EditOrdemServicoForm({
                 // From "CONCLUÍDA" or "ANDAMENTO" back to "CANCELADA"
                 else if (values.status === 'cancelada' && (originalOrdem.status === 'concluida' || originalOrdem.status === 'andamento')) {
                     for (const itemPeca of originalOrdem.pecas) {
-                       const pecaSnapshot = await getDocs(query(collection(firestore, 'pecas'), where('userId', '==', originalOrdem.userId), where('descricao', '==', itemPeca.descricao)));
-                        if (!pecaSnapshot.empty) {
-                            const pecaDoc = pecaSnapshot.docs[0];
-                            const pecaRef = pecaDoc.ref;
+                       if (!itemPeca.itemId) continue; // Skip if no ID
+                       const pecaRef = doc(firestore, 'pecas', itemPeca.itemId);
+                       const pecaDoc = await transaction.get(pecaRef);
+                        if (pecaDoc.exists()) {
+                            const pecaData = pecaDoc.data() as Peca;
                              // if original status was concluida, we need to add back to stock
                             if(originalOrdem.status === 'concluida'){
                                 transaction.update(pecaRef, {
-                                    quantidadeEstoque: (pecaDoc.data().quantidadeEstoque || 0) + itemPeca.quantidade
+                                    quantidadeEstoque: pecaData.quantidadeEstoque + itemPeca.quantidade
                                 });
-                            } else { // if it was andamento, just un-reserve
-                                transaction.update(pecaRef, {
-                                    quantidadeReservada: (pecaDoc.data().quantidadeReservada || 0) - itemPeca.quantidade
+                            } else { // if it was andamento (and came from a quote), just un-reserve
+                                 transaction.update(pecaRef, {
+                                    quantidadeReservada: (pecaData.quantidadeReservada || 0) > 0 
+                                        ? (pecaData.quantidadeReservada || 0) - itemPeca.quantidade 
+                                        : 0
                                 });
                             }
                         }

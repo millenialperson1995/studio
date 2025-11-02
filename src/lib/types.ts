@@ -114,6 +114,7 @@ export interface ItemServico {
 }
 
 export interface ItemPeca {
+    itemId?: string; // ID of the part in the 'pecas' collection
     descricao: string;
     quantidade: number;
     valorUnitario: number;
