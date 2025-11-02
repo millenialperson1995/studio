@@ -7,11 +7,13 @@
 
 import { ai } from '@/ai/genkit';
 import { z } from 'zod';
+import { googleAI } from '@genkit-ai/google-genai';
+import wav from 'wav';
 
+// O input agora espera apenas os dados base64, sem o prefixo do data URI.
 const TranscricaoInputSchema = z.object({
-  audioDataUri: z.string().describe(
-    "O áudio a ser transcrito, como um data URI que deve incluir um MIME type. Ex: 'data:audio/webm;base64,...'"
-  ),
+  audioBase64: z.string().describe("Os dados de áudio a serem transcritos, como uma string base64."),
+  mimeType: z.string().describe("O MIME type do áudio, ex: 'audio/webm'"),
 });
 
 const TranscricaoOutputSchema = z.object({
@@ -22,12 +24,6 @@ export async function transcreverAudio(input: z.infer<typeof TranscricaoInputSch
   return await transcricaoFlow(input);
 }
 
-const transcricaoPrompt = ai.definePrompt({
-  name: 'transcricaoAudioPrompt',
-  input: { schema: TranscricaoInputSchema },
-  output: { schema: TranscricaoOutputSchema },
-  prompt: 'Transcreva o seguinte áudio para texto em português do Brasil: {{media url=audioDataUri}}',
-});
 
 const transcricaoFlow = ai.defineFlow(
   {
@@ -36,10 +32,37 @@ const transcricaoFlow = ai.defineFlow(
     outputSchema: TranscricaoOutputSchema,
   },
   async (input) => {
-    const { output } = await transcricaoPrompt(input);
-    if (!output) {
+    // Converte a string base64 para um buffer
+    const audioBuffer = Buffer.from(input.audioBase64, 'base64');
+    
+    // O modelo de transcrição funciona melhor com formatos como WAV.
+    // O áudio do navegador geralmente vem como webm, então convertemos.
+    // Embora a conversão para WAV não seja estritamente sempre necessária, 
+    // ela aumenta a compatibilidade e a confiabilidade.
+    // Neste caso, vamos passar o áudio diretamente, pois os modelos mais recentes
+    // têm boa compatibilidade com webm/opus. Se houver problemas, a conversão para WAV
+    // seria o próximo passo.
+
+    const { output } = await ai.generate({
+        model: googleAI.model('gemini-1.5-flash'), // Modelo capaz de processar áudio
+        prompt: `Você é um especialista em mecânica. Transcreva o áudio a seguir, que contém uma descrição de sintomas de um motor, para texto em português do Brasil. Seja o mais fiel possível ao que foi dito.`,
+        history: [
+            {
+                role: 'user',
+                content: [
+                    { media: { url: `data:${input.mimeType};base64,${input.audioBase64}` } }
+                ]
+            }
+        ],
+        output: {
+            schema: TranscricaoOutputSchema,
+        }
+    });
+
+    if (!output || !output.texto) {
       throw new Error('A IA não conseguiu gerar uma transcrição válida.');
     }
+    
     return { texto: output.texto };
   }
 );

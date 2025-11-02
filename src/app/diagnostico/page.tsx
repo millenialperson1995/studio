@@ -68,7 +68,7 @@ function DiagnosticoContent() {
     if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
       try {
         const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-        mediaRecorderRef.current = new MediaRecorder(stream);
+        mediaRecorderRef.current = new MediaRecorder(stream, { mimeType: 'audio/webm' });
         audioChunksRef.current = [];
 
         mediaRecorderRef.current.ondataavailable = (event) => {
@@ -81,9 +81,12 @@ function DiagnosticoContent() {
           const reader = new FileReader();
           reader.readAsDataURL(audioBlob);
           reader.onloadend = async () => {
-            const base64Audio = reader.result as string;
+            const base64AudioDataUri = reader.result as string;
+            // Extrai apenas os dados base64, removendo o prefixo "data:audio/webm;base64,"
+            const base64Audio = base64AudioDataUri.split(',')[1];
+
             try {
-              const result = await transcreverAudio({ audioDataUri: base64Audio });
+              const result = await transcreverAudio({ audioBase64: base64Audio, mimeType: 'audio/webm' });
               const currentSintomas = form.getValues('sintomas');
               form.setValue('sintomas', (currentSintomas ? currentSintomas + ' ' : '') + result.texto, { shouldValidate: true });
             } catch (e: any) {
