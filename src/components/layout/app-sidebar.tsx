@@ -46,6 +46,12 @@ import {
                     {!isCollapsed && 'Dashboard'}
                 </SidebarMenuButton>
             </SidebarMenuItem>
+            <SidebarMenuItem>
+                <SidebarMenuButton href="/diagnostico" tooltip="Diagnóstico IA">
+                    <Sparkles />
+                    {!isCollapsed && 'Diagnóstico IA'}
+                </SidebarMenuButton>
+            </SidebarMenuItem>
              <SidebarMenuItem>
                 <SidebarMenuButton href="/relatorios" tooltip="Relatórios">
                     <LineChart />

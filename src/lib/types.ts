@@ -156,3 +156,25 @@ export interface Peca {
   alertaEstoqueBaixo: boolean;
   createdAt?: any;
 }
+
+export interface DiagnosticoMotorInput {
+  sintomas: string;
+  codigosErro: string;
+  observacoes: string;
+}
+
+export interface DiagnosticoMotorOutput {
+    causasProvaveis: {
+        causa: string;
+        probabilidade: 'alta' | 'media' | 'baixa';
+    }[];
+    testesSugeridos: {
+        teste: string;
+        descricao: string;
+    }[];
+    pecasSugeridas: {
+        nome: string;
+        codigo?: string;
+    }[];
+    observacoesAdicionais?: string;
+}
