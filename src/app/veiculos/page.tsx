@@ -19,7 +19,7 @@ import {
 } from '@/components/ui/card';
 import { useCollection, useFirestore, useUser, errorEmitter, FirestorePermissionError } from '@/firebase';
 import { useMemoFirebase } from '@/firebase/provider';
-import { collection, collectionGroup, query, where, getDocs, Query } from 'firebase/firestore';
+import { collection, query, where, onSnapshot } from 'firebase/firestore';
 import type { Cliente, Veiculo } from '@/lib/types';
 import {
   Dialog,
@@ -49,35 +49,49 @@ function VeiculosContent() {
 
   useEffect(() => {
     if (!firestore || !user?.uid) {
+        setIsLoadingVehicles(false);
         return;
-    }
+    };
 
     setIsLoadingVehicles(true);
 
-    const fetchVehicles = async () => {
-        try {
-            const allVehicles: Veiculo[] = [];
-            const clientesSnapshot = await getDocs(query(collection(firestore, 'clientes'), where('userId', '==', user.uid)));
-            for (const clienteDoc of clientesSnapshot.docs) {
-              const veiculosSnapshot = await getDocs(collection(firestore, 'clientes', clienteDoc.id, 'veiculos'));
-              veiculosSnapshot.forEach((doc) => {
-                  allVehicles.push(doc.data() as Veiculo);
-              });
-            }
+    // Set up a real-time listener for all vehicle subcollections
+    const q = query(collection(firestore, "clientes"), where("userId", "==", user.uid));
+    const unsubscribe = onSnapshot(q, (querySnapshot) => {
+        const promises: Promise<Veiculo[]>[] = [];
+        querySnapshot.forEach((clienteDoc) => {
+            const veiculosCollectionRef = collection(firestore, 'clientes', clienteDoc.id, 'veiculos');
+            const promise = new Promise<Veiculo[]>((resolve, reject) => {
+                const unsubscribeVehicle = onSnapshot(veiculosCollectionRef, (snapshot) => {
+                    const clientVehicles = snapshot.docs.map(doc => doc.data() as Veiculo);
+                    resolve(clientVehicles);
+                }, reject);
+                // The main unsubscribe will handle this, but good practice
+            });
+            promises.push(promise);
+        });
+
+        Promise.all(promises).then((results) => {
+            const allVehicles = results.flat();
             setVehicles(allVehicles);
-        } catch (error) {
-            console.error("Error fetching vehicles: ", error);
-             const contextualError = new FirestorePermissionError({
-              operation: 'list',
-              path: 'veiculos (subcollection)',
+            setIsLoadingVehicles(false);
+        }).catch(error => {
+            console.error("Error fetching vehicles with real-time listener: ", error);
+            const contextualError = new FirestorePermissionError({
+                operation: 'list',
+                path: 'veiculos (subcollection)',
             });
             errorEmitter.emit('permission-error', contextualError);
-        } finally {
             setIsLoadingVehicles(false);
-        }
-    };
+        });
+    }, (error) => {
+        console.error("Error listening to clients collection: ", error);
+        setIsLoadingVehicles(false);
+    });
 
-    fetchVehicles();
+    // Cleanup function to unsubscribe from the listener
+    return () => unsubscribe();
+
   }, [firestore, user?.uid]);
   
   const isLoading = isLoadingVehicles || isLoadingClients;
