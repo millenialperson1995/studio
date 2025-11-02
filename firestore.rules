@@ -11,6 +11,10 @@ service cloud.firestore {
     function isOwner(userId) {
       return request.auth.uid == userId;
     }
+    
+    function isCreatingOwnedResource() {
+      return request.resource.data.userId == request.auth.uid;
+    }
 
     // Default deny all
     match /{document=**} {
@@ -27,7 +31,9 @@ service cloud.firestore {
     
     // Allow users to read and write their own data in any top-level collection owned by them.
     match /{collection}/{docId} {
-      allow read, write: if isSignedIn() && isOwner(resource.data.userId);
+      allow read: if isSignedIn() && isOwner(resource.data.userId);
+      // For create, check the incoming data. For update/delete, check existing data.
+      allow write: if isSignedIn() && (isCreatingOwnedResource() || isOwner(resource.data.userId));
     }
 
     // Special rule for 'veiculos' as a subcollection.
