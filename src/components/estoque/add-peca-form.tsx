@@ -86,7 +86,7 @@ export function AddPecaForm({ setDialogOpen }: AddPecaFormProps) {
 
   return (
     <Form {...form}>
-      <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+      <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4 max-h-[80vh] overflow-y-auto p-1 pr-4">
         <FormField name="codigo" control={form.control} render={({ field }) => (
             <FormItem>
               <FormLabel>Código da Peça</FormLabel>
@@ -111,9 +111,9 @@ export function AddPecaForm({ setDialogOpen }: AddPecaFormProps) {
             </FormItem>
           )}
         />
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+        <div className="flex flex-col sm:flex-row gap-4">
             <FormField name="quantidadeEstoque" control={form.control} render={({ field }) => (
-                <FormItem>
+                <FormItem className='flex-1'>
                 <FormLabel>Qtd. em Estoque</FormLabel>
                 <FormControl><Input type="number" placeholder="10" {...field} /></FormControl>
                 <FormMessage />
@@ -121,7 +121,7 @@ export function AddPecaForm({ setDialogOpen }: AddPecaFormProps) {
             )}
             />
             <FormField name="quantidadeMinima" control={form.control} render={({ field }) => (
-                <FormItem>
+                <FormItem className='flex-1'>
                 <FormLabel>Qtd. Mínima</FormLabel>
                 <FormControl><Input type="number" placeholder="2" {...field} /></FormControl>
                 <FormMessage />
@@ -129,9 +129,9 @@ export function AddPecaForm({ setDialogOpen }: AddPecaFormProps) {
             )}
             />
         </div>
-         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+         <div className="flex flex-col sm:flex-row gap-4">
             <FormField name="valorCompra" control={form.control} render={({ field }) => (
-                <FormItem>
+                <FormItem className='flex-1'>
                 <FormLabel>Valor de Compra (R$)</FormLabel>
                 <FormControl><Input type="number" placeholder="80.50" {...field} /></FormControl>
                 <FormMessage />
@@ -139,7 +139,7 @@ export function AddPecaForm({ setDialogOpen }: AddPecaFormProps) {
             )}
             />
             <FormField name="valorVenda" control={form.control} render={({ field }) => (
-                <FormItem>
+                <FormItem className='flex-1'>
                 <FormLabel>Valor de Venda (R$)</FormLabel>
                 <FormControl><Input type="number" placeholder="120.00" {...field} /></FormControl>
                 <FormMessage />
