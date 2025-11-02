@@ -19,7 +19,7 @@ import {
 } from '@/components/ui/card';
 import { useCollection, useFirestore, useUser, errorEmitter, FirestorePermissionError } from '@/firebase';
 import { useMemoFirebase } from '@/firebase/provider';
-import { collection, query, where, onSnapshot } from 'firebase/firestore';
+import { collection, query, where, onSnapshot, Unsubscribe } from 'firebase/firestore';
 import type { Cliente, Veiculo } from '@/lib/types';
 import {
   Dialog,
@@ -55,42 +55,65 @@ function VeiculosContent() {
 
     setIsLoadingVehicles(true);
 
-    // Set up a real-time listener for all vehicle subcollections
-    const q = query(collection(firestore, "clientes"), where("userId", "==", user.uid));
-    const unsubscribe = onSnapshot(q, (querySnapshot) => {
-        const promises: Promise<Veiculo[]>[] = [];
-        querySnapshot.forEach((clienteDoc) => {
-            const veiculosCollectionRef = collection(firestore, 'clientes', clienteDoc.id, 'veiculos');
-            const promise = new Promise<Veiculo[]>((resolve, reject) => {
-                const unsubscribeVehicle = onSnapshot(veiculosCollectionRef, (snapshot) => {
-                    const clientVehicles = snapshot.docs.map(doc => doc.data() as Veiculo);
-                    resolve(clientVehicles);
-                }, reject);
-                // The main unsubscribe will handle this, but good practice
+    const clientQuery = query(collection(firestore, "clientes"), where("userId", "==", user.uid));
+    
+    // Main listener for the clients collection
+    const unsubscribeClients = onSnapshot(clientQuery, (clientsSnapshot) => {
+        const vehicleListeners: Unsubscribe[] = [];
+        let allVehicles: { [key: string]: Veiculo } = {};
+
+        if (clientsSnapshot.empty) {
+            setVehicles([]);
+            setIsLoadingVehicles(false);
+            return;
+        }
+
+        // Keep track of how many sub-listeners have loaded
+        let loadedCount = 0;
+
+        clientsSnapshot.forEach((clientDoc) => {
+            const vehiclesQuery = collection(firestore, 'clientes', clientDoc.id, 'veiculos');
+            
+            const unsubscribeVehicle = onSnapshot(vehiclesQuery, (vehiclesSnapshot) => {
+                // Update the state with vehicles from this specific client
+                vehiclesSnapshot.docChanges().forEach((change) => {
+                    if (change.type === "removed") {
+                        delete allVehicles[change.doc.id];
+                    } else {
+                        allVehicles[change.doc.id] = change.doc.data() as Veiculo;
+                    }
+                });
+
+                setVehicles(Object.values(allVehicles));
+
+            }, (error) => {
+                console.error(`Error listening to vehicles for client ${clientDoc.id}:`, error);
+                const contextualError = new FirestorePermissionError({
+                    operation: 'list',
+                    path: `clientes/${clientDoc.id}/veiculos`,
+                });
+                errorEmitter.emit('permission-error', contextualError);
             });
-            promises.push(promise);
+
+            vehicleListeners.push(unsubscribeVehicle);
         });
 
-        Promise.all(promises).then((results) => {
-            const allVehicles = results.flat();
-            setVehicles(allVehicles);
-            setIsLoadingVehicles(false);
-        }).catch(error => {
-            console.error("Error fetching vehicles with real-time listener: ", error);
-            const contextualError = new FirestorePermissionError({
-                operation: 'list',
-                path: 'veiculos (subcollection)',
-            });
-            errorEmitter.emit('permission-error', contextualError);
-            setIsLoadingVehicles(false);
-        });
+        // This ensures the loading state is only turned off after all initial reads are attempted.
+        // The real-time updates will continue to flow in.
+        setIsLoadingVehicles(false);
+
+
+        // Return a cleanup function that unsubscribes from all vehicle listeners
+        return () => {
+            vehicleListeners.forEach(unsubscribe => unsubscribe());
+        };
     }, (error) => {
         console.error("Error listening to clients collection: ", error);
         setIsLoadingVehicles(false);
     });
 
-    // Cleanup function to unsubscribe from the listener
-    return () => unsubscribe();
+    // Cleanup function to unsubscribe from the main client listener
+    return () => unsubscribeClients();
 
   }, [firestore, user?.uid]);
   
