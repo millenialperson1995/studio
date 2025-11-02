@@ -22,7 +22,7 @@ import {
 } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
 import { updateDocumentNonBlocking } from '@/firebase/non-blocking-updates';
-import { doc } from 'firebase/firestore';
+import { doc, getDoc } from 'firebase/firestore';
 import { useFirestore, useUser } from '@/firebase';
 import { useToast } from '@/hooks/use-toast';
 import type { Orcamento, Cliente, Veiculo, Peca, Servico } from '@/lib/types';
@@ -113,11 +113,16 @@ export function EditOrcamentoForm({
   const itensValues = form.watch('itens');
 
   useEffect(() => {
-    const total = itensValues.reduce((sum, item) => {
-       const valorTotalItem = (item.quantidade || 0) * (item.valorUnitario || 0);
-       return sum + valorTotalItem;
-    }, 0);
-    form.setValue('valorTotal', total, { shouldDirty: true, shouldValidate: true });
+    const updatedItens = itensValues.map(item => ({
+      ...item,
+      valorTotal: (item.quantidade || 0) * (item.valorUnitario || 0),
+    }));
+
+    const total = updatedItens.reduce((sum, item) => sum + item.valorTotal, 0);
+
+    if (form.getValues('valorTotal') !== total) {
+      form.setValue('valorTotal', total, { shouldDirty: true, shouldValidate: true });
+    }
   }, [itensValues, form]);
 
 
@@ -132,7 +137,7 @@ export function EditOrcamentoForm({
     for (const item of values.itens) {
         if (item.tipo === 'peca' && item.itemId) {
             const pecaRef = doc(firestore, 'pecas', item.itemId);
-            const pecaDoc = await doc(pecaRef).get();
+            const pecaDoc = await getDoc(pecaRef);
             if (pecaDoc.exists()) {
                 const pecaData = pecaDoc.data() as Peca;
                 const estoqueDisponivel = pecaData.quantidadeEstoque - (pecaData.quantidadeReservada || 0);
