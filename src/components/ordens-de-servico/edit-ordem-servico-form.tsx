@@ -22,10 +22,10 @@ import {
 } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
 import { updateDocumentNonBlocking } from '@/firebase/non-blocking-updates';
-import { doc, serverTimestamp } from 'firebase/firestore';
+import { doc, runTransaction, Transaction, serverTimestamp, getDoc, collection } from 'firebase/firestore';
 import { useFirestore } from '@/firebase';
 import { useToast } from '@/hooks/use-toast';
-import type { OrdemServico, Cliente, Veiculo, Peca, Servico } from '@/lib/types';
+import type { OrdemServico, Cliente, Veiculo, Peca, Servico, ItemOrcamento } from '@/lib/types';
 import { Trash2, PlusCircle, CalendarIcon } from 'lucide-react';
 import { useState, useEffect } from 'react';
 import { Popover, PopoverContent, PopoverTrigger } from '../ui/popover';
@@ -40,6 +40,7 @@ const servicoSchema = z.object({
 });
 
 const pecaSchema = z.object({
+  itemId: z.string().optional(),
   descricao: z.string().min(1, 'A descrição é obrigatória.'),
   quantidade: z.coerce.number().min(0.1, 'A quantidade deve ser maior que 0.'),
   valorUnitario: z.coerce.number().min(0, 'O valor deve ser positivo.'),
@@ -132,28 +133,77 @@ export function EditOrdemServicoForm({
     if (!firestore) return;
 
     try {
-      const finalValues = {
-        ...values,
-        dataConclusao: values.status === 'concluida' ? (values.dataConclusao || new Date()) : null,
-        dataPagamento: values.statusPagamento === 'Pago' ? (values.dataPagamento || new Date()) : null,
-      };
+        await runTransaction(firestore, async (transaction: Transaction) => {
+            const ordemDocRef = doc(firestore, 'ordensServico', ordemServico.id);
+            const originalOrdemDoc = await transaction.get(ordemDocRef);
+            if (!originalOrdemDoc.exists()) {
+                throw new Error("Ordem de serviço não encontrada.");
+            }
+            const originalOrdem = originalOrdemDoc.data() as OrdemServico;
 
-      const ordemDocRef = doc(firestore, 'ordensServico', ordemServico.id);
-      updateDocumentNonBlocking(ordemDocRef, finalValues);
+            // Logic for status change
+            if (originalOrdem.status !== values.status) {
+                // From any status to "CONCLUÍDA"
+                if (values.status === 'concluida') {
+                    for (const itemPeca of originalOrdem.pecas) {
+                        const pecaSnapshot = await getDocs(query(collection(firestore, 'pecas'), where('userId', '==', originalOrdem.userId), where('descricao', '==', itemPeca.descricao)));
+                        if (!pecaSnapshot.empty) {
+                            const pecaDoc = pecaSnapshot.docs[0];
+                            const pecaRef = pecaDoc.ref;
+                            const pecaData = pecaDoc.data() as Peca;
+                            transaction.update(pecaRef, {
+                                quantidadeEstoque: pecaData.quantidadeEstoque - itemPeca.quantidade,
+                                quantidadeReservada: (pecaData.quantidadeReservada || 0) - itemPeca.quantidade
+                            });
+                        }
+                    }
+                }
+                // From "CONCLUÍDA" or "ANDAMENTO" back to "CANCELADA"
+                else if (values.status === 'cancelada' && (originalOrdem.status === 'concluida' || originalOrdem.status === 'andamento')) {
+                    for (const itemPeca of originalOrdem.pecas) {
+                       const pecaSnapshot = await getDocs(query(collection(firestore, 'pecas'), where('userId', '==', originalOrdem.userId), where('descricao', '==', itemPeca.descricao)));
+                        if (!pecaSnapshot.empty) {
+                            const pecaDoc = pecaSnapshot.docs[0];
+                            const pecaRef = pecaDoc.ref;
+                             // if original status was concluida, we need to add back to stock
+                            if(originalOrdem.status === 'concluida'){
+                                transaction.update(pecaRef, {
+                                    quantidadeEstoque: (pecaDoc.data().quantidadeEstoque || 0) + itemPeca.quantidade
+                                });
+                            } else { // if it was andamento, just un-reserve
+                                transaction.update(pecaRef, {
+                                    quantidadeReservada: (pecaDoc.data().quantidadeReservada || 0) - itemPeca.quantidade
+                                });
+                            }
+                        }
+                    }
+                }
+            }
 
-      toast({
-        title: 'Sucesso!',
-        description: 'Ordem de Serviço atualizada com sucesso.',
-      });
-      form.reset();
-      setDialogOpen(false);
-    } catch (error) {
-      console.error('Error updating document: ', error);
-      toast({
-        variant: 'destructive',
-        title: 'Erro',
-        description: 'Não foi possível atualizar a Ordem de Serviço. Tente novamente.',
-      });
+            const finalValues = {
+                ...values,
+                dataConclusao: values.status === 'concluida' ? (values.dataConclusao || new Date()) : null,
+                dataPagamento: values.statusPagamento === 'Pago' ? (values.dataPagamento || new Date()) : null,
+            };
+
+            transaction.update(ordemDocRef, finalValues);
+        });
+
+        toast({
+            title: 'Sucesso!',
+            description: 'Ordem de Serviço atualizada com sucesso.',
+        });
+        form.reset();
+        setDialogOpen(false);
+
+    } catch (error: any) {
+        console.error('Error updating service order: ', error);
+        toast({
+            variant: 'destructive',
+            title: 'Erro',
+            description: error.message || 'Não foi possível atualizar a Ordem de Serviço. Tente novamente.',
+            duration: 7000,
+        });
     }
   }
 
@@ -167,6 +217,7 @@ export function EditOrdemServicoForm({
     } else { // itemType === 'pecas'
         updatePeca(index, {
             ...form.getValues(`pecas.${index}`),
+            itemId: item.id,
             descricao: item.descricao,
             valorUnitario: (item as Peca).valorVenda,
             quantidade: 1,

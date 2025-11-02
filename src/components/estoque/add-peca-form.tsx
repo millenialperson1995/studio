@@ -61,6 +61,7 @@ export function AddPecaForm({ setDialogOpen }: AddPecaFormProps) {
         ...values,
         id: newPecaRef.id,
         userId: user.uid,
+        quantidadeReservada: 0, // Initialize reservation field
         alertaEstoqueBaixo: values.quantidadeEstoque <= values.quantidadeMinima,
         createdAt: serverTimestamp(),
       };

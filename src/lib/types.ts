@@ -1,3 +1,7 @@
+'use client';
+
+import { Cliente } from './types';
+
 export interface UserProfile {
   uid: string;
   email: string;
@@ -144,6 +148,7 @@ export interface Peca {
   codigo: string;
   descricao: string;
   quantidadeEstoque: number;
+  quantidadeReservada: number;
   quantidadeMinima: number;
   valorCompra: number;
   valorVenda: number;
@@ -151,5 +156,3 @@ export interface Peca {
   alertaEstoqueBaixo: boolean;
   createdAt?: any;
 }
-
-    

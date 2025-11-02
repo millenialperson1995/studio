@@ -40,6 +40,7 @@ const servicoSchema = z.object({
 });
 
 const pecaSchema = z.object({
+  itemId: z.string().optional(),
   descricao: z.string().min(1, 'A descrição é obrigatória.'),
   quantidade: z.coerce.number().min(0.1, 'A quantidade deve ser maior que 0.'),
   valorUnitario: z.coerce.number().min(0, 'O valor deve ser positivo.'),
@@ -156,6 +157,7 @@ export function AddOrdemServicoForm({
     } else { // itemType === 'pecas'
         updatePeca(index, {
             ...form.getValues(`pecas.${index}`),
+            itemId: item.id,
             descricao: item.descricao,
             valorUnitario: (item as Peca).valorVenda,
             quantidade: 1,
@@ -368,7 +370,7 @@ export function AddOrdemServicoForm({
                 </div>
               </div>
           ))}
-          <Button type="button" variant="outline" size="sm" onClick={() => appendPeca({ descricao: '', quantidade: 1, valorUnitario: 0 })}>
+          <Button type="button" variant="outline" size="sm" onClick={() => appendPeca({ descricao: '', quantidade: 1, valorUnitario: 0, itemId: '' })}>
             <PlusCircle className="mr-2 h-4 w-4" /> Adicionar Peça
           </Button>
         </div>

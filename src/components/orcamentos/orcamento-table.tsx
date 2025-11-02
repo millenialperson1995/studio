@@ -38,9 +38,9 @@ import {
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { MoreHorizontal, Pencil, Trash2, FilePlus2, FileDown } from 'lucide-react';
-import type { Orcamento, Cliente, Veiculo, ItemServico, OrdemServico, Peca, Servico, ItemPeca, Oficina } from '@/lib/types';
+import type { Orcamento, Cliente, Veiculo, ItemServico, OrdemServico, Peca, Servico, ItemPeca, Oficina, ItemOrcamento } from '@/lib/types';
 import { deleteDocumentNonBlocking, addDocumentNonBlocking, updateDocumentNonBlocking } from '@/firebase/non-blocking-updates';
-import { doc, collection, serverTimestamp, getDoc } from 'firebase/firestore';
+import { doc, collection, serverTimestamp, getDoc, runTransaction, Transaction } from 'firebase/firestore';
 import { useFirestore, useUser } from '@/firebase';
 import { useToast } from '@/hooks/use-toast';
 import { EditOrcamentoForm } from './edit-orcamento-form';
@@ -148,60 +148,92 @@ export default function OrcamentoTable({
   };
   
   const handleGenerateOS = async (orcamento: Orcamento) => {
-    if (!firestore || !orcamento.clienteId || orcamento.ordemServicoId || !user) return;
+    if (!firestore || !user || !orcamento.clienteId || orcamento.ordemServicoId) return;
 
-    const osServicos: ItemServico[] = orcamento.itens
-        .filter(item => item.tipo === 'servico')
-        .map(item => ({
-            descricao: item.descricao,
-            valor: item.valorTotal,
-        }));
-    
-    const osPecas: ItemPeca[] = orcamento.itens
-        .filter(item => item.tipo === 'peca')
-        .map(item => ({
+    try {
+      await runTransaction(firestore, async (transaction: Transaction) => {
+        const pecasDoOrcamento = orcamento.itens.filter(item => item.tipo === 'peca' && item.itemId);
+        
+        // 1. Check stock availability for all parts in the transaction
+        for (const itemPeca of pecasDoOrcamento) {
+          const pecaRef = doc(firestore, 'pecas', itemPeca.itemId!);
+          const pecaDoc = await transaction.get(pecaRef);
+
+          if (!pecaDoc.exists()) {
+            throw new Error(`A peça ${itemPeca.descricao} não foi encontrada no estoque.`);
+          }
+
+          const pecaData = pecaDoc.data() as Peca;
+          const estoqueDisponivel = pecaData.quantidadeEstoque - (pecaData.quantidadeReservada || 0);
+
+          if (estoqueDisponivel < itemPeca.quantidade) {
+            throw new Error(`Estoque insuficiente para a peça: ${itemPeca.descricao}. Disponível: ${estoqueDisponivel}, Solicitado: ${itemPeca.quantidade}`);
+          }
+        }
+        
+        // 2. Reserve all parts
+        for (const itemPeca of pecasDoOrcamento) {
+            const pecaRef = doc(firestore, 'pecas', itemPeca.itemId!);
+            const pecaDoc = await transaction.get(pecaRef); // Re-get inside transaction for safety
+            const pecaData = pecaDoc.data() as Peca;
+            
+            transaction.update(pecaRef, {
+                quantidadeReservada: (pecaData.quantidadeReservada || 0) + itemPeca.quantidade
+            });
+        }
+        
+        // 3. Create the Service Order
+        const osServicos: ItemServico[] = orcamento.itens
+            .filter(item => item.tipo === 'servico')
+            .map(item => ({ descricao: item.descricao, valor: item.valorTotal }));
+        
+        const osPecas: ItemPeca[] = pecasDoOrcamento.map(item => ({
             descricao: item.descricao,
             quantidade: item.quantidade,
             valorUnitario: item.valorUnitario,
         }));
+        
+        const osCollectionRef = collection(firestore, 'ordensServico');
+        const newOSRef = doc(osCollectionRef);
 
-    const osCollectionRef = collection(firestore, 'ordensServico');
-    const newOSRef = doc(osCollectionRef);
+        const newOrdemServico = {
+            id: newOSRef.id,
+            userId: user.uid,
+            orcamentoId: orcamento.id,
+            clienteId: orcamento.clienteId,
+            veiculoId: orcamento.veiculoId,
+            status: 'pendente',
+            statusPagamento: 'Pendente',
+            dataEntrada: serverTimestamp(),
+            dataPrevisao: new Date(new Date().setDate(new Date().getDate() + 7)),
+            mecanicoResponsavel: 'A definir',
+            servicos: osServicos,
+            pecas: osPecas,
+            valorTotal: orcamento.valorTotal,
+            observacoes: orcamento.observacoes,
+            createdAt: serverTimestamp(),
+        };
 
-    const newOrdemServico: Omit<OrdemServico, 'id' | 'cliente' | 'veiculo'| 'createdAt'> = {
-        id: newOSRef.id,
-        userId: user.uid,
-        orcamentoId: orcamento.id,
-        clienteId: orcamento.clienteId,
-        veiculoId: orcamento.veiculoId,
-        status: 'pendente',
-        statusPagamento: 'Pendente',
-        dataEntrada: serverTimestamp(),
-        dataPrevisao: new Date(new Date().setDate(new Date().getDate() + 7)), // Default to 7 days from now
-        mecanicoResponsavel: 'A definir',
-        servicos: osServicos,
-        pecas: osPecas,
-        valorTotal: orcamento.valorTotal,
-        observacoes: orcamento.observacoes,
-    };
-    
-    try {
-        await addDocumentNonBlocking(newOSRef, newOrdemServico);
+        transaction.set(newOSRef, newOrdemServico);
 
+        // 4. Update the quote status
         const orcamentoDocRef = doc(firestore, 'orcamentos', orcamento.id);
-        updateDocumentNonBlocking(orcamentoDocRef, { ordemServicoId: newOSRef.id, status: 'aprovado' });
-       
-        toast({
-            title: 'Sucesso!',
-            description: 'Ordem de Serviço gerada a partir do orçamento.',
-        });
-        router.push('/ordens-de-servico');
-    } catch (error) {
-        console.error("Error generating service order: ", error);
+        transaction.update(orcamentoDocRef, { ordemServicoId: newOSRef.id, status: 'aprovado' });
+      });
+
+      toast({
+        title: 'Sucesso!',
+        description: 'Ordem de Serviço gerada e estoque reservado.',
+      });
+      router.push('/ordens-de-servico');
+
+    } catch (error: any) {
+        console.error("Erro ao gerar OS e reservar estoque: ", error);
         toast({
             variant: 'destructive',
-            title: 'Erro',
-            description: 'Não foi possível gerar a Ordem de Serviço.',
+            title: 'Erro ao Gerar OS',
+            description: error.message || 'Não foi possível gerar a Ordem de Serviço ou reservar o estoque.',
+            duration: 7000,
         });
     }
   };
@@ -354,6 +386,3 @@ export default function OrcamentoTable({
     </>
   );
 }
-
-    
-    

@@ -140,14 +140,15 @@
         "userId": { "type": "string", "description": "The ID of the user (workshop owner) who owns this part." },
         "codigo": { "type": "string" },
         "descricao": { "type": "string" },
-        "quantidadeEstoque": { "type": "number" },
+        "quantidadeEstoque": { "type": "number", "description": "The physical quantity of the part in stock." },
+        "quantidadeReservada": { "type": "number", "description": "The quantity of the part reserved for approved quotes." },
         "quantidadeMinima": { "type": "number" },
         "valorCompra": { "type": "number" },
         "valorVenda": { "type": "number" },
         "fornecedor": { "type": "string" },
         "alertaEstoqueBaixo": { "type": "boolean" }
       },
-      "required": ["id", "userId", "codigo", "descricao", "quantidadeEstoque", "valorVenda", "fornecedor", "quantidadeMinima"]
+      "required": ["id", "userId", "codigo", "descricao", "quantidadeEstoque", "quantidadeReservada", "valorVenda", "fornecedor", "quantidadeMinima"]
     },
     "Servico": {
       "title": "Servico",

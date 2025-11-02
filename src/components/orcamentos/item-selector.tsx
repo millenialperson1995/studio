@@ -20,6 +20,7 @@ import {
   PopoverTrigger,
 } from "@/components/ui/popover"
 import type { Peca, Servico } from "@/lib/types"
+import { useToast } from "@/hooks/use-toast"
 
 interface ItemSelectorProps {
     pecas: Peca[];
@@ -29,9 +30,22 @@ interface ItemSelectorProps {
 }
 
 export function ItemSelector({ pecas, servicos, onSelect, trigger }: ItemSelectorProps) {
-  const [open, setOpen] = React.useState(false)
+  const [open, setOpen] = React.useState(false);
+  const { toast } = useToast();
 
   const handleSelect = (item: Peca | Servico, type: 'peca' | 'servico') => {
+    if (type === 'peca') {
+        const peca = item as Peca;
+        const estoqueDisponivel = peca.quantidadeEstoque - (peca.quantidadeReservada || 0);
+        if (estoqueDisponivel <= 0) {
+            toast({
+                variant: 'destructive',
+                title: 'Estoque Indisponível',
+                description: `A peça "${peca.descricao}" não tem estoque disponível.`,
+            });
+            return;
+        }
+    }
     onSelect(item, type);
     setOpen(false)
   }
@@ -60,16 +74,27 @@ export function ItemSelector({ pecas, servicos, onSelect, trigger }: ItemSelecto
             </CommandGroup>
             <CommandSeparator />
             <CommandGroup heading="Peças">
-              {pecas.map((peca) => (
-                <CommandItem
-                  key={`peca-${peca.id}`}
-                  value={peca.descricao}
-                  onSelect={() => handleSelect(peca, 'peca')}
-                >
-                  <Package className="mr-2 h-4 w-4" />
-                  {peca.descricao}
-                </CommandItem>
-              ))}
+              {pecas.map((peca) => {
+                const estoqueDisponivel = peca.quantidadeEstoque - (peca.quantidadeReservada || 0);
+                const isAvailable = estoqueDisponivel > 0;
+                return (
+                    <CommandItem
+                    key={`peca-${peca.id}`}
+                    value={peca.descricao}
+                    onSelect={() => handleSelect(peca, 'peca')}
+                    disabled={!isAvailable}
+                    className={cn(!isAvailable && "text-muted-foreground")}
+                    >
+                    <Package className="mr-2 h-4 w-4" />
+                    <div className="flex justify-between w-full">
+                        <span>{peca.descricao}</span>
+                        <span className={cn("text-xs", isAvailable ? 'text-green-600' : 'text-red-600')}>
+                            {estoqueDisponivel} disp.
+                        </span>
+                    </div>
+                    </CommandItem>
+                )
+              })}
             </CommandGroup>
           </CommandList>
         </Command>

@@ -24,6 +24,7 @@ const formSchema = z.object({
   descricao: z.string().min(2, 'A descrição é obrigatória.'),
   fornecedor: z.string().min(2, 'O fornecedor é obrigatório.'),
   quantidadeEstoque: z.coerce.number().min(0, 'A quantidade não pode ser negativa.'),
+  quantidadeReservada: z.coerce.number().min(0, 'A quantidade não pode ser negativa.'),
   quantidadeMinima: z.coerce.number().min(0, 'A quantidade não pode ser negativa.'),
   valorCompra: z.coerce.number().min(0, 'O valor deve ser positivo.'),
   valorVenda: z.coerce.number().min(0, 'O valor deve ser positivo.'),
@@ -40,7 +41,10 @@ export function EditPecaForm({ peca, setDialogOpen }: EditPecaFormProps) {
 
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
-    defaultValues: peca,
+    defaultValues: {
+        ...peca,
+        quantidadeReservada: peca.quantidadeReservada || 0,
+    },
   });
 
   async function onSubmit(values: z.infer<typeof formSchema>) {
@@ -106,7 +110,15 @@ export function EditPecaForm({ peca, setDialogOpen }: EditPecaFormProps) {
                 </FormItem>
             )}
             />
-            <FormField name="quantidadeMinima" control={form.control} render={({ field }) => (
+            <FormField name="quantidadeReservada" control={form.control} render={({ field }) => (
+                <FormItem>
+                <FormLabel>Qtd. Reservada</FormLabel>
+                <FormControl><Input type="number" placeholder="0" {...field} readOnly /></FormControl>
+                <FormMessage />
+                </FormItem>
+            )}
+            />
+             <FormField name="quantidadeMinima" control={form.control} render={({ field }) => (
                 <FormItem>
                 <FormLabel>Qtd. Mínima</FormLabel>
                 <FormControl><Input type="number" placeholder="2" {...field} /></FormControl>
