@@ -90,7 +90,14 @@ import {
           </SidebarMenu>
         </SidebarContent>
         <SidebarFooter className="mt-auto">
-            {/* O menu de configurações foi removido */}
+            <SidebarMenu>
+                 <SidebarMenuItem>
+                    <SidebarMenuButton href="/configuracoes" tooltip="Configurações">
+                        <Settings />
+                        {!isCollapsed && 'Configurações'}
+                    </SidebarMenuButton>
+                </SidebarMenuItem>
+            </SidebarMenu>
         </SidebarFooter>
       </>
     );
@@ -98,3 +105,4 @@ import {
   
   export default AppSidebar;
   
+    

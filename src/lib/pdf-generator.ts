@@ -2,7 +2,7 @@
 
 import jsPDF from 'jspdf';
 import 'jspdf-autotable';
-import type { Orcamento, Cliente, Veiculo } from './types';
+import type { Orcamento, Cliente, Veiculo, Oficina } from './types';
 import { format } from 'date-fns';
 
 // Extend the jsPDF interface to include autoTable
@@ -15,7 +15,8 @@ declare module 'jspdf' {
 export const generateOrcamentoPDF = (
   orcamento: Orcamento,
   cliente: Cliente,
-  veiculo: Veiculo
+  veiculo: Veiculo,
+  oficina: Oficina | null
 ) => {
   const doc = new jsPDF();
   const pageHeight = doc.internal.pageSize.getHeight();
@@ -24,14 +25,19 @@ export const generateOrcamentoPDF = (
   let currentY = 20;
 
   // 1. Header
+  const nomeEmpresa = oficina?.nomeEmpresa || 'Nome da Sua Empresa';
+  const cnpj = oficina?.cnpj ? `CNPJ: ${oficina.cnpj}` : '';
+  const telefone = oficina?.telefone ? `· ${oficina.telefone}` : '';
+  const enderecoOficina = oficina ? `${oficina.endereco}, ${oficina.cidade}-${oficina.uf}` : 'Seu Endereço, Sua Cidade';
+  const companyInfo = `${cnpj} · ${enderecoOficina} ${telefone}`;
+
   doc.setFontSize(22);
   doc.setFont('helvetica', 'bold');
-  doc.text('RETÍFICA FIGUEIRÊDO', pageWidth / 2, currentY, { align: 'center' });
+  doc.text(nomeEmpresa, pageWidth / 2, currentY, { align: 'center' });
   currentY += 8;
 
   doc.setFontSize(10);
   doc.setFont('helvetica', 'normal');
-  const companyInfo = 'CNPJ: 33.925-338/0001-74 · Av. Presidente Kennedy, 1956, Peixinhos, OLINDA-PE · (81) 9.8836-6701';
   doc.text(companyInfo, pageWidth / 2, currentY, { align: 'center' });
   currentY += 10;
   
@@ -143,3 +149,5 @@ export const generateOrcamentoPDF = (
   // 6. Save the PDF
   doc.save(`Orcamento-${cliente.nome.split(' ')[0]}-${orcamento.id.substring(0, 4)}.pdf`);
 };
+
+    

@@ -38,9 +38,9 @@ import {
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { MoreHorizontal, Pencil, Trash2, FilePlus2, FileDown } from 'lucide-react';
-import type { Orcamento, Cliente, Veiculo, ItemServico, OrdemServico, Peca, Servico, ItemPeca } from '@/lib/types';
+import type { Orcamento, Cliente, Veiculo, ItemServico, OrdemServico, Peca, Servico, ItemPeca, Oficina } from '@/lib/types';
 import { deleteDocumentNonBlocking, addDocumentNonBlocking, updateDocumentNonBlocking } from '@/firebase/non-blocking-updates';
-import { doc, collection, serverTimestamp } from 'firebase/firestore';
+import { doc, collection, serverTimestamp, getDoc } from 'firebase/firestore';
 import { useFirestore, useUser } from '@/firebase';
 import { useToast } from '@/hooks/use-toast';
 import { EditOrcamentoForm } from './edit-orcamento-form';
@@ -100,21 +100,37 @@ export default function OrcamentoTable({
     setIsDeleteDialogOpen(true);
   };
 
-  const handleDownloadPDF = (orcamento: Orcamento) => {
+  const handleDownloadPDF = async (orcamento: Orcamento) => {
+    if (!firestore || !user) return;
+    
     const cliente = clientsMap.get(orcamento.clienteId);
     const veiculo = vehiclesMap.get(orcamento.veiculoId);
-    if (cliente && veiculo) {
-      generateOrcamentoPDF(orcamento, cliente, veiculo);
-      toast({
-        title: 'PDF Gerado',
-        description: 'O download do seu PDF foi iniciado.',
-      });
-    } else {
-      toast({
-        variant: 'destructive',
-        title: 'Erro',
-        description: 'Não foi possível encontrar os dados do cliente ou veículo para gerar o PDF.',
-      });
+    
+    try {
+      const oficinaDocRef = doc(firestore, 'oficinas', user.uid);
+      const oficinaSnap = await getDoc(oficinaDocRef);
+      const oficina = oficinaSnap.exists() ? (oficinaSnap.data() as Oficina) : null;
+      
+      if (cliente && veiculo) {
+        generateOrcamentoPDF(orcamento, cliente, veiculo, oficina);
+        toast({
+          title: 'PDF Gerado',
+          description: 'O download do seu PDF foi iniciado.',
+        });
+      } else {
+        toast({
+          variant: 'destructive',
+          title: 'Erro',
+          description: 'Não foi possível encontrar os dados do cliente ou veículo para gerar o PDF.',
+        });
+      }
+    } catch (error) {
+       console.error("Error fetching workshop details for PDF: ", error);
+       toast({
+          variant: 'destructive',
+          title: 'Erro ao gerar PDF',
+          description: 'Não foi possível buscar as informações da oficina. Tente novamente.',
+        });
     }
   };
 
@@ -159,6 +175,7 @@ export default function OrcamentoTable({
         clienteId: orcamento.clienteId,
         veiculoId: orcamento.veiculoId,
         status: 'pendente',
+        statusPagamento: 'Pendente',
         dataEntrada: serverTimestamp(),
         dataPrevisao: new Date(new Date().setDate(new Date().getDate() + 7)), // Default to 7 days from now
         mecanicoResponsavel: 'A definir',
@@ -338,4 +355,5 @@ export default function OrcamentoTable({
   );
 }
 
+    
     

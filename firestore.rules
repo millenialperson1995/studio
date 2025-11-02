@@ -28,6 +28,11 @@ service cloud.firestore {
         allow create: if isSignedIn() && request.auth.uid == userId;
         allow update, delete: if isSignedIn() && isOwner(userId);
     }
+
+    // Allow users to manage their own workshop settings document.
+    match /oficinas/{userId} {
+        allow read, write: if isSignedIn() && isOwner(userId);
+    }
     
     // Allow users to read and write their own data in any top-level collection owned by them.
     match /{collection}/{docId} {
@@ -43,3 +48,5 @@ service cloud.firestore {
     }
   }
 }
+
+    

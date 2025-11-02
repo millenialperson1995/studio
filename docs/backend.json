@@ -12,6 +12,23 @@
       },
       "required": ["uid", "email", "nome", "sobrenome"]
     },
+    "Oficina": {
+      "title": "Oficina",
+      "description": "Stores the settings and information for a user's workshop.",
+      "type": "object",
+      "properties": {
+        "userId": { "type": "string", "description": "The ID of the user (workshop owner) who owns this data." },
+        "nomeEmpresa": { "type": "string", "description": "The name of the workshop/company." },
+        "cnpj": { "type": "string", "description": "The company's CNPJ." },
+        "endereco": { "type": "string", "description": "Street address." },
+        "cidade": { "type": "string", "description": "City." },
+        "uf": { "type": "string", "description": "State (Unidade Federativa)." },
+        "cep": { "type": "string", "description": "Postal code (CEP)." },
+        "telefone": { "type": "string", "description": "The company's phone number." },
+        "email": { "type": "string", "format": "email", "description": "The company's contact email." }
+      },
+      "required": ["userId", "nomeEmpresa", "cnpj", "endereco", "cidade", "uf", "cep", "telefone"]
+    },
     "Cliente": {
       "title": "Cliente",
       "type": "object",
@@ -64,7 +81,8 @@
         "status": { "type": "string" },
         "itens": { "type": "array", "items": { "type": "string" } },
         "valorTotal": { "type": "number" },
-        "observacoes": { "type": "string" }
+        "observacoes": { "type": "string" },
+        "ordemServicoId": { "type": "string", "description": "The ID of the service order generated from this quote, if any." }
       },
       "required": ["id", "userId", "clienteId", "veiculoId", "dataCriacao", "dataValidade", "status", "itens", "valorTotal"]
     },
@@ -78,19 +96,40 @@
         "orcamentoId": { "type": "string" },
         "clienteId": { "type": "string" },
         "veiculoId": { "type": "string" },
-        "status": { "type": "string" },
+        "status": { "type": "string", "enum": ["pendente", "andamento", "concluida", "cancelada"] },
         "statusPagamento": { "type": "string", "description": "The payment status of the service order.", "enum": ["Pendente", "Pago", "Vencido"] },
         "dataEntrada": { "type": "string", "format": "date-time" },
         "dataPrevisao": { "type": "string", "format": "date-time" },
         "dataPagamento": { "type": "string", "format": "date-time" },
         "dataConclusao": { "type": "string", "format": "date-time" },
         "mecanicoResponsavel": { "type": "string" },
-        "servicos": { "type": "array", "items": { "type": "string" } },
-        "pecas": { "type": "array", "items": { "type": "string" } },
+        "servicos": { "type": "array", "items": { "$ref": "#/backend/entities/ItemServico" } },
+        "pecas": { "type": "array", "items": { "$ref": "#/backend/entities/ItemPeca" } },
         "valorTotal": { "type": "number" },
         "observacoes": { "type": "string" }
       },
       "required": ["id", "userId", "clienteId", "veiculoId", "status", "statusPagamento", "dataEntrada", "dataPrevisao", "mecanicoResponsavel", "servicos", "pecas", "valorTotal"]
+    },
+     "ItemServico": {
+      "title": "ItemServico",
+      "type": "object",
+      "description": "Represents a single service item within a service order.",
+      "properties": {
+        "descricao": { "type": "string" },
+        "valor": { "type": "number" }
+      },
+      "required": ["descricao", "valor"]
+    },
+    "ItemPeca": {
+      "title": "ItemPeca",
+      "type": "object",
+      "description": "Represents a single part item within a service order.",
+      "properties": {
+        "descricao": { "type": "string" },
+        "quantidade": { "type": "number" },
+        "valorUnitario": { "type": "number" }
+      },
+      "required": ["descricao", "quantidade", "valorUnitario"]
     },
     "Peca": {
       "title": "Peca",
@@ -102,10 +141,13 @@
         "codigo": { "type": "string" },
         "descricao": { "type": "string" },
         "quantidadeEstoque": { "type": "number" },
+        "quantidadeMinima": { "type": "number" },
+        "valorCompra": { "type": "number" },
         "valorVenda": { "type": "number" },
-        "fornecedor": { "type": "string" }
+        "fornecedor": { "type": "string" },
+        "alertaEstoqueBaixo": { "type": "boolean" }
       },
-      "required": ["id", "userId", "codigo", "descricao", "quantidadeEstoque", "valorVenda", "fornecedor"]
+      "required": ["id", "userId", "codigo", "descricao", "quantidadeEstoque", "valorVenda", "fornecedor", "quantidadeMinima"]
     },
     "Servico": {
       "title": "Servico",
@@ -116,9 +158,12 @@
         "userId": { "type": "string", "description": "The ID of the user (workshop owner) who offers this service." },
         "codigo": { "type": "string" },
         "descricao": { "type": "string" },
-        "valorPadrao": { "type": "number" }
+        "valorPadrao": { "type": "number" },
+        "tempoMedio": { "type": "number", "description": "Average time in hours to complete the service." },
+        "categoria": { "type": "string", "description": "Category of the service (e.g., Engine, Brakes)." },
+        "ativo": { "type": "boolean", "description": "Whether the service is currently active and offered." }
       },
-      "required": ["id", "userId", "codigo", "descricao", "valorPadrao"]
+      "required": ["id", "userId", "codigo", "descricao", "valorPadrao", "tempoMedio", "categoria", "ativo"]
     }
   },
   "auth": {
@@ -132,6 +177,14 @@
           "entityName": "UserProfile",
           "schema": { "$ref": "#/backend/entities/UserProfile" },
           "description": "Stores user profiles. The 'userId' is the document ID, which matches the Firebase Auth UID."
+        }
+      },
+      {
+        "path": "/oficinas/{userId}",
+        "definition": {
+          "entityName": "Oficina",
+          "schema": { "$ref": "#/backend/entities/Oficina" },
+          "description": "Stores workshop settings. The 'userId' is the document ID, matching the owner's UID."
         }
       },
       {
@@ -183,6 +236,7 @@
         }
       }
     ],
-    "reasoning": "The data model is designed for a multi-tenant SaaS application where each user (a workshop) owns their data. All primary data collections (clientes, orcamentos, ordensServico, pecas, servicos) are at the top level. Every document in these collections MUST contain a 'userId' field that links it to the owner in the '/users' collection. This structure allows for simple, scalable, and secure ownership-based security rules. For example, a rule on '/clientes/{clienteId}' will be `allow read, write: if request.auth.uid == resource.data.userId;`. This prevents any user from accessing another user's data. The 'veiculos' collection is a subcollection of 'clientes' as a vehicle is intrinsically linked to a single client."
+    "reasoning": "The data model is designed for a multi-tenant SaaS application where each user (a workshop) owns their data. All primary data collections (clientes, orcamentos, ordensServico, pecas, servicos, oficinas) are at the top level. Every document in these collections MUST contain a 'userId' field that links it to the owner in the '/users' collection. The document ID for '/oficinas/{userId}' and '/users/{userId}' is the user's Auth UID. This structure allows for simple, scalable, and secure ownership-based security rules. For example, a rule on '/clientes/{clienteId}' will be `allow read, write: if request.auth.uid == resource.data.userId;`. This prevents any user from accessing another user's data. The 'veiculos' collection is a subcollection of 'clientes' as a vehicle is intrinsically linked to a single client."
   }
 }
+    

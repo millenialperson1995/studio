@@ -3,10 +3,23 @@ export interface UserProfile {
   email: string;
   nome: string;
   sobrenome: string;
-  // Role has been removed for simplification
   photoURL?: string | null;
   disabled?: boolean;
 }
+
+export interface Oficina {
+  userId: string;
+  nomeEmpresa: string;
+  cnpj: string;
+  endereco: string;
+  cidade: string;
+  uf: string;
+  cep: string;
+  telefone: string;
+  email?: string;
+  createdAt?: any;
+}
+
 
 export interface DashboardData {
   receitaMensal: number;
@@ -138,3 +151,5 @@ export interface Peca {
   alertaEstoqueBaixo: boolean;
   createdAt?: any;
 }
+
+    
