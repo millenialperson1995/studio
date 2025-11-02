@@ -42,6 +42,7 @@ import { doc } from 'firebase/firestore';
 import { useFirestore } from '@/firebase';
 import { useToast } from '@/hooks/use-toast';
 import { EditPecaForm } from './edit-peca-form';
+import { Card, CardContent } from '../ui/card';
 
 interface PecaTableProps {
   pecas: Peca[];
@@ -78,9 +79,23 @@ export default function PecaTable({ pecas = [] }: PecaTableProps) {
     setSelectedPeca(null);
   };
 
+  const renderEstoqueBadge = (peca: Peca) => {
+    return peca.quantidadeEstoque <= peca.quantidadeMinima ? (
+        <Badge variant="destructive" className="text-xs">
+            {peca.quantidadeEstoque} (Baixo)
+        </Badge>
+    ) : (
+        peca.quantidadeEstoque
+    );
+  }
+
+  const formatCurrency = (value: number) => `R$ ${value.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`;
+
+
   return (
     <>
-      <div className="relative w-full overflow-auto rounded-md border">
+      {/* Desktop Table View */}
+      <div className="relative w-full overflow-auto rounded-md border hidden md:block">
         <Table>
           <TableHeader>
             <TableRow>
@@ -99,16 +114,8 @@ export default function PecaTable({ pecas = [] }: PecaTableProps) {
                 <TableRow key={peca.id}>
                   <TableCell className="font-medium">{peca.codigo}</TableCell>
                   <TableCell>{peca.descricao}</TableCell>
-                  <TableCell>
-                    {peca.quantidadeEstoque <= peca.quantidadeMinima ? (
-                        <Badge variant="destructive" className="text-xs">
-                            {peca.quantidadeEstoque} (Baixo)
-                        </Badge>
-                    ) : (
-                        peca.quantidadeEstoque
-                    )}
-                  </TableCell>
-                  <TableCell>{`R$ ${peca.valorVenda.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`}</TableCell>
+                  <TableCell>{renderEstoqueBadge(peca)}</TableCell>
+                  <TableCell>{formatCurrency(peca.valorVenda)}</TableCell>
                   <TableCell>
                     <DropdownMenu>
                       <DropdownMenuTrigger asChild>
@@ -144,6 +151,60 @@ export default function PecaTable({ pecas = [] }: PecaTableProps) {
             )}
           </TableBody>
         </Table>
+      </div>
+
+       {/* Mobile Card View */}
+      <div className="grid grid-cols-1 gap-4 md:hidden">
+         {pecas.length > 0 ? (
+              pecas.map((peca) => (
+                <Card key={peca.id} className="w-full">
+                    <CardContent className="p-4 flex flex-col space-y-2">
+                         <div className="flex justify-between items-start">
+                             <div>
+                                <p className="font-bold text-base">{peca.descricao}</p>
+                                <p className="text-sm text-muted-foreground">{peca.codigo}</p>
+                             </div>
+                             <DropdownMenu>
+                                <DropdownMenuTrigger asChild>
+                                    <Button aria-haspopup="true" size="icon" variant="ghost">
+                                    <MoreHorizontal className="h-4 w-4" />
+                                    <span className="sr-only">Toggle menu</span>
+                                    </Button>
+                                </DropdownMenuTrigger>
+                                <DropdownMenuContent align="end">
+                                    <DropdownMenuLabel>Ações</DropdownMenuLabel>
+                                    <DropdownMenuItem onClick={() => handleEditClick(peca)}>
+                                        <Pencil className="mr-2 h-4 w-4" />
+                                        Editar
+                                    </DropdownMenuItem>
+                                    <DropdownMenuItem
+                                    className="text-destructive focus:text-destructive focus:bg-destructive/10"
+                                    onClick={() => handleDeleteClick(peca)}
+                                    >
+                                        <Trash2 className="mr-2 h-4 w-4" />
+                                        Excluir
+                                    </DropdownMenuItem>
+                                </DropdownMenuContent>
+                            </DropdownMenu>
+                        </div>
+
+                        <div className="flex justify-between items-center text-sm pt-2">
+                           <div className="text-muted-foreground">Estoque</div>
+                           <div>{renderEstoqueBadge(peca)}</div>
+                        </div>
+
+                        <div className="flex justify-between items-center text-sm">
+                           <div className="text-muted-foreground">Valor de Venda</div>
+                           <div className="font-semibold">{formatCurrency(peca.valorVenda)}</div>
+                        </div>
+                    </CardContent>
+                </Card>
+              ))
+            ) : (
+                <div className="text-center text-muted-foreground p-8">
+                    Nenhuma peça encontrada no estoque.
+                </div>
+            )}
       </div>
 
       <AlertDialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
