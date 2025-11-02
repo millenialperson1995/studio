@@ -68,14 +68,10 @@ function VeiculosContent() {
             return;
         }
 
-        // Keep track of how many sub-listeners have loaded
-        let loadedCount = 0;
-
         clientsSnapshot.forEach((clientDoc) => {
             const vehiclesQuery = collection(firestore, 'clientes', clientDoc.id, 'veiculos');
             
             const unsubscribeVehicle = onSnapshot(vehiclesQuery, (vehiclesSnapshot) => {
-                // Update the state with vehicles from this specific client
                 vehiclesSnapshot.docChanges().forEach((change) => {
                     if (change.type === "removed") {
                         delete allVehicles[change.doc.id];
@@ -87,7 +83,6 @@ function VeiculosContent() {
                 setVehicles(Object.values(allVehicles));
 
             }, (error) => {
-                console.error(`Error listening to vehicles for client ${clientDoc.id}:`, error);
                 const contextualError = new FirestorePermissionError({
                     operation: 'list',
                     path: `clientes/${clientDoc.id}/veiculos`,
@@ -98,21 +93,21 @@ function VeiculosContent() {
             vehicleListeners.push(unsubscribeVehicle);
         });
 
-        // This ensures the loading state is only turned off after all initial reads are attempted.
-        // The real-time updates will continue to flow in.
         setIsLoadingVehicles(false);
 
 
-        // Return a cleanup function that unsubscribes from all vehicle listeners
         return () => {
             vehicleListeners.forEach(unsubscribe => unsubscribe());
         };
     }, (error) => {
-        console.error("Error listening to clients collection: ", error);
+        const contextualError = new FirestorePermissionError({
+            operation: 'list',
+            path: 'clientes',
+        });
+        errorEmitter.emit('permission-error', contextualError);
         setIsLoadingVehicles(false);
     });
 
-    // Cleanup function to unsubscribe from the main client listener
     return () => unsubscribeClients();
 
   }, [firestore, user?.uid]);
