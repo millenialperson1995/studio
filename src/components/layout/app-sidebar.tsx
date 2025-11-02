@@ -17,7 +17,8 @@ import {
     SidebarFooter,
     useSidebar,
   } from '../ui/sidebar';
-  import Image from 'next/image';
+  import { Logo } from '../logo';
+  import { cn } from '@/lib/utils';
 
   const AppSidebar = () => {
     const { state } = useSidebar();
@@ -25,11 +26,12 @@ import {
     return (
       <>
         <SidebarHeader>
-          <div className="flex items-center gap-2 p-2 justify-center">
+          <div className={cn("flex items-center gap-2 p-2", isCollapsed ? 'justify-center' : '')}>
+            <Logo className="w-8 h-8 text-primary" />
             <h1
-              className={`text-lg font-semibold text-foreground transition-opacity duration-200 ${isCollapsed ? 'opacity-0' : 'opacity-100'}`}
+              className={`text-lg font-semibold text-foreground transition-opacity duration-200 ${isCollapsed ? 'opacity-0 w-0' : 'opacity-100'}`}
             >
-              RETÍFICA FIGUEIRÊDO
+              Retífica Figueirêdo
             </h1>
           </div>
         </SidebarHeader>

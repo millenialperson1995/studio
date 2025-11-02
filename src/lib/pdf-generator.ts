@@ -4,6 +4,8 @@ import jsPDF from 'jspdf';
 import 'jspdf-autotable';
 import type { Orcamento, Cliente, Veiculo } from './types';
 import { format } from 'date-fns';
+import { logoSvg } from './logo';
+
 
 // Extend the jsPDF interface to include autoTable
 declare module 'jspdf' {
@@ -21,28 +23,32 @@ export const generateOrcamentoPDF = (
   const pageHeight = doc.internal.pageSize.getHeight();
   const pageWidth = doc.internal.pageSize.getWidth();
   const margin = 15;
-  const contentWidth = pageWidth - margin * 2;
   let currentY = 20;
 
-  // 1. Header without Logo
+  // 1. Header with Logo
+  const logoWidth = 30;
+  const logoHeight = 30;
+  
+  doc.addFileToVFS('logo.svg', logoSvg);
+  doc.addImage('logo.svg', 'SVG', margin, 15, logoWidth, logoHeight);
+
   doc.setFontSize(20);
   doc.setFont('helvetica', 'bold');
   doc.text('RETÍFICA FIGUEIRÊDO', pageWidth / 2, 25, { align: 'center' });
+  
+  // Company Info moved slightly
   doc.setFontSize(10);
   doc.setFont('helvetica', 'normal');
-  doc.text(`Orçamento #: ${orcamento.id.substring(0, 8)}`, pageWidth - margin, 20, { align: 'right' });
-  
-  // Company Info
-  doc.setFontSize(10);
   const companyInfoLines = [
+    `Orçamento #: ${orcamento.id.substring(0, 8)}`,
     'CNPJ: 33.925-338/0001-74',
     'Av. Presidente Kennedy, 1956, loja T.: Peixinhos',
     'CEP: 53.230-650 - OLINDA-PE',
     'Telefone: (81) 9.8836-6701'
   ];
-  doc.text(companyInfoLines, pageWidth / 2, 35, { align: 'center' });
+  doc.text(companyInfoLines, pageWidth - margin, 20, { align: 'right' });
   
-  currentY = 55;
+  currentY = 15 + logoHeight + 10; // Position below logo
   doc.setLineWidth(0.5);
   doc.line(margin, currentY, pageWidth - margin, currentY);
   currentY += 8;
@@ -55,6 +61,9 @@ export const generateOrcamentoPDF = (
 
   doc.setFontSize(10);
   doc.setFont('helvetica', 'normal');
+  
+  const contentWidth = pageWidth - margin * 2;
+  const halfWidth = contentWidth / 2 - 5;
   
   const clientLines = [
     `Cliente: ${cliente.nome}`,
@@ -70,12 +79,9 @@ export const generateOrcamentoPDF = (
       `Veículo: ${veiculo.fabricante} ${veiculo.modelo}`,
       `Placa: ${veiculo.placa}`,
       `Ano: ${veiculo.ano}`,
-      `Motor: ${veiculo.motor || 'N/A'}`,
-      `Cilindros: ${veiculo.cilindros || 'N/A'}`
+      `Motor: ${veiculo.motor || 'N/A'}, Cilindros: ${veiculo.cilindros || 'N/A'}`
   ];
 
-  const halfWidth = contentWidth / 2 - 5;
-  
   doc.text(clientLines, margin, currentY, { maxWidth: halfWidth });
   doc.text(vehicleLines, margin + halfWidth + 10, currentY, { maxWidth: halfWidth });
 
