@@ -8,6 +8,7 @@
 import { ai } from '@/ai/genkit';
 import { z } from 'zod';
 import type { DiagnosticoMotorInput, DiagnosticoMotorOutput } from '@/lib/types';
+import { googleAI } from '@genkit-ai/google-genai';
 
 // Zod Schemas must be defined in the same file as the "use server" flow.
 const ItemSchema = z.object({
@@ -79,7 +80,7 @@ const diagnosticoMotorFlow = ai.defineFlow(
     outputSchema: DiagnosticoMotorOutputSchema,
   },
   async (input) => {
-    const { output } = await diagnosticoPrompt(input);
+    const { output } = await diagnosticoPrompt(input, {model: googleAI.model('gemini-2.5-flash')});
     
     if (!output) {
       throw new Error("A IA não conseguiu gerar um diagnóstico válido.");
