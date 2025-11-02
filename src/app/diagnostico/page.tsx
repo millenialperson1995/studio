@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation';
 import { useCollection, useFirestore, useUser } from '@/firebase';
 import { useMemoFirebase } from '@/firebase/provider';
 import { collection, query, where } from 'firebase/firestore';
-import { Sparkles, Bot, User as UserIcon, CheckCircle2, Wrench, Package } from 'lucide-react';
+import { Sparkles, Bot, CheckCircle2, Wrench, Package } from 'lucide-react';
 import { z } from 'zod';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -21,9 +21,10 @@ import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Separator } from '@/components/ui/separator';
+import { Badge } from '@/components/ui/badge';
 
-import type { Peca, Servico } from '@/lib/types';
-import { diagnosticarMotor, type DiagnosticoMotorOutput } from '@/ai/flows/diagnostico-fluxo';
+import type { Peca, Servico, DiagnosticoMotorOutput } from '@/lib/types';
+import { diagnosticarMotor } from '@/ai/flows/diagnostico-fluxo';
 
 const formSchema = z.object({
   motorInfo: z.string().min(3, 'Por favor, forneça informações sobre o motor.'),

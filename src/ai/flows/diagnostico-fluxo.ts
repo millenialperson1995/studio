@@ -3,42 +3,11 @@
  * @fileOverview Fluxo de IA para diagnóstico de problemas em motores de retífica.
  *
  * - diagnosticarMotor: Função que dispara o fluxo de diagnóstico.
- * - DiagnosticoMotorInput: Tipo de entrada para a função, incluindo sintomas e catálogo.
- * - DiagnosticoMotorOutput: Tipo de saída, com diagnóstico, plano de serviços e peças.
  */
 
 import { ai } from '@/ai/genkit';
 import { z } from 'genkit';
-import type { Peca, Servico } from '@/lib/types';
-
-
-// Define o schema para um item (serviço ou peça)
-const ItemSchema = z.object({
-  codigo: z.string(),
-  descricao: z.string(),
-});
-
-// Schema de entrada
-export const DiagnosticoMotorInputSchema = z.object({
-  sintomas: z.string().describe('Os sintomas observados no motor, descritos pelo mecânico ou cliente.'),
-  motorInfo: z.string().describe('Informações sobre o motor (ex: VW AP 1.8, Fiat Fire 1.0).'),
-  servicosDisponiveis: z.array(ItemSchema).describe('A lista de todos os serviços que a retífica oferece.'),
-  pecasDisponiveis: z.array(ItemSchema).describe('A lista de todas as peças disponíveis no catálogo.'),
-});
-export type DiagnosticoMotorInput = z.infer<typeof DiagnosticoMotorInputSchema>;
-
-
-// Schema de saída
-export const DiagnosticoMotorOutputSchema = z.object({
-  diagnosticoProvavel: z.string().describe('Um resumo técnico das causas mais prováveis para os sintomas, em uma ou duas frases.'),
-  planoDeAcao: z.array(z.object({
-      passo: z.string().describe('Ação de verificação ou diagnóstico a ser tomada.'),
-      isCritico: z.boolean().describe('Indica se o passo é crítico para o diagnóstico.'),
-  })).describe('Uma lista de passos investigativos para confirmar o diagnóstico.'),
-  servicosSugeridos: z.array(ItemSchema).describe('Uma lista de serviços da retífica sugeridos para corrigir o problema. Deve usar APENAS itens da lista de `servicosDisponiveis`.'),
-  pecasSugeridas: z.array(ItemSchema).describe('Uma lista de peças que provavelmente serão necessárias. Deve usar APENAS itens da lista de `pecasDisponiveis`.'),
-});
-export type DiagnosticoMotorOutput = z.infer<typeof DiagnosticoMotorOutputSchema>;
+import { DiagnosticoMotorInputSchema, DiagnosticoMotorOutputSchema, type DiagnosticoMotorInput, type DiagnosticoMotorOutput } from '@/lib/types';
 
 
 // Função pública que o frontend vai chamar
