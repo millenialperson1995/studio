@@ -119,7 +119,7 @@ export default function AppHeader() {
             <DropdownMenuLabel>Notificações</DropdownMenuLabel>
             <DropdownMenuSeparator />
             {notificacoes && notificacoes.length > 0 ? (
-                notificacoes.sort((a,b) => b.createdAt.toDate() - a.createdAt.toDate()).slice(0, 5).map(n => (
+                notificacoes.sort((a,b) => (b.createdAt?.toDate() || 0) - (a.createdAt?.toDate() || 0)).slice(0, 5).map(n => (
                    <DropdownMenuItem key={n.id} className="flex-col items-start gap-1 p-2">
                        <div className='flex items-center gap-2'>
                            <PackageWarning className='h-4 w-4 text-amber-500' />

@@ -62,10 +62,8 @@ export function EditPecaForm({ peca, setDialogOpen }: EditPecaFormProps) {
       
       await updateDocumentNonBlocking(pecaDocRef, pecaData);
 
-      // Check if low stock alert needs to be created
-      // We create a notification if the stock is now low, but wasn't before.
-      if (isEstoqueBaixo && !peca.alertaEstoqueBaixo) {
-        // First, check if an unread notification for this specific part already exists.
+      // We should create a notification if the stock is low and there isn't an existing unread notification.
+      if (isEstoqueBaixo) {
         const q = query(
             collection(firestore, 'notificacoes'),
             where('userId', '==', user.uid),
@@ -74,14 +72,13 @@ export function EditPecaForm({ peca, setDialogOpen }: EditPecaFormProps) {
         );
         const existingNotif = await getDocs(q);
 
-        // Only create a notification if one doesn't already exist for this part.
         if(existingNotif.empty) {
             const notificacoesCollectionRef = collection(firestore, 'notificacoes');
             const newNotificacaoRef = doc(notificacoesCollectionRef);
             const notificacaoData = {
                 id: newNotificacaoRef.id,
                 userId: user.uid,
-                pecaId: peca.id, // Store reference to the part
+                pecaId: peca.id,
                 titulo: 'Estoque Baixo',
                 descricao: `A peça "${peca.descricao}" (Cód: ${peca.codigo}) atingiu o estoque mínimo.`,
                 tipo: 'estoque',
