@@ -8,7 +8,7 @@
  */
 
 import { ai } from '@/ai/genkit';
-import { z, z_array } from 'genkit/zod';
+import { z } from 'genkit';
 import { DiagnosticoMotorInput, DiagnosticoMotorOutput } from '@/lib/types';
 import { googleAI } from '@genkit-ai/google-genai';
 
@@ -36,7 +36,7 @@ const DiagnosticoMotorOutputSchema = z.object({
 });
 
 export async function diagnosticarMotor(input: DiagnosticoMotorInput): Promise<DiagnosticoMotorOutput> {
-    const { output } = await diagnosticoFlow.run(input);
+    const { output } = await diagnosticoFlow(input);
     if (!output) {
       throw new Error("A IA não conseguiu gerar um diagnóstico válido.");
     }
