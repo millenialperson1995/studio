@@ -4,7 +4,6 @@ import jsPDF from 'jspdf';
 import 'jspdf-autotable';
 import type { Orcamento, Cliente, Veiculo } from './types';
 import { format } from 'date-fns';
-import { logoBase64 } from './logo-base64';
 
 // Extend the jsPDF interface to include autoTable
 declare module 'jspdf' {
@@ -25,29 +24,28 @@ export const generateOrcamentoPDF = (
   const contentWidth = pageWidth - margin * 2;
   let currentY = 20;
 
-  // 1. Header with Logo
-  doc.addImage(logoBase64, 'PNG', margin, 15, 30, 30);
-  
+  // 1. Header without Logo
   doc.setFontSize(20);
-  doc.text('Orçamento de Serviços', pageWidth / 2, 25, { align: 'center' });
+  doc.setFont('helvetica', 'bold');
+  doc.text('RETÍFICA FIGUEIRÊDO', pageWidth / 2, 25, { align: 'center' });
   doc.setFontSize(10);
+  doc.setFont('helvetica', 'normal');
   doc.text(`Orçamento #: ${orcamento.id.substring(0, 8)}`, pageWidth - margin, 20, { align: 'right' });
   
-  // Company Info (to the right of the logo)
-  const companyInfoX = margin + 40;
-  doc.setFontSize(12);
-  doc.setFont('helvetica', 'bold');
-  doc.text('REDÍFICA FIGUEIRÊDO', companyInfoX, 30);
-  doc.setFont('helvetica', 'normal');
+  // Company Info
   doc.setFontSize(10);
-  doc.text('CNPJ: 33.925-338/0001-74', companyInfoX, 36);
-  doc.text('Av. Presidente Kennedy, 1956, loja T.: Peixinhos', companyInfoX, 41);
-  doc.text('CEP: 53.230-650 - OLINDA-PE', companyInfoX, 46);
-  doc.text('Telefone: (81) 9.8836-6701', companyInfoX, 51);
-
+  const companyInfoLines = [
+    'CNPJ: 33.925-338/0001-74',
+    'Av. Presidente Kennedy, 1956, loja T.: Peixinhos',
+    'CEP: 53.230-650 - OLINDA-PE',
+    'Telefone: (81) 9.8836-6701'
+  ];
+  doc.text(companyInfoLines, pageWidth / 2, 35, { align: 'center' });
+  
+  currentY = 55;
   doc.setLineWidth(0.5);
-  doc.line(margin, 60, pageWidth - margin, 60);
-  currentY = 68;
+  doc.line(margin, currentY, pageWidth - margin, currentY);
+  currentY += 8;
 
   // 2. Client and Vehicle Info
   doc.setFontSize(12);
