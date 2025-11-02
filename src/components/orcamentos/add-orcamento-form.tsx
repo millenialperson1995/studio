@@ -43,18 +43,6 @@ const itemSchema = z.object({
   valorTotal: z.coerce.number(),
 });
 
-const formSchema = z.object({
-  clienteId: z.string().min(1, 'Selecione um cliente.'),
-  veiculoId: z.string().min(1, 'Selecione um veículo.'),
-  dataValidade: z.date({
-    required_error: 'A data de validade é obrigatória.',
-  }),
-  status: z.enum(['pendente', 'aprovado', 'rejeitado']),
-  observacoes: z.string().optional(),
-  itens: z.array(itemSchema).min(1, 'Adicione pelo menos um item.'),
-  valorTotal: z.coerce.number(),
-});
-
 type AddOrcamentoFormProps = {
   clients: Cliente[];
   vehicles: Veiculo[];
@@ -74,6 +62,38 @@ export function AddOrcamentoForm({
   const { user } = useUser();
   const { toast } = useToast();
   const [selectedClientId, setSelectedClientId] = useState('');
+  
+  const pecasMap = new Map(pecas.map(p => [p.id, p]));
+
+  const formSchema = z.object({
+    clienteId: z.string().min(1, 'Selecione um cliente.'),
+    veiculoId: z.string().min(1, 'Selecione um veículo.'),
+    dataValidade: z.date({
+      required_error: 'A data de validade é obrigatória.',
+    }),
+    status: z.enum(['pendente', 'aprovado', 'rejeitado']),
+    observacoes: z.string().optional(),
+    itens: z.array(itemSchema).min(1, 'Adicione pelo menos um item.')
+      .superRefine((itens, ctx) => {
+        itens.forEach((item, index) => {
+          if (item.tipo === 'peca' && item.itemId) {
+            const peca = pecasMap.get(item.itemId);
+            if (peca) {
+              const estoqueDisponivel = peca.quantidadeEstoque - (peca.quantidadeReservada || 0);
+              if (item.quantidade > estoqueDisponivel) {
+                ctx.addIssue({
+                  code: z.ZodIssueCode.custom,
+                  message: `Estoque insuficiente. Disponível: ${estoqueDisponivel}`,
+                  path: [index, 'quantidade'],
+                });
+              }
+            }
+          }
+        });
+      }),
+    valorTotal: z.coerce.number(),
+  });
+
 
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
@@ -110,6 +130,28 @@ export function AddOrcamentoForm({
 
   async function onSubmit(values: z.infer<typeof formSchema>) {
     if (!firestore || !user) return;
+    
+    // Final stock check before submission
+    for (const item of values.itens) {
+        if (item.tipo === 'peca' && item.itemId) {
+            const pecaRef = doc(firestore, 'pecas', item.itemId);
+            const pecaDoc = await doc(pecaRef).get();
+            if (pecaDoc.exists()) {
+                const pecaData = pecaDoc.data() as Peca;
+                const estoqueDisponivel = pecaData.quantidadeEstoque - (pecaData.quantidadeReservada || 0);
+                if (item.quantidade > estoqueDisponivel) {
+                    toast({
+                        variant: 'destructive',
+                        title: 'Erro de Estoque',
+                        description: `A peça "${item.descricao}" não tem estoque suficiente. Ação cancelada.`,
+                        duration: 7000,
+                    });
+                    return; // Abort submission
+                }
+            }
+        }
+    }
+
 
     try {
       const orcamentosCollectionRef = collection(firestore, 'orcamentos');
@@ -421,5 +463,3 @@ export function AddOrcamentoForm({
     </Form>
   );
 }
-
-    

@@ -46,19 +46,6 @@ const pecaSchema = z.object({
   valorUnitario: z.coerce.number().min(0, 'O valor deve ser positivo.'),
 });
 
-const formSchema = z.object({
-  clienteId: z.string().min(1, 'Selecione um cliente.'),
-  veiculoId: z.string().min(1, 'Selecione um veículo.'),
-  dataEntrada: z.date({ required_error: 'A data de entrada é obrigatória.' }),
-  dataPrevisao: z.date({ required_error: 'A data de previsão é obrigatória.' }),
-  status: z.enum(['pendente', 'andamento', 'concluida', 'cancelada']),
-  statusPagamento: z.enum(['Pendente', 'Pago', 'Vencido']),
-  mecanicoResponsavel: z.string().min(1, 'Informe o mecânico responsável.'),
-  observacoes: z.string().optional(),
-  servicos: z.array(servicoSchema),
-  pecas: z.array(pecaSchema),
-  valorTotal: z.coerce.number(),
-});
 
 type AddOrdemServicoFormProps = {
   clients: Cliente[];
@@ -79,6 +66,40 @@ export function AddOrdemServicoForm({
   const { user } = useUser();
   const { toast } = useToast();
   const [selectedClientId, setSelectedClientId] = useState('');
+  
+  const pecasMap = new Map(pecas.map(p => [p.id, p]));
+
+  const formSchema = z.object({
+    clienteId: z.string().min(1, 'Selecione um cliente.'),
+    veiculoId: z.string().min(1, 'Selecione um veículo.'),
+    dataEntrada: z.date({ required_error: 'A data de entrada é obrigatória.' }),
+    dataPrevisao: z.date({ required_error: 'A data de previsão é obrigatória.' }),
+    status: z.enum(['pendente', 'andamento', 'concluida', 'cancelada']),
+    statusPagamento: z.enum(['Pendente', 'Pago', 'Vencido']),
+    mecanicoResponsavel: z.string().min(1, 'Informe o mecânico responsável.'),
+    observacoes: z.string().optional(),
+    servicos: z.array(servicoSchema),
+    pecas: z.array(pecaSchema)
+    .superRefine((pecas, ctx) => {
+        pecas.forEach((item, index) => {
+          if (item.itemId) {
+            const peca = pecasMap.get(item.itemId);
+            if (peca) {
+              const estoqueDisponivel = peca.quantidadeEstoque - (peca.quantidadeReservada || 0);
+              if (item.quantidade > estoqueDisponivel) {
+                ctx.addIssue({
+                  code: z.ZodIssueCode.custom,
+                  message: `Estoque insuficiente. Disponível: ${estoqueDisponivel}`,
+                  path: [index, 'quantidade'],
+                });
+              }
+            }
+          }
+        });
+      }),
+    valorTotal: z.coerce.number(),
+  });
+
 
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
@@ -116,6 +137,28 @@ export function AddOrdemServicoForm({
 
   async function onSubmit(values: z.infer<typeof formSchema>) {
     if (!firestore || !user) return;
+    
+    // Final stock check before submission
+    for (const item of values.pecas) {
+        if (item.itemId) {
+            const pecaRef = doc(firestore, 'pecas', item.itemId);
+            const pecaDoc = await doc(pecaRef).get();
+            if (pecaDoc.exists()) {
+                const pecaData = pecaDoc.data() as Peca;
+                const estoqueDisponivel = pecaData.quantidadeEstoque - (pecaData.quantidadeReservada || 0);
+                if (item.quantidade > estoqueDisponivel) {
+                    toast({
+                        variant: 'destructive',
+                        title: 'Erro de Estoque',
+                        description: `A peça "${item.descricao}" não tem estoque suficiente. Ação cancelada.`,
+                        duration: 7000,
+                    });
+                    return; // Abort submission
+                }
+            }
+        }
+    }
+
 
     try {
       const osCollectionRef = collection(firestore, 'ordensServico');
