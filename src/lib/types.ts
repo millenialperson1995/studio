@@ -168,18 +168,12 @@ export interface Notificacao {
 }
 
 
-// Schema for AI diagnosis - types only
-// The actual Zod schemas are in the flow file to prevent "use server" conflicts.
-const ItemAIType = z.object({
-  codigo: z.string(),
-  descricao: z.string(),
-});
-
+// Tipos para o fluxo de IA, para que possam ser usados no frontend sem importar o Zod
 export type DiagnosticoMotorInput = {
   sintomas: string;
   motorInfo: string;
-  servicosDisponiveis: z.infer<typeof ItemAIType>[];
-  pecasDisponiveis: z.infer<typeof ItemAIType>[];
+  servicosDisponiveis: { codigo: string; descricao: string }[];
+  pecasDisponiveis: { codigo: string; descricao: string }[];
 };
 
 export type DiagnosticoMotorOutput = {
@@ -188,6 +182,6 @@ export type DiagnosticoMotorOutput = {
     passo: string;
     isCritico: boolean;
   }[];
-  servicosSugeridos: z.infer<typeof ItemAIType>[];
-  pecasSugeridas: z.infer<typeof ItemAIType>[];
+  servicosSugeridos: { codigo: string; descricao: string }[];
+  pecasSugeridas: { codigo: string; descricao: string }[];
 };
