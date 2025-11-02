@@ -16,37 +16,53 @@ service cloud.firestore {
       return request.resource.data.userId == request.auth.uid;
     }
 
-    // Default deny all
+    // --- Default deny all ---
     match /{document=**} {
       allow read, write: if false;
     }
     
-    // Allow users to CUD their own user profile, but anyone can see the profile
-    // to get name/photo for display purposes.
+    // --- User Profiles ---
     match /users/{userId} {
         allow read: if isSignedIn();
         allow create: if isSignedIn() && request.auth.uid == userId;
-        allow update, delete: if isSignedIn() && isOwner(userId);
+        allow update, delete: if isOwner(userId);
     }
 
-    // Allow users to manage their own workshop settings document.
+    // --- Workshop Settings ---
     match /oficinas/{userId} {
         allow read, write: if isSignedIn() && isOwner(userId);
     }
     
-    // Allow users to read and write their own data in any top-level collection owned by them.
-    match /{collection}/{docId} {
-      allow read: if isSignedIn() && isOwner(resource.data.userId);
-      // For create, check the incoming data. For update/delete, check existing data.
-      allow write: if isSignedIn() && (isCreatingOwnedResource() || isOwner(resource.data.userId));
+    // --- Top-level collections owned by a user ---
+    match /clientes/{docId} {
+      allow read, write: if isSignedIn() && isOwner(resource.data.userId);
+    }
+    
+    match /orcamentos/{docId} {
+      allow read, write: if isSignedIn() && isOwner(resource.data.userId);
     }
 
-    // Special rule for 'veiculos' as a subcollection.
+    match /ordensServico/{docId} {
+      allow read, write: if isSignedIn() && isOwner(resource.data.userId);
+    }
+
+    match /pecas/{docId} {
+      allow read, write: if isSignedIn() && isOwner(resource.data.userId);
+    }
+
+    match /servicos/{docId} {
+      allow read, write: if isSignedIn() && isOwner(resource.data.userId);
+    }
+
+    match /notificacoes/{docId} {
+      allow read, write: if isSignedIn() && isOwner(resource.data.userId);
+    }
+    
+    // --- Subcollections ---
+    // Rule for 'veiculos' as a subcollection.
     // Allow read/write if the user owns the parent 'cliente' document.
     match /clientes/{clienteId}/veiculos/{veiculoId} {
         allow read, write: if isSignedIn() && get(/databases/$(database)/documents/clientes/$(clienteId)).data.userId == request.auth.uid;
     }
   }
 }
-
-    
