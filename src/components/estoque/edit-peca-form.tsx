@@ -13,8 +13,8 @@ import {
   FormMessage,
 } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
-import { updateDocumentNonBlocking, addDocumentNonBlocking } from '@/firebase/non-blocking-updates';
-import { doc, collection, serverTimestamp, query, where, getDocs } from 'firebase/firestore';
+import { updateDocumentNonBlocking } from '@/firebase/non-blocking-updates';
+import { doc } from 'firebase/firestore';
 import { useFirestore, useUser } from '@/firebase';
 import { useToast } from '@/hooks/use-toast';
 import type { Peca } from '@/lib/types';
@@ -61,38 +61,7 @@ export function EditPecaForm({ peca, setDialogOpen }: EditPecaFormProps) {
       };
       
       await updateDocumentNonBlocking(pecaDocRef, pecaData);
-
-      // We should create a notification if the stock is low and there isn't an existing unread notification.
-      if (isEstoqueBaixo) {
-        const q = query(
-            collection(firestore, 'notificacoes'),
-            where('userId', '==', user.uid),
-            where('pecaId', '==', peca.id),
-            where('lida', '==', false)
-        );
-        const existingNotif = await getDocs(q);
-
-        if(existingNotif.empty) {
-            const notificacoesCollectionRef = collection(firestore, 'notificacoes');
-            const newNotificacaoRef = doc(notificacoesCollectionRef);
-            const notificacaoData = {
-                id: newNotificacaoRef.id,
-                userId: user.uid,
-                pecaId: peca.id,
-                titulo: 'Estoque Baixo',
-                descricao: `A peça "${peca.descricao}" (Cód: ${peca.codigo}) atingiu o estoque mínimo.`,
-                tipo: 'estoque',
-                lida: false,
-                createdAt: serverTimestamp()
-            };
-            await addDocumentNonBlocking(newNotificacaoRef, notificacaoData);
-            toast({
-              title: "Notificação de Estoque",
-              description: "Alerta de estoque baixo foi gerado."
-            })
-        }
-      }
-
+      
       toast({
         title: 'Sucesso!',
         description: 'Peça atualizada com sucesso.',

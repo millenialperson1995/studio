@@ -157,18 +157,6 @@ export interface Peca {
   createdAt?: any;
 }
 
-export interface Notificacao {
-    id: string;
-    userId: string;
-    titulo: string;
-    descricao: string;
-    tipo: 'estoque'; // Add more types later if needed
-    lida: boolean;
-    createdAt: any;
-    pecaId?: string; // Optional reference to the part
-}
-
-
 // Tipos para o fluxo de IA, para que possam ser usados no frontend sem importar o Zod
 export type DiagnosticoMotorInput = {
   sintomas: string;
