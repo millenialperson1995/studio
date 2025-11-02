@@ -3,6 +3,7 @@
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useForm, useFieldArray } from 'react-hook-form';
 import { z } from 'zod';
+import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import {
   Form,
@@ -27,7 +28,6 @@ import { useFirestore, useUser } from '@/firebase';
 import { useToast } from '@/hooks/use-toast';
 import type { Cliente, Veiculo, Peca, Servico } from '@/lib/types';
 import { Trash2, PlusCircle, CalendarIcon } from 'lucide-react';
-import { useState } from 'react';
 import { Popover, PopoverContent, PopoverTrigger } from '../ui/popover';
 import { Calendar } from '../ui/calendar';
 import { cn } from '@/lib/utils';
