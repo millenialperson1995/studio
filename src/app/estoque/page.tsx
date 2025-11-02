@@ -100,7 +100,7 @@ function EstoqueContent() {
             Gerencie as peças e produtos da sua retífica.
           </CardDescription>
         </CardHeader>
-        <CardContent className="overflow-x-auto max-w-full">
+        <CardContent>
           <PecaTable pecas={pecas || []} />
           {error && (
             <div className="text-destructive text-center p-4">

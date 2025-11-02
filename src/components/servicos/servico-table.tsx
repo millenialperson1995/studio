@@ -80,7 +80,7 @@ export default function ServicoTable({ servicos = [] }: ServicoTableProps) {
 
   return (
     <>
-      <div className="rounded-md border">
+      <div className="relative w-full overflow-auto rounded-md border">
         <Table>
           <TableHeader>
             <TableRow>

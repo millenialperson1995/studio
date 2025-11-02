@@ -100,7 +100,7 @@ function ServicosContent() {
             Gerencie os serviços prestados pela sua retífica.
           </CardDescription>
         </CardHeader>
-        <CardContent className="overflow-x-auto max-w-full">
+        <CardContent>
           <ServicoTable servicos={servicos || []} />
           {error && (
             <div className="text-destructive text-center p-4">
