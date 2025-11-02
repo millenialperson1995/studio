@@ -46,7 +46,7 @@ function ServicosContent() {
 
   if (isLoading) {
     return (
-      <main className="flex-1 space-y-6 p-4 md:p-6 lg:p-8 overflow-hidden">
+      <main className="flex-1 space-y-6 p-4 md:p-6 lg:p-8">
         <div className="flex items-center justify-between">
           <Skeleton className="h-8 w-32" />
           <Skeleton className="h-10 w-44" />
@@ -71,7 +71,7 @@ function ServicosContent() {
   }
 
   return (
-    <main className="flex-1 space-y-6 p-4 md:p-6 lg:p-8 overflow-hidden">
+    <main className="flex-1 space-y-6 p-4 md:p-6 lg:p-8">
       <div className="flex items-center justify-between">
         <h1 className="text-2xl font-semibold">Serviços</h1>
         <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
@@ -100,7 +100,7 @@ function ServicosContent() {
             Gerencie os serviços prestados pela sua retífica.
           </CardDescription>
         </CardHeader>
-        <CardContent>
+        <CardContent className="overflow-x-auto max-w-full">
           <ServicoTable servicos={servicos || []} />
           {error && (
             <div className="text-destructive text-center p-4">
@@ -129,7 +129,7 @@ export default function ServicosPage() {
         <Sidebar><AppSidebar /></Sidebar>
         <SidebarInset>
           <AppHeader />
-          <main className="flex-1 space-y-6 p-4 md:p-6 lg:p-8 overflow-hidden">
+          <main className="flex-1 space-y-6 p-4 md:p-6 lg:p-8">
             <div className="flex items-center justify-between">
               <Skeleton className="h-8 w-32" />
               <Skeleton className="h-10 w-44" />
