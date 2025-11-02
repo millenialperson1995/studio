@@ -53,17 +53,22 @@ export const generateOrcamentoPDF = (
   
   // Cliente
   doc.text(`Cliente: ${cliente.nome}`, 15, clientInfoY);
-  doc.text(`Email: ${cliente.email}`, 15, clientInfoY + 5);
-  doc.text(`Telefone: ${cliente.telefone}`, 15, clientInfoY + 10);
-  doc.text(`Endereço: ${cliente.endereco}`, 15, clientInfoY + 15);
-  
+  doc.text(`Telefone: ${cliente.telefone}`, 15, clientInfoY + 5);
+  const enderecoLinha1 = `${cliente.endereco}, ${cliente.numero} - ${cliente.bairro}`;
+  const enderecoLinha2 = `${cliente.cidade} - ${cliente.uf}, CEP: ${cliente.cep}`;
+  doc.text(`Endereço: ${enderecoLinha1}`, 15, clientInfoY + 10);
+  doc.text(enderecoLinha2, 15, clientInfoY + 15);
+  if (cliente.pontoReferencia) {
+      doc.text(`Ref: ${cliente.pontoReferencia}`, 15, clientInfoY + 20);
+  }
+
   // Veículo
   doc.text(`Veículo: ${veiculo.marca} ${veiculo.modelo}`, vehicleInfoX, clientInfoY);
   doc.text(`Placa: ${veiculo.placa}`, vehicleInfoX, clientInfoY + 5);
   doc.text(`Ano: ${veiculo.ano}`, vehicleInfoX, clientInfoY + 10);
   doc.text(`Info. Técnicas: ${veiculo.informacoesTecnicas}`, vehicleInfoX, clientInfoY + 15);
 
-  doc.line(15, clientInfoY + 20, 195, clientInfoY + 20);
+  doc.line(15, clientInfoY + 25, 195, clientInfoY + 25);
 
   // 3. Items Table
   const tableColumn = ["Descrição", "Tipo", "Qtd.", "Vlr. Unitário", "Subtotal"];
@@ -76,7 +81,7 @@ export const generateOrcamentoPDF = (
   ]);
 
   doc.autoTable({
-    startY: clientInfoY + 25,
+    startY: clientInfoY + 30,
     head: [tableColumn],
     body: tableRows,
     theme: 'striped',

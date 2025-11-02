@@ -51,7 +51,13 @@ export interface Cliente {
   nome: string;
   telefone: string;
   email: string;
+  cep: string;
   endereco: string;
+  numero: string;
+  bairro: string;
+  cidade: string;
+  uf: string;
+  pontoReferencia?: string;
   createdAt?: any;
 }
 

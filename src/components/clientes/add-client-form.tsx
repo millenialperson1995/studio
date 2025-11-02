@@ -25,7 +25,13 @@ const formSchema = z.object({
   telefone: z
     .string()
     .min(10, 'O telefone deve ter pelo menos 10 caracteres.'),
-  endereco: z.string().min(5, 'O endereço deve ter pelo menos 5 caracteres.'),
+  cep: z.string().min(8, 'O CEP deve ter 8 caracteres.').max(9, 'O CEP deve ter no máximo 9 caracteres (com hífen).'),
+  endereco: z.string().min(3, 'O endereço deve ter pelo menos 3 caracteres.'),
+  numero: z.string().min(1, 'O número é obrigatório.'),
+  bairro: z.string().min(2, 'O bairro é obrigatório.'),
+  cidade: z.string().min(2, 'A cidade é obrigatória.'),
+  uf: z.string().length(2, 'A UF deve ter 2 caracteres.'),
+  pontoReferencia: z.string().optional(),
 });
 
 type AddClientFormProps = {
@@ -43,7 +49,13 @@ export function AddClientForm({ setDialogOpen }: AddClientFormProps) {
       nome: '',
       email: '',
       telefone: '',
+      cep: '',
       endereco: '',
+      numero: '',
+      bairro: '',
+      cidade: '',
+      uf: '',
+      pontoReferencia: '',
     },
   });
 
@@ -97,51 +109,136 @@ export function AddClientForm({ setDialogOpen }: AddClientFormProps) {
             <FormItem>
               <FormLabel>Nome</FormLabel>
               <FormControl>
-                <Input placeholder="Nome do cliente" {...field} />
+                <Input placeholder="Nome completo do cliente" {...field} />
               </FormControl>
               <FormMessage />
             </FormItem>
           )}
         />
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <FormField
+            control={form.control}
+            name="email"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Email</FormLabel>
+                <FormControl>
+                  <Input placeholder="email@exemplo.com" {...field} />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+          <FormField
+            control={form.control}
+            name="telefone"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Telefone</FormLabel>
+                <FormControl>
+                  <Input placeholder="(11) 99999-9999" {...field} />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+        </div>
         <FormField
-          control={form.control}
-          name="email"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>Email</FormLabel>
-              <FormControl>
-                <Input placeholder="email@exemplo.com" {...field} />
-              </FormControl>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
+            control={form.control}
+            name="cep"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>CEP</FormLabel>
+                <FormControl>
+                  <Input placeholder="00000-000" {...field} />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+            <FormField
+                control={form.control}
+                name="endereco"
+                render={({ field }) => (
+                <FormItem className='col-span-2'>
+                    <FormLabel>Endereço</FormLabel>
+                    <FormControl>
+                    <Input placeholder="Rua, Avenida, etc." {...field} />
+                    </FormControl>
+                    <FormMessage />
+                </FormItem>
+                )}
+            />
+             <FormField
+                control={form.control}
+                name="numero"
+                render={({ field }) => (
+                <FormItem>
+                    <FormLabel>Número</FormLabel>
+                    <FormControl>
+                    <Input placeholder="123" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                </FormItem>
+                )}
+            />
+        </div>
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+            <FormField
+                control={form.control}
+                name="bairro"
+                render={({ field }) => (
+                <FormItem>
+                    <FormLabel>Bairro</FormLabel>
+                    <FormControl>
+                    <Input placeholder="Centro" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                </FormItem>
+                )}
+            />
+             <FormField
+                control={form.control}
+                name="cidade"
+                render={({ field }) => (
+                <FormItem>
+                    <FormLabel>Cidade</FormLabel>
+                    <FormControl>
+                    <Input placeholder="São Paulo" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                </FormItem>
+                )}
+            />
+             <FormField
+                control={form.control}
+                name="uf"
+                render={({ field }) => (
+                <FormItem>
+                    <FormLabel>UF</FormLabel>
+                    <FormControl>
+                    <Input placeholder="SP" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                </FormItem>
+                )}
+            />
+        </div>
         <FormField
-          control={form.control}
-          name="telefone"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>Telefone</FormLabel>
-              <FormControl>
-                <Input placeholder="(11) 99999-9999" {...field} />
-              </FormControl>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
-        <FormField
-          control={form.control}
-          name="endereco"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>Endereço</FormLabel>
-              <FormControl>
-                <Input placeholder="Rua, número, cidade" {...field} />
-              </FormControl>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
+            control={form.control}
+            name="pontoReferencia"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Ponto de Referência (Opcional)</FormLabel>
+                <FormControl>
+                  <Input placeholder="Próximo ao mercado" {...field} />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+
         <div className="flex justify-end pt-4">
           <Button type="submit" disabled={form.formState.isSubmitting}>
             {form.formState.isSubmitting ? 'Salvando...' : 'Salvar Cliente'}

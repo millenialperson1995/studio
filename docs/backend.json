@@ -22,9 +22,15 @@
         "nome": { "type": "string", "description": "The name of the customer." },
         "telefone": { "type": "string", "description": "The customer's phone number." },
         "email": { "type": "string", "description": "The customer's email address.", "format": "email" },
-        "endereco": { "type": "string", "description": "The customer's address." }
+        "cep": { "type": "string", "description": "Postal code (CEP)." },
+        "endereco": { "type": "string", "description": "Street address." },
+        "numero": { "type": "string", "description": "House/Building number." },
+        "bairro": { "type": "string", "description": "Neighborhood." },
+        "cidade": { "type": "string", "description": "City." },
+        "uf": { "type": "string", "description": "State (Unidade Federativa)." },
+        "pontoReferencia": { "type": "string", "description": "Reference point for the address." }
       },
-      "required": ["id", "userId", "nome", "telefone", "email", "endereco"]
+      "required": ["id", "userId", "nome", "telefone", "email", "cep", "endereco", "numero", "bairro", "cidade", "uf"]
     },
     "Veiculo": {
       "title": "Veiculo",
