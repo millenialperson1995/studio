@@ -79,15 +79,17 @@
         "clienteId": { "type": "string" },
         "veiculoId": { "type": "string" },
         "status": { "type": "string" },
+        "statusPagamento": { "type": "string", "description": "The payment status of the service order.", "enum": ["Pendente", "Pago", "Vencido"] },
         "dataEntrada": { "type": "string", "format": "date-time" },
         "dataPrevisao": { "type": "string", "format": "date-time" },
+        "dataPagamento": { "type": "string", "format": "date-time" },
         "mecanicoResponsavel": { "type": "string" },
         "servicos": { "type": "array", "items": { "type": "string" } },
         "pecas": { "type": "array", "items": { "type": "string" } },
         "valorTotal": { "type": "number" },
         "observacoes": { "type": "string" }
       },
-      "required": ["id", "userId", "clienteId", "veiculoId", "status", "dataEntrada", "dataPrevisao", "mecanicoResponsavel", "servicos", "pecas", "valorTotal"]
+      "required": ["id", "userId", "clienteId", "veiculoId", "status", "statusPagamento", "dataEntrada", "dataPrevisao", "mecanicoResponsavel", "servicos", "pecas", "valorTotal"]
     },
     "Peca": {
       "title": "Peca",

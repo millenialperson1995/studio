@@ -22,7 +22,7 @@ import {
 } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
 import { updateDocumentNonBlocking } from '@/firebase/non-blocking-updates';
-import { doc } from 'firebase/firestore';
+import { doc, serverTimestamp } from 'firebase/firestore';
 import { useFirestore } from '@/firebase';
 import { useToast } from '@/hooks/use-toast';
 import type { OrdemServico, Cliente, Veiculo, Peca, Servico } from '@/lib/types';
@@ -52,6 +52,8 @@ const formSchema = z.object({
   dataPrevisao: z.date({ required_error: 'A data de previsão é obrigatória.' }),
   dataConclusao: z.date().optional().nullable(),
   status: z.enum(['pendente', 'andamento', 'concluida', 'cancelada']),
+  statusPagamento: z.enum(['Pendente', 'Pago', 'Vencido']),
+  dataPagamento: z.date().optional().nullable(),
   mecanicoResponsavel: z.string().min(1, 'Informe o mecânico responsável.'),
   observacoes: z.string().optional(),
   servicos: z.array(servicoSchema),
@@ -93,6 +95,7 @@ export function EditOrdemServicoForm({
       dataEntrada: toDate(ordemServico.dataEntrada)!,
       dataPrevisao: toDate(ordemServico.dataPrevisao)!,
       dataConclusao: toDate(ordemServico.dataConclusao),
+      dataPagamento: toDate(ordemServico.dataPagamento),
     },
   });
 
@@ -102,12 +105,16 @@ export function EditOrdemServicoForm({
   const servicosValues = form.watch('servicos');
   const pecasValues = form.watch('pecas');
   const statusValue = form.watch('status');
+  const paymentStatus = form.watch('statusPagamento');
 
    useEffect(() => {
     if (statusValue === 'concluida' && !form.getValues('dataConclusao')) {
       form.setValue('dataConclusao', new Date());
     }
-  }, [statusValue, form]);
+     if (paymentStatus === 'Pago' && !form.getValues('dataPagamento')) {
+      form.setValue('dataPagamento', new Date());
+    }
+  }, [statusValue, paymentStatus, form]);
 
 
   useEffect(() => {
@@ -128,6 +135,7 @@ export function EditOrdemServicoForm({
       const finalValues = {
         ...values,
         dataConclusao: values.status === 'concluida' ? (values.dataConclusao || new Date()) : null,
+        dataPagamento: values.statusPagamento === 'Pago' ? (values.dataPagamento || new Date()) : null,
       };
 
       const ordemDocRef = doc(firestore, 'ordensServico', ordemServico.id);
@@ -251,14 +259,14 @@ export function EditOrdemServicoForm({
             />
         </div>
 
-         <div className="flex flex-col md:flex-row gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             <FormField control={form.control} name="mecanicoResponsavel" render={({ field }) => (
                 <FormItem className="flex-1"><FormLabel>Mecânico Responsável</FormLabel>
                 <FormControl><Input placeholder="Nome do mecânico" {...field} /></FormControl>
                 <FormMessage /></FormItem>)}
             />
             <FormField control={form.control} name="status" render={({ field }) => (
-              <FormItem className="flex-1"><FormLabel>Status</FormLabel>
+              <FormItem className="flex-1"><FormLabel>Status do Serviço</FormLabel>
                 <Select onValueChange={field.onChange} defaultValue={field.value}>
                   <FormControl><SelectTrigger><SelectValue placeholder="Selecione o status" /></SelectTrigger></FormControl>
                   <SelectContent>
@@ -266,6 +274,18 @@ export function EditOrdemServicoForm({
                     <SelectItem value="andamento">Em Andamento</SelectItem>
                     <SelectItem value="concluida">Concluída</SelectItem>
                     <SelectItem value="cancelada">Cancelada</SelectItem>
+                  </SelectContent>
+                </Select><FormMessage />
+              </FormItem>)}
+            />
+            <FormField control={form.control} name="statusPagamento" render={({ field }) => (
+              <FormItem className="flex-1"><FormLabel>Status do Pagamento</FormLabel>
+                <Select onValueChange={field.onChange} defaultValue={field.value}>
+                  <FormControl><SelectTrigger><SelectValue placeholder="Selecione o status" /></SelectTrigger></FormControl>
+                  <SelectContent>
+                    <SelectItem value="Pendente">Pendente</SelectItem>
+                    <SelectItem value="Pago">Pago</SelectItem>
+                    <SelectItem value="Vencido">Vencido</SelectItem>
                   </SelectContent>
                 </Select><FormMessage />
               </FormItem>)}
@@ -283,6 +303,21 @@ export function EditOrdemServicoForm({
                     </FormControl></PopoverTrigger>
                     <PopoverContent className="w-auto p-0" align="start">
                         <Calendar mode="single" selected={field.value || undefined} onSelect={field.onChange} disabled={(date) => date < form.getValues('dataEntrada')} initialFocus/>
+                    </PopoverContent></Popover><FormMessage />
+                </FormItem>)}
+            />
+        )}
+        {form.watch('statusPagamento') === 'Pago' && (
+             <FormField name="dataPagamento" control={form.control} render={({ field }) => (
+                <FormItem className="flex flex-col"><FormLabel>Data de Pagamento</FormLabel>
+                    <Popover><PopoverTrigger asChild><FormControl>
+                        <Button variant={'outline'} className={cn('w-full pl-3 text-left font-normal',!field.value && 'text-muted-foreground')}>
+                            {field.value ? format(field.value, 'PPP') : <span>Escolha uma data</span>}
+                            <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
+                        </Button>
+                    </FormControl></PopoverTrigger>
+                    <PopoverContent className="w-auto p-0" align="start">
+                        <Calendar mode="single" selected={field.value || undefined} onSelect={field.onChange} initialFocus/>
                     </PopoverContent></Popover><FormMessage />
                 </FormItem>)}
             />
@@ -401,5 +436,3 @@ export function EditOrdemServicoForm({
     </Form>
   );
 }
-
-    

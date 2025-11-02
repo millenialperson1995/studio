@@ -14,6 +14,7 @@ import {
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuLabel,
+  DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import {
@@ -35,10 +36,10 @@ import {
 } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { MoreHorizontal, Pencil, Trash2 } from 'lucide-react';
+import { MoreHorizontal, Pencil, Trash2, DollarSign } from 'lucide-react';
 import type { OrdemServico, Cliente, Veiculo, Peca, Servico } from '@/lib/types';
-import { deleteDocumentNonBlocking } from '@/firebase/non-blocking-updates';
-import { doc } from 'firebase/firestore';
+import { deleteDocumentNonBlocking, updateDocumentNonBlocking } from '@/firebase/non-blocking-updates';
+import { doc, serverTimestamp } from 'firebase/firestore';
 import { useFirestore } from '@/firebase';
 import { useToast } from '@/hooks/use-toast';
 import { EditOrdemServicoForm } from './edit-ordem-servico-form';
@@ -64,6 +65,18 @@ const statusLabelMap: { [key: string]: string } = {
   andamento: 'Em Andamento',
   concluida: 'Concluída',
   cancelada: 'Cancelada',
+};
+
+const paymentStatusVariantMap: { [key: string]: 'default' | 'secondary' | 'destructive' | 'outline' } = {
+    Pago: 'secondary',
+    Pendente: 'outline',
+    Vencido: 'destructive',
+};
+
+const paymentStatusLabelMap: { [key: string]: string } = {
+    Pendente: 'Pendente',
+    Pago: 'Pago',
+    Vencido: 'Vencido',
 };
 
 
@@ -94,6 +107,19 @@ export default function OrdemServicoTable({
   const handleDeleteClick = (ordem: OrdemServico) => {
     setSelectedOrdem(ordem);
     setIsDeleteDialogOpen(true);
+  };
+
+  const handleMarkAsPaid = (ordem: OrdemServico) => {
+    if (!firestore) return;
+    const ordemDocRef = doc(firestore, 'ordensServico', ordem.id);
+    updateDocumentNonBlocking(ordemDocRef, { 
+      statusPagamento: 'Pago',
+      dataPagamento: serverTimestamp() 
+    });
+    toast({
+      title: 'Pagamento Registrado',
+      description: `A ordem de serviço foi marcada como paga.`,
+    });
   };
 
   const handleDeleteConfirm = () => {
@@ -131,10 +157,10 @@ export default function OrdemServicoTable({
           <TableHeader>
             <TableRow>
               <TableHead>Cliente</TableHead>
-              <TableHead className="hidden md:table-cell">Veículo</TableHead>
-              <TableHead className="hidden sm:table-cell">Data Entrada</TableHead>
-              <TableHead>Valor</TableHead>
-              <TableHead className="hidden sm:table-cell">Status</TableHead>
+              <TableHead className="hidden lg:table-cell">Veículo</TableHead>
+              <TableHead className="hidden md:table-cell">Valor</TableHead>
+              <TableHead className="hidden sm:table-cell">Serviço</TableHead>
+              <TableHead>Pagamento</TableHead>
               <TableHead>
                 <span className="sr-only">Ações</span>
               </TableHead>
@@ -146,16 +172,20 @@ export default function OrdemServicoTable({
                 <TableRow key={ordem.id}>
                   <TableCell>
                      <div className="font-medium">{ordem.clienteNome}</div>
-                     <div className="block sm:hidden text-xs text-muted-foreground">
-                       {statusLabelMap[ordem.status]}
+                     <div className="text-xs text-muted-foreground">
+                       OS Aberta em: {formatDate(ordem.dataEntrada)}
                     </div>
                   </TableCell>
-                   <TableCell className="hidden md:table-cell text-muted-foreground">{ordem.veiculoDesc}</TableCell>
-                   <TableCell className="hidden sm:table-cell text-muted-foreground">{formatDate(ordem.dataEntrada)}</TableCell>
-                  <TableCell>{`R$ ${ordem.valorTotal.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`}</TableCell>
+                   <TableCell className="hidden lg:table-cell text-muted-foreground">{ordem.veiculoDesc}</TableCell>
+                   <TableCell className="hidden md:table-cell">{`R$ ${ordem.valorTotal.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`}</TableCell>
                    <TableCell className="hidden sm:table-cell">
                     <Badge variant={statusVariantMap[ordem.status]} className="text-xs">
                         {statusLabelMap[ordem.status]}
+                    </Badge>
+                  </TableCell>
+                   <TableCell>
+                    <Badge variant={paymentStatusVariantMap[ordem.statusPagamento]} className="text-xs">
+                        {paymentStatusLabelMap[ordem.statusPagamento]}
                     </Badge>
                   </TableCell>
                   <TableCell>
@@ -174,6 +204,13 @@ export default function OrdemServicoTable({
                           <Pencil className="mr-2 h-4 w-4" />
                           Editar
                         </DropdownMenuItem>
+                        {ordem.statusPagamento !== 'Pago' && (
+                           <DropdownMenuItem onClick={() => handleMarkAsPaid(ordem)}>
+                              <DollarSign className="mr-2 h-4 w-4" />
+                              Marcar como Pago
+                          </DropdownMenuItem>
+                        )}
+                        <DropdownMenuSeparator />
                         <DropdownMenuItem
                           className="text-destructive focus:text-destructive focus:bg-destructive/10"
                           onClick={() => handleDeleteClick(ordem)}
@@ -244,5 +281,3 @@ export default function OrdemServicoTable({
     </>
   );
 }
-
-    

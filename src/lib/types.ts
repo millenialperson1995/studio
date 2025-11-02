@@ -110,9 +110,11 @@ export interface OrdemServico {
   clienteId: string;
   veiculoId: string;
   status: 'pendente' | 'andamento' | 'concluida' | 'cancelada';
+  statusPagamento: 'Pendente' | 'Pago' | 'Vencido';
   dataEntrada: any;
   dataPrevisao: any;
   dataConclusao?: any;
+  dataPagamento?: any;
   mecanicoResponsavel: string;
   servicos: ItemServico[];
   pecas: ItemPeca[];
@@ -136,5 +138,3 @@ export interface Peca {
   alertaEstoqueBaixo: boolean;
   createdAt?: any;
 }
-
-    

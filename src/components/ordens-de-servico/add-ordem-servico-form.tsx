@@ -51,6 +51,7 @@ const formSchema = z.object({
   dataEntrada: z.date({ required_error: 'A data de entrada é obrigatória.' }),
   dataPrevisao: z.date({ required_error: 'A data de previsão é obrigatória.' }),
   status: z.enum(['pendente', 'andamento', 'concluida', 'cancelada']),
+  statusPagamento: z.enum(['Pendente', 'Pago', 'Vencido']),
   mecanicoResponsavel: z.string().min(1, 'Informe o mecânico responsável.'),
   observacoes: z.string().optional(),
   servicos: z.array(servicoSchema),
@@ -86,6 +87,7 @@ export function AddOrdemServicoForm({
       dataEntrada: new Date(),
       dataPrevisao: new Date(new Date().setDate(new Date().getDate() + 7)),
       status: 'pendente',
+      statusPagamento: 'Pendente',
       mecanicoResponsavel: '',
       observacoes: '',
       servicos: [],
@@ -246,14 +248,14 @@ export function AddOrdemServicoForm({
             />
         </div>
 
-        <div className="flex flex-col md:flex-row gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             <FormField control={form.control} name="mecanicoResponsavel" render={({ field }) => (
                 <FormItem className="flex-1"><FormLabel>Mecânico Responsável</FormLabel>
                 <FormControl><Input placeholder="Nome do mecânico" {...field} /></FormControl>
                 <FormMessage /></FormItem>)}
             />
             <FormField control={form.control} name="status" render={({ field }) => (
-              <FormItem className="flex-1"><FormLabel>Status</FormLabel>
+              <FormItem className="flex-1"><FormLabel>Status do Serviço</FormLabel>
                 <Select onValueChange={field.onChange} defaultValue={field.value}>
                   <FormControl><SelectTrigger><SelectValue placeholder="Selecione o status" /></SelectTrigger></FormControl>
                   <SelectContent>
@@ -261,6 +263,18 @@ export function AddOrdemServicoForm({
                     <SelectItem value="andamento">Em Andamento</SelectItem>
                     <SelectItem value="concluida">Concluída</SelectItem>
                     <SelectItem value="cancelada">Cancelada</SelectItem>
+                  </SelectContent>
+                </Select><FormMessage />
+              </FormItem>)}
+            />
+             <FormField control={form.control} name="statusPagamento" render={({ field }) => (
+              <FormItem className="flex-1"><FormLabel>Status do Pagamento</FormLabel>
+                <Select onValueChange={field.onChange} defaultValue={field.value}>
+                  <FormControl><SelectTrigger><SelectValue placeholder="Selecione o status" /></SelectTrigger></FormControl>
+                  <SelectContent>
+                    <SelectItem value="Pendente">Pendente</SelectItem>
+                    <SelectItem value="Pago">Pago</SelectItem>
+                    <SelectItem value="Vencido">Vencido</SelectItem>
                   </SelectContent>
                 </Select><FormMessage />
               </FormItem>)}
@@ -379,7 +393,3 @@ export function AddOrdemServicoForm({
     </Form>
   );
 }
-
-    
-
-    
