@@ -8,7 +8,6 @@ import {
     Settings,
     Users,
     Wrench,
-    Sparkles,
   } from 'lucide-react';
   import {
     SidebarHeader,
@@ -44,12 +43,6 @@ import {
                 <SidebarMenuButton href="/" tooltip="Dashboard">
                     <LayoutDashboard />
                     {!isCollapsed && 'Dashboard'}
-                </SidebarMenuButton>
-            </SidebarMenuItem>
-            <SidebarMenuItem>
-                <SidebarMenuButton href="/diagnostico" tooltip="Diagnóstico IA">
-                    <Sparkles />
-                    {!isCollapsed && 'Diagnóstico IA'}
                 </SidebarMenuButton>
             </SidebarMenuItem>
              <SidebarMenuItem>
