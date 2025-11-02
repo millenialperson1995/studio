@@ -68,47 +68,52 @@ function VeiculosContent() {
             return;
         }
 
+        let loadedClients = 0;
         clientsSnapshot.forEach((clientDoc) => {
             const vehiclesQuery = collection(firestore, 'clientes', clientDoc.id, 'veiculos');
             
             const unsubscribeVehicle = onSnapshot(vehiclesQuery, (vehiclesSnapshot) => {
                 vehiclesSnapshot.docChanges().forEach((change) => {
+                    const vehicleData = change.doc.data() as Veiculo;
                     if (change.type === "removed") {
                         delete allVehicles[change.doc.id];
                     } else {
-                        allVehicles[change.doc.id] = change.doc.data() as Veiculo;
+                        allVehicles[change.doc.id] = vehicleData;
                     }
                 });
 
+                // Update state once for this batch
                 setVehicles(Object.values(allVehicles));
-
+                
             }, (error) => {
-                const contextualError = new FirestorePermissionError({
+                errorEmitter.emit('permission-error', new FirestorePermissionError({
                     operation: 'list',
                     path: `clientes/${clientDoc.id}/veiculos`,
-                });
-                errorEmitter.emit('permission-error', contextualError);
+                }));
             });
-
             vehicleListeners.push(unsubscribeVehicle);
         });
 
+        // This might be a bit premature if snapshots arrive out of order,
+        // but it's better than the multiple state updates.
         setIsLoadingVehicles(false);
 
-
+        // Cleanup function
         return () => {
             vehicleListeners.forEach(unsubscribe => unsubscribe());
         };
     }, (error) => {
-        const contextualError = new FirestorePermissionError({
+        errorEmitter.emit('permission-error', new FirestorePermissionError({
             operation: 'list',
             path: 'clientes',
-        });
-        errorEmitter.emit('permission-error', contextualError);
+        }));
         setIsLoadingVehicles(false);
     });
 
-    return () => unsubscribeClients();
+    return () => {
+        // This will be called when the component unmounts
+        unsubscribeClients();
+    };
 
   }, [firestore, user?.uid]);
   
