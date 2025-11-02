@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import AppHeader from '@/components/layout/app-header';
 import AppSidebar from '@/components/layout/app-sidebar';
 import {
@@ -29,10 +29,9 @@ import {
   DialogDescription,
   DialogTrigger,
 } from '@/components/ui/dialog';
-import { Skeleton } from '@/components/ui/skeleton';
 import { AddPecaForm } from '@/components/estoque/add-peca-form';
 import PecaTable from '@/components/estoque/peca-table';
-import { useRouter } from 'next/navigation';
+import AuthenticatedPage from '@/components/layout/authenticated-page';
 
 function EstoqueContent() {
   const [isDialogOpen, setIsDialogOpen] = useState(false);
@@ -45,29 +44,7 @@ function EstoqueContent() {
   const { data: pecas, isLoading, error } = useCollection<Peca>(pecasCollectionRef);
 
   if (isLoading) {
-    return (
-      <main className="flex-1 space-y-6 p-4 md:p-6 lg:p-8">
-        <div className="flex items-center justify-between">
-          <Skeleton className="h-8 w-48" />
-          <Skeleton className="h-10 w-36" />
-        </div>
-        <Card>
-          <CardHeader>
-            <CardTitle>Controle de Estoque</CardTitle>
-            <CardDescription>
-              Gerencie as peças e produtos da sua retífica.
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-2">
-              <Skeleton className="h-12 w-full" />
-              <Skeleton className="h-12 w-full" />
-              <Skeleton className="h-12 w-full" />
-            </div>
-          </CardContent>
-        </Card>
-      </main>
-    );
+    return null; // Skeleton handled by AuthenticatedPage
   }
 
   return (
@@ -114,33 +91,6 @@ function EstoqueContent() {
 }
 
 export default function EstoquePage() {
-  const { user, isUserLoading } = useUser();
-  const router = useRouter();
-
-  useEffect(() => {
-    if (!isUserLoading && !user) {
-      router.push('/login');
-    }
-  }, [user, isUserLoading, router]);
-
-  if (isUserLoading || !user) {
-    return (
-      <SidebarProvider>
-        <Sidebar><AppSidebar /></Sidebar>
-        <SidebarInset>
-          <AppHeader />
-          <main className="flex-1 space-y-6 p-4 md:p-6 lg:p-8">
-            <div className="flex items-center justify-between">
-              <Skeleton className="h-8 w-48" />
-              <Skeleton className="h-10 w-36" />
-            </div>
-            <Skeleton className="h-96 w-full" />
-          </main>
-        </SidebarInset>
-      </SidebarProvider>
-    );
-  }
-
   return (
     <SidebarProvider>
       <Sidebar>
@@ -148,7 +98,9 @@ export default function EstoquePage() {
       </Sidebar>
       <SidebarInset>
         <AppHeader />
-        <EstoqueContent />
+        <AuthenticatedPage>
+          <EstoqueContent />
+        </AuthenticatedPage>
       </SidebarInset>
     </SidebarProvider>
   );

@@ -38,10 +38,10 @@ import {
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { MoreHorizontal, Pencil, Trash2, FilePlus2, FileDown, Loader2 } from 'lucide-react';
-import type { Orcamento, Cliente, Veiculo, ItemServico, OrdemServico, Peca, Servico, Oficina, ItemOrcamento, ItemPeca } from '@/lib/types';
-import { deleteDocumentNonBlocking, addDocumentNonBlocking, updateDocumentNonBlocking } from '@/firebase/non-blocking-updates';
+import type { Orcamento, Cliente, Veiculo, ItemServico, OrdemServico, Peca, Servico, Oficina } from '@/lib/types';
+import { deleteDocumentNonBlocking } from '@/firebase/non-blocking-updates';
 import { doc, collection, serverTimestamp, getDoc, runTransaction, Transaction } from 'firebase/firestore';
-import { useFirestore, useUser } from '@/firebase';
+import { useFirestore, useUser, useVehicles } from '@/firebase';
 import { useToast } from '@/hooks/use-toast';
 import { EditOrcamentoForm } from './edit-orcamento-form';
 import { format } from 'date-fns';
@@ -50,7 +50,6 @@ import { generateOrcamentoPDF } from '@/lib/pdf-generator';
 interface OrcamentoTableProps {
   orcamentos: Orcamento[];
   clients: Cliente[];
-  vehicles: Veiculo[];
   servicos: Servico[];
   pecas: Peca[];
 }
@@ -71,7 +70,6 @@ const statusLabelMap: { [key: string]: string } = {
 export default function OrcamentoTable({
   orcamentos = [],
   clients = [],
-  vehicles = [],
   servicos = [],
   pecas = [],
 }: OrcamentoTableProps) {
@@ -79,6 +77,8 @@ export default function OrcamentoTable({
   const { user } = useUser();
   const { toast } = useToast();
   const router = useRouter();
+  const { vehicles } = useVehicles();
+
 
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
@@ -192,8 +192,10 @@ export default function OrcamentoTable({
             .filter(item => item.tipo === 'servico')
             .map(item => ({ descricao: item.descricao, valor: item.valorTotal }));
         
-        const osPecas: ItemPeca[] = pecasDoOrcamento.map(item => ({
-            itemId: item.itemId, // Carry over the itemId
+        const osPecas = orcamento.itens
+        .filter(item => item.tipo === 'peca')
+        .map(item => ({
+            itemId: item.itemId!,
             descricao: item.descricao,
             quantidade: item.quantidade,
             valorUnitario: item.valorUnitario,
@@ -387,7 +389,7 @@ export default function OrcamentoTable({
             <EditOrcamentoForm
               orcamento={selectedOrcamento}
               clients={clients}
-              vehicles={vehicles}
+              vehicles={vehicles || []}
               servicos={servicos}
               pecas={pecas}
               setDialogOpen={setIsEditDialogOpen}

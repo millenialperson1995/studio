@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import AppHeader from '@/components/layout/app-header';
 import AppSidebar from '@/components/layout/app-sidebar';
 import {
@@ -17,10 +17,10 @@ import {
   CardTitle,
   CardDescription,
 } from '@/components/ui/card';
-import { useCollection, useFirestore, useUser, errorEmitter } from '@/firebase';
+import { useCollection, useFirestore, useUser, useVehicles } from '@/firebase';
 import { useMemoFirebase } from '@/firebase/provider';
-import { collection, query, where, onSnapshot, Unsubscribe } from 'firebase/firestore';
-import type { Cliente, Veiculo } from '@/lib/types';
+import { collection, query, where } from 'firebase/firestore';
+import type { Cliente } from '@/lib/types';
 import {
   Dialog,
   DialogContent,
@@ -31,130 +31,24 @@ import {
 } from '@/components/ui/dialog';
 import { AddVehicleForm } from '@/components/veiculos/add-vehicle-form';
 import VehicleTable from '@/components/veiculos/vehicle-table';
-import { Skeleton } from '@/components/ui/skeleton';
-import { useRouter } from 'next/navigation';
-import { FirestorePermissionError } from '@/firebase/errors';
+import AuthenticatedPage from '@/components/layout/authenticated-page';
 
 function VeiculosContent() {
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const firestore = useFirestore();
   const { user } = useUser();
-  const [vehicles, setVehicles] = useState<Veiculo[]>([]);
-  const [isLoadingVehicles, setIsLoadingVehicles] = useState(true);
+  const { vehicles, isLoading: isLoadingVehicles } = useVehicles();
 
   const clientsCollectionRef = useMemoFirebase(
     () => (firestore && user?.uid ? query(collection(firestore, 'clientes'), where('userId', '==', user.uid)) : null),
     [firestore, user?.uid]
   );
   const { data: clients, isLoading: isLoadingClients } = useCollection<Cliente>(clientsCollectionRef);
-
-  useEffect(() => {
-    if (!firestore || !user?.uid) {
-        setIsLoadingVehicles(false);
-        return;
-    }
-  
-    // This will hold all the unsubscribe functions for the vehicle subcollections.
-    let vehicleListeners: Unsubscribe[] = [];
-  
-    const cleanup = () => {
-      // Unsubscribe from all subcollection listeners
-      vehicleListeners.forEach(unsubscribe => unsubscribe());
-      vehicleListeners = []; // Reset the array
-    };
-  
-    setIsLoadingVehicles(true);
-    const clientQuery = query(collection(firestore, "clientes"), where("userId", "==", user.uid));
-    
-    // Main listener for the clients collection
-    const unsubscribeClients = onSnapshot(clientQuery, (clientsSnapshot) => {
-        cleanup(); // Unsubscribe from old listeners before creating new ones
-
-        let allVehicles: { [key: string]: Veiculo } = {};
-
-        if (clientsSnapshot.empty) {
-            setVehicles([]);
-            setIsLoadingVehicles(false);
-            return;
-        }
-        
-        let clientsProcessed = 0;
-        const totalClients = clientsSnapshot.size;
-
-        clientsSnapshot.forEach((clientDoc) => {
-            const vehiclesQuery = collection(firestore, 'clientes', clientDoc.id, 'veiculos');
-            
-            const unsubscribeVehicle = onSnapshot(vehiclesQuery, (vehiclesSnapshot) => {
-                vehiclesSnapshot.docChanges().forEach((change) => {
-                    const vehicleData = change.doc.data() as Veiculo;
-                    if (change.type === "removed") {
-                        delete allVehicles[change.doc.id];
-                    } else {
-                        allVehicles[change.doc.id] = vehicleData;
-                    }
-                });
-                
-                // Update the state with the new complete list of vehicles
-                setVehicles(Object.values(allVehicles));
-                
-            }, (error) => {
-                console.error(`Error listening to vehicles for client ${clientDoc.id}:`, error);
-                errorEmitter.emit('permission-error', new FirestorePermissionError({
-                    operation: 'list',
-                    path: `clientes/${clientDoc.id}/veiculos`,
-                }));
-            });
-            
-            vehicleListeners.push(unsubscribeVehicle); // Store the new unsubscribe function
-        });
-        
-        // This part is a bit tricky with nested listeners. A simpler approach might be better if many clients are expected.
-        // For now, let's assume it's okay and just set loading to false.
-        setIsLoadingVehicles(false);
-
-    }, (error) => {
-        console.error("Error listening to clients collection: ", error);
-        errorEmitter.emit('permission-error', new FirestorePermissionError({
-            operation: 'list',
-            path: 'clientes',
-        }));
-        setIsLoadingVehicles(false);
-    });
-
-    // Main cleanup function for the useEffect hook
-    return () => {
-        unsubscribeClients();
-        cleanup(); // Also clean up vehicle listeners when the component unmounts
-    };
-
-  }, [firestore, user?.uid]);
   
   const isLoading = isLoadingVehicles || isLoadingClients;
 
   if (isLoading) {
-    return (
-      <main className="flex-1 space-y-6 p-4 md:p-6 lg:p-8">
-        <div className="flex items-center justify-between">
-          <Skeleton className="h-8 w-32" />
-          <Skeleton className="h-10 w-40" />
-        </div>
-        <Card>
-          <CardHeader>
-            <CardTitle>Lista de Veículos</CardTitle>
-            <CardDescription>
-              Gerencie os veículos da sua retífica.
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-2">
-                <Skeleton className="h-12 w-full" />
-                <Skeleton className="h-12 w-full" />
-                <Skeleton className="h-12 w-full" />
-            </div>
-          </CardContent>
-        </Card>
-      </main>
-    );
+    return null; // Skeleton handled by AuthenticatedPage
   }
 
   return (
@@ -199,33 +93,6 @@ function VeiculosContent() {
 }
 
 export default function VeiculosPage() {
-  const { user, isUserLoading } = useUser();
-  const router = useRouter();
-
-  useEffect(() => {
-    if (!isUserLoading && !user) {
-      router.push('/login');
-    }
-  }, [user, isUserLoading, router]);
-
-  if (isUserLoading || !user) {
-    return (
-      <SidebarProvider>
-        <Sidebar><AppSidebar /></Sidebar>
-        <SidebarInset>
-          <AppHeader />
-          <main className="flex-1 space-y-6 p-4 md:p-6 lg:p-8">
-            <div className="flex items-center justify-between">
-              <Skeleton className="h-8 w-32" />
-              <Skeleton className="h-10 w-40" />
-            </div>
-            <Skeleton className="h-96 w-full" />
-          </main>
-        </SidebarInset>
-      </SidebarProvider>
-    );
-  }
-
   return (
     <SidebarProvider>
       <Sidebar>
@@ -233,10 +100,10 @@ export default function VeiculosPage() {
       </Sidebar>
       <SidebarInset>
         <AppHeader />
-        <VeiculosContent />
+        <AuthenticatedPage>
+          <VeiculosContent />
+        </AuthenticatedPage>
       </SidebarInset>
     </SidebarProvider>
   );
 }
-
-    

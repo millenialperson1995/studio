@@ -21,10 +21,10 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
-import { doc, runTransaction, Transaction, getDoc, collection, getDocs, query, where } from 'firebase/firestore';
-import { useFirestore, useUser } from '@/firebase';
+import { doc, runTransaction, Transaction } from 'firebase/firestore';
+import { useFirestore, useUser, useVehicles } from '@/firebase';
 import { useToast } from '@/hooks/use-toast';
-import type { OrdemServico, Cliente, Veiculo, Peca, Servico } from '@/lib/types';
+import type { OrdemServico, Cliente, Peca, Servico } from '@/lib/types';
 import { Trash2, PlusCircle, CalendarIcon } from 'lucide-react';
 import React, { useState, useEffect } from 'react';
 import { Popover, PopoverContent, PopoverTrigger } from '../ui/popover';
@@ -49,7 +49,6 @@ const pecaSchema = z.object({
 type EditOrdemServicoFormProps = {
   ordemServico: OrdemServico;
   clients: Cliente[];
-  vehicles: Veiculo[];
   pecas: Peca[];
   servicos: Servico[];
   setDialogOpen: (open: boolean) => void;
@@ -64,7 +63,6 @@ const toDate = (timestamp: any): Date | undefined => {
 export function EditOrdemServicoForm({
   ordemServico,
   clients,
-  vehicles,
   pecas,
   servicos,
   setDialogOpen,
@@ -72,6 +70,7 @@ export function EditOrdemServicoForm({
   const firestore = useFirestore();
   const { user } = useUser();
   const { toast } = useToast();
+  const { vehicles } = useVehicles();
   const [selectedClientId, setSelectedClientId] = useState(ordemServico.clienteId);
   
   const pecasMap = new Map(pecas.map(p => [p.id, p]));
@@ -491,7 +490,7 @@ export function EditOrdemServicoForm({
                 </div>
               </div>
           ))}
-          <Button type="button" variant="outline" size="sm" onClick={() => appendPeca({ descricao: '', quantidade: 1, valorUnitario: 0 })}>
+          <Button type="button" variant="outline" size="sm" onClick={() => appendPeca({ descricao: '', quantidade: 1, valorUnitario: 0, itemId: '' })}>
             <PlusCircle className="mr-2 h-4 w-4" /> Adicionar Peça
           </Button>
         </div>

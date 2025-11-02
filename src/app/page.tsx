@@ -1,5 +1,5 @@
 'use client';
-import { useMemo, useEffect } from 'react';
+import { useMemo } from 'react';
 import AppHeader from '@/components/layout/app-header';
 import AppSidebar from '@/components/layout/app-sidebar';
 import { Sidebar, SidebarInset, SidebarProvider } from '@/components/ui/sidebar';
@@ -15,13 +15,13 @@ import {
 import RevenueChartCard from '@/components/dashboard/revenue-chart-card';
 import RecentActivityCard from '@/components/dashboard/recent-activity-card';
 import { useCollection, useFirestore, useUser } from '@/firebase';
-import { collection, query, where, Timestamp } from 'firebase/firestore';
+import { collection, query, where } from 'firebase/firestore';
 import { useMemoFirebase } from '@/firebase/provider';
 import type { Cliente, OrdemServico, Orcamento } from '@/lib/types';
-import { Skeleton } from '@/components/ui/skeleton';
-import { useRouter } from 'next/navigation';
+import { toDate } from '@/lib/utils';
+import AuthenticatedPage from '@/components/layout/authenticated-page';
 
-function DashboardPage() {
+function DashboardContent() {
   const firestore = useFirestore();
   const { user } = useUser();
 
@@ -44,18 +44,6 @@ function DashboardPage() {
   const { data: ordensServico, isLoading: isLoadingOrdens } = useCollection<OrdemServico>(ordensQuery);
 
   const isLoading = isLoadingClientes || isLoadingOrcamentos || isLoadingOrdens;
-
-  const toDate = (timestamp: any): Date => {
-      if (!timestamp) return new Date(0);
-      if (timestamp.toDate) return timestamp.toDate();
-      if (timestamp instanceof Date) return timestamp;
-      // Handle cases where timestamp might be a string or number
-      if (typeof timestamp === 'string' || typeof timestamp === 'number') {
-        const d = new Date(timestamp);
-        if (!isNaN(d.getTime())) return d;
-      }
-      return new Date(0);
-  }
 
   // --- Data Processing & Calculations ---
   const dashboardStats = useMemo(() => {
@@ -152,22 +140,7 @@ function DashboardPage() {
   }, [isLoading, clientes, orcamentos, ordensServico]);
   
   if (isLoading) {
-    return (
-      <main className="flex-1 space-y-6 p-4 md:p-6 lg:p-8">
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-4">
-            {[...Array(5)].map((_, i) => <Skeleton key={i} className="h-28 w-full" />)}
-        </div>
-        <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
-            <div className="lg:col-span-2">
-                  <Skeleton className="h-[380px] w-full" />
-            </div>
-            <div className="lg:col-span-1">
-                  <Skeleton className="h-[380px] w-full" />
-            </div>
-        </div>
-        <Skeleton className="h-[380px] w-full" />
-      </main>
-    );
+    return null; // The loading skeleton is handled by AuthenticatedPage
   }
   
   const stats = [
@@ -242,44 +215,6 @@ function DashboardPage() {
 }
 
 export default function Home() {
-  const { user, isUserLoading } = useUser();
-  const router = useRouter();
-
-  useEffect(() => {
-    if (!isUserLoading && !user) {
-      router.push('/login');
-    }
-  }, [user, isUserLoading, router]);
-
-  // Render a loading state while checking for user auth
-  if (isUserLoading || !user) {
-    return (
-      <SidebarProvider>
-        <Sidebar>
-          <AppSidebar />
-        </Sidebar>
-        <SidebarInset>
-          <AppHeader />
-          <main className="flex-1 space-y-6 p-4 md:p-6 lg:p-8">
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-4">
-              {[...Array(5)].map((_, i) => <Skeleton key={i} className="h-28 w-full" />)}
-            </div>
-            <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
-              <div className="lg:col-span-2">
-                <Skeleton className="h-[380px] w-full" />
-              </div>
-              <div className="lg:col-span-1">
-                <Skeleton className="h-[380px] w-full" />
-              </div>
-            </div>
-            <Skeleton className="h-[380px] w-full" />
-          </main>
-        </SidebarInset>
-      </SidebarProvider>
-    );
-  }
-
-  // Once user is authenticated, render the actual dashboard page
   return (
     <SidebarProvider>
       <Sidebar>
@@ -287,7 +222,9 @@ export default function Home() {
       </Sidebar>
       <SidebarInset>
         <AppHeader />
-        <DashboardPage />
+        <AuthenticatedPage>
+          <DashboardContent />
+        </AuthenticatedPage>
       </SidebarInset>
     </SidebarProvider>
   );
