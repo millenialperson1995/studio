@@ -44,7 +44,7 @@ export default function ServicosRentaveisCard({ data }: ServicosRentaveisCardPro
                 <BarChart
                 layout="vertical"
                 data={data}
-                margin={{ top: 5, right: 30, left: -10, bottom: 5 }}
+                margin={{ top: 5, right: 50, left: -10, bottom: 5 }}
                 >
                 <YAxis
                     dataKey="name"
@@ -53,8 +53,8 @@ export default function ServicosRentaveisCard({ data }: ServicosRentaveisCardPro
                     fontSize={12}
                     tickLine={false}
                     axisLine={false}
-                    width={100}
-                    tickFormatter={(value) => value.length > 12 ? `${value.substring(0,12)}...` : value}
+                    width={150}
+                    tickFormatter={(value) => value.length > 18 ? `${value.substring(0,18)}...` : value}
                 />
                 <XAxis type="number" hide />
                 <Tooltip
