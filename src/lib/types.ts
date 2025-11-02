@@ -165,6 +165,7 @@ export interface Notificacao {
     tipo: 'estoque'; // Add more types later if needed
     lida: boolean;
     createdAt: any;
+    pecaId?: string; // Optional reference to the part
 }
 
 

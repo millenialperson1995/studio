@@ -54,30 +54,34 @@ export function EditPecaForm({ peca, setDialogOpen }: EditPecaFormProps) {
     try {
       const pecaDocRef = doc(firestore, 'pecas', peca.id);
       const isEstoqueBaixo = values.quantidadeEstoque <= values.quantidadeMinima;
+      
       const pecaData = {
         ...values,
         alertaEstoqueBaixo: isEstoqueBaixo,
       };
-      updateDocumentNonBlocking(pecaDocRef, pecaData);
+      
+      await updateDocumentNonBlocking(pecaDocRef, pecaData);
 
       // Check if low stock alert needs to be created
+      // We create a notification if the stock is now low, but wasn't before.
       if (isEstoqueBaixo && !peca.alertaEstoqueBaixo) {
-        // First check if an unread notification for this part already exists
+        // First, check if an unread notification for this specific part already exists.
         const q = query(
             collection(firestore, 'notificacoes'),
             where('userId', '==', user.uid),
-            where('tipo', '==', 'estoque'),
-            where('descricao', 'like', `%${peca.descricao}%`),
+            where('pecaId', '==', peca.id),
             where('lida', '==', false)
         );
         const existingNotif = await getDocs(q);
 
+        // Only create a notification if one doesn't already exist for this part.
         if(existingNotif.empty) {
             const notificacoesCollectionRef = collection(firestore, 'notificacoes');
             const newNotificacaoRef = doc(notificacoesCollectionRef);
             const notificacaoData = {
                 id: newNotificacaoRef.id,
                 userId: user.uid,
+                pecaId: peca.id, // Store reference to the part
                 titulo: 'Estoque Baixo',
                 descricao: `A peça "${peca.descricao}" (Cód: ${peca.codigo}) atingiu o estoque mínimo.`,
                 tipo: 'estoque',
@@ -85,6 +89,10 @@ export function EditPecaForm({ peca, setDialogOpen }: EditPecaFormProps) {
                 createdAt: serverTimestamp()
             };
             await addDocumentNonBlocking(newNotificacaoRef, notificacaoData);
+            toast({
+              title: "Notificação de Estoque",
+              description: "Alerta de estoque baixo foi gerado."
+            })
         }
       }
 
@@ -184,5 +192,3 @@ export function EditPecaForm({ peca, setDialogOpen }: EditPecaFormProps) {
     </Form>
   );
 }
-
-    
