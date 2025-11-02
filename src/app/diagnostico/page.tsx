@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation';
 import { useCollection, useFirestore, useUser } from '@/firebase';
 import { useMemoFirebase } from '@/firebase/provider';
 import { collection, query, where } from 'firebase/firestore';
-import { Sparkles, Bot, CheckCircle2, Wrench, Package, Mic, Waves } from 'lucide-react';
+import { Sparkles, Bot, CheckCircle2, Wrench, Package } from 'lucide-react';
 import { z } from 'zod';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -25,9 +25,9 @@ import { Badge } from '@/components/ui/badge';
 import { useToast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
 
-import type { Peca, Servico, DiagnosticoMotorOutput } from '@/lib/types';
+import type { Peca, Servico, DiagnosticoMotorOutput, DiagnosticoMotorInput } from '@/lib/types';
 import { diagnosticarMotor } from '@/ai/flows/diagnostico-fluxo';
-import { transcreverAudio } from '@/ai/flows/transcricao-fluxo';
+
 
 const formSchema = z.object({
   motorInfo: z.string().min(3, 'Por favor, forneça informações sobre o motor.'),
@@ -42,12 +42,6 @@ function DiagnosticoContent() {
   const [analise, setAnalise] = useState<DiagnosticoMotorOutput | null>(null);
   const [isAnalysing, setIsAnalysing] = useState(false);
   const [error, setError] = useState<string | null>(null);
-
-  // Audio Recording State
-  const [isRecording, setIsRecording] = useState(false);
-  const [isTranscribing, setIsTranscribing] = useState(false);
-  const mediaRecorderRef = useRef<MediaRecorder | null>(null);
-  const audioChunksRef = useRef<Blob[]>([]);
 
   // Carregar catálogos de serviços e peças
   const servicosQuery = useMemoFirebase(() => (firestore && user?.uid ? query(collection(firestore, 'servicos'), where('userId', '==', user.uid)) : null), [firestore, user?.uid]);
@@ -64,57 +58,6 @@ function DiagnosticoContent() {
     },
   });
 
-  const startRecording = async () => {
-    if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
-      try {
-        const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-        mediaRecorderRef.current = new MediaRecorder(stream, { mimeType: 'audio/webm' });
-        audioChunksRef.current = [];
-
-        mediaRecorderRef.current.ondataavailable = (event) => {
-          audioChunksRef.current.push(event.data);
-        };
-
-        mediaRecorderRef.current.onstop = async () => {
-          setIsTranscribing(true);
-          const audioBlob = new Blob(audioChunksRef.current, { type: 'audio/webm' });
-          const reader = new FileReader();
-          reader.readAsDataURL(audioBlob);
-          reader.onloadend = async () => {
-            const base64AudioDataUri = reader.result as string;
-            // Extrai apenas os dados base64, removendo o prefixo "data:audio/webm;base64,"
-            const base64Audio = base64AudioDataUri.split(',')[1];
-
-            try {
-              const result = await transcreverAudio({ audioBase64: base64Audio, mimeType: 'audio/webm' });
-              const currentSintomas = form.getValues('sintomas');
-              form.setValue('sintomas', (currentSintomas ? currentSintomas + ' ' : '') + result.texto, { shouldValidate: true });
-            } catch (e: any) {
-              console.error("Erro na transcrição:", e);
-              toast({ variant: "destructive", title: "Erro de Transcrição", description: e.message || "Não foi possível transcrever o áudio."});
-            } finally {
-              setIsTranscribing(false);
-            }
-          };
-        };
-
-        mediaRecorderRef.current.start();
-        setIsRecording(true);
-      } catch (err) {
-        console.error("Erro ao acessar o microfone:", err);
-        toast({ variant: "destructive", title: "Erro de Microfone", description: "Não foi possível acessar seu microfone. Verifique as permissões do navegador."});
-      }
-    }
-  };
-
-  const stopRecording = () => {
-    if (mediaRecorderRef.current && isRecording) {
-      mediaRecorderRef.current.stop();
-      setIsRecording(false);
-    }
-  };
-
-
   const onSubmit = async (values: z.infer<typeof formSchema>) => {
     if (!servicos || !pecas) {
       setError('Catálogo de serviços ou peças não carregado. Tente novamente.');
@@ -126,7 +69,7 @@ function DiagnosticoContent() {
     setAnalise(null);
 
     try {
-        const input = {
+        const input: DiagnosticoMotorInput = {
             ...values,
             servicosDisponiveis: servicos.map(s => ({ codigo: s.codigo, descricao: s.descricao })),
             pecasDisponiveis: pecas.map(p => ({ codigo: p.codigo, descricao: p.descricao })),
@@ -136,6 +79,11 @@ function DiagnosticoContent() {
     } catch (e: any) {
         console.error("Erro no diagnóstico com IA:", e);
         setError(e.message || 'Ocorreu um erro ao consultar a IA. Tente novamente.');
+        toast({
+          variant: "destructive",
+          title: "Erro na Análise",
+          description: e.message || 'Ocorreu um erro ao consultar a IA. Tente novamente.'
+        })
     } finally {
         setIsAnalysing(false);
     }
@@ -173,30 +121,13 @@ function DiagnosticoContent() {
                   <FormItem>
                     <FormLabel>Sintomas Observados</FormLabel>
                     <div className="relative">
-                      <FormControl><Textarea placeholder="Ex: Superaqueceu, fumaça azul saindo do escapamento, perda de potência em subidas..." className="min-h-[100px] pr-12" {...field} /></FormControl>
-                       <Button
-                          type="button"
-                          variant="ghost"
-                          size="icon"
-                          className={cn(
-                            "absolute right-2 top-1/2 -translate-y-1/2 h-8 w-8",
-                            isRecording && "bg-red-500/20 text-red-500 animate-pulse"
-                          )}
-                          onMouseDown={startRecording}
-                          onMouseUp={stopRecording}
-                          onTouchStart={startRecording}
-                          onTouchEnd={stopRecording}
-                          disabled={isTranscribing}
-                        >
-                          {isTranscribing ? <Waves className="h-5 w-5 animate-ping" /> : <Mic className="h-5 w-5" />}
-                          <span className="sr-only">Gravar áudio</span>
-                        </Button>
+                      <FormControl><Textarea placeholder="Ex: Superaqueceu, fumaça azul saindo do escapamento, perda de potência em subidas..." className="min-h-[100px]" {...field} /></FormControl>
                     </div>
                     <FormMessage />
                   </FormItem>
                 )} />
-                <Button type="submit" className="w-full" disabled={isAnalysing || isLoadingCatalogo || isRecording || isTranscribing}>
-                  {isLoadingCatalogo ? 'Carregando catálogo...' : isAnalysing ? 'Analisando...' : isTranscribing ? 'Transcrevendo...' : <><Sparkles className="mr-2 h-4 w-4" /> Analisar com IA</>}
+                <Button type="submit" className="w-full" disabled={isAnalysing || isLoadingCatalogo}>
+                  {isLoadingCatalogo ? 'Carregando catálogo...' : isAnalysing ? 'Analisando...' : <><Sparkles className="mr-2 h-4 w-4" /> Analisar com IA</>}
                 </Button>
               </form>
             </Form>
@@ -221,7 +152,7 @@ function DiagnosticoContent() {
                     </CardContent>
                 </Card>
             )}
-            {error && (
+            {error && !isAnalysing && (
                  <Alert variant="destructive">
                     <AlertTitle>Erro na Análise</AlertTitle>
                     <AlertDescription>{error}</AlertDescription>
