@@ -22,7 +22,7 @@ import {
 } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
 import { updateDocumentNonBlocking } from '@/firebase/non-blocking-updates';
-import { doc, runTransaction, Transaction, serverTimestamp, getDoc, collection } from 'firebase/firestore';
+import { doc, runTransaction, Transaction, serverTimestamp, getDoc, collection, getDocs, query, where } from 'firebase/firestore';
 import { useFirestore } from '@/firebase';
 import { useToast } from '@/hooks/use-toast';
 import type { OrdemServico, Cliente, Veiculo, Peca, Servico, ItemOrcamento } from '@/lib/types';
