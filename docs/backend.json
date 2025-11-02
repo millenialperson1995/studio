@@ -79,7 +79,7 @@
         "dataCriacao": { "type": "string", "format": "date-time" },
         "dataValidade": { "type": "string", "format": "date-time" },
         "status": { "type": "string" },
-        "itens": { "type": "array", "items": { "type": "string" } },
+        "itens": { "type": "array", "items": { "$ref": "#/backend/entities/ItemOrcamento" } },
         "valorTotal": { "type": "number" },
         "observacoes": { "type": "string" },
         "ordemServicoId": { "type": "string", "description": "The ID of the service order generated from this quote, if any." }
@@ -113,7 +113,7 @@
      "ItemServico": {
       "title": "ItemServico",
       "type": "object",
-      "description": "Represents a single service item within a service order.",
+      "description": "Represents a single service item within a service order or quote.",
       "properties": {
         "descricao": { "type": "string" },
         "valor": { "type": "number" }
@@ -123,13 +123,27 @@
     "ItemPeca": {
       "title": "ItemPeca",
       "type": "object",
-      "description": "Represents a single part item within a service order.",
+      "description": "Represents a single part item within a service order or quote.",
       "properties": {
         "descricao": { "type": "string" },
         "quantidade": { "type": "number" },
         "valorUnitario": { "type": "number" }
       },
       "required": ["descricao", "quantidade", "valorUnitario"]
+    },
+    "ItemOrcamento": {
+      "title": "ItemOrcamento",
+      "type": "object",
+      "description": "Represents a single item (part or service) within a quote.",
+      "properties": {
+        "itemId": { "type": "string" },
+        "tipo": { "type": "string", "enum": ["peca", "servico"] },
+        "descricao": { "type": "string" },
+        "quantidade": { "type": "number" },
+        "valorUnitario": { "type": "number" },
+        "valorTotal": { "type": "number" }
+      },
+      "required": ["descricao", "quantidade", "valorUnitario", "valorTotal"]
     },
     "Peca": {
       "title": "Peca",
@@ -165,6 +179,22 @@
         "ativo": { "type": "boolean", "description": "Whether the service is currently active and offered." }
       },
       "required": ["id", "userId", "codigo", "descricao", "valorPadrao", "tempoMedio", "categoria", "ativo"]
+    },
+    "Notificacao": {
+      "title": "Notificacao",
+      "description": "Represents a system notification for a user.",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "userId": { "type": "string" },
+        "title": { "type": "string" },
+        "description": { "type": "string" },
+        "type": { "type": "string", "enum": ["estoque", "orcamento", "os"] },
+        "referenceId": { "type": "string", "description": "ID of the related entity (e.g., pecaId, orcamentoId)" },
+        "isRead": { "type": "boolean" },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["id", "userId", "title", "description", "type", "isRead", "createdAt"]
     }
   },
   "auth": {
@@ -235,9 +265,18 @@
           "schema": { "$ref": "#/backend/entities/Servico" },
           "description": "Top-level collection for services. Each document has a 'userId' for ownership."
         }
+      },
+      {
+        "path": "/notificacoes/{notificacaoId}",
+        "definition": {
+          "entityName": "Notificacao",
+          "schema": { "$ref": "#/backend/entities/Notificacao" },
+          "description": "Top-level collection for user notifications. Each document has a 'userId' for ownership."
+        }
       }
     ],
-    "reasoning": "The data model is designed for a multi-tenant SaaS application where each user (a workshop) owns their data. All primary data collections (clientes, orcamentos, ordensServico, pecas, servicos, oficinas) are at the top level. Every document in these collections MUST contain a 'userId' field that links it to the owner in the '/users' collection. The document ID for '/oficinas/{userId}' and '/users/{userId}' is the user's Auth UID. This structure allows for simple, scalable, and secure ownership-based security rules. For example, a rule on '/clientes/{clienteId}' will be `allow read, write: if request.auth.uid == resource.data.userId;`. This prevents any user from accessing another user's data. The 'veiculos' collection is a subcollection of 'clientes' as a vehicle is intrinsically linked to a single client."
+    "reasoning": "The data model is designed for a multi-tenant SaaS application where each user (a workshop) owns their data. All primary data collections (clientes, orcamentos, ordensServico, pecas, servicos, oficinas, notificacoes) are at the top level. Every document in these collections MUST contain a 'userId' field that links it to the owner in the '/users' collection. The document ID for '/oficinas/{userId}' and '/users/{userId}' is the user's Auth UID. This structure allows for simple, scalable, and secure ownership-based security rules. For example, a rule on '/clientes/{clienteId}' will be `allow read, write: if request.auth.uid == resource.data.userId;`. This prevents any user from accessing another user's data. The 'veiculos' collection is a subcollection of 'clientes' as a vehicle is intrinsically linked to a single client."
   }
 }
+
     

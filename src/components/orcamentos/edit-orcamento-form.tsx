@@ -21,9 +21,9 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
-import { updateDocumentNonBlocking } from '@/firebase/non-blocking-updates';
-import { doc } from 'firebase/firestore';
-import { useFirestore } from '@/firebase';
+import { updateDocumentNonBlocking, addDocumentNonBlocking } from '@/firebase/non-blocking-updates';
+import { doc, collection, serverTimestamp } from 'firebase/firestore';
+import { useFirestore, useUser } from '@/firebase';
 import { useToast } from '@/hooks/use-toast';
 import type { Orcamento, Cliente, Veiculo, Peca, Servico } from '@/lib/types';
 import { Trash2, PlusCircle, CalendarIcon } from 'lucide-react';
@@ -61,6 +61,7 @@ export function EditOrcamentoForm({
   setDialogOpen,
 }: EditOrcamentoFormProps) {
   const firestore = useFirestore();
+  const { user } = useUser();
   const { toast } = useToast();
   const [selectedClientId, setSelectedClientId] = useState(orcamento.clienteId);
   const pecasMap = new Map(pecas.map(p => [p.id, p]));
@@ -99,6 +100,7 @@ export function EditOrcamentoForm({
     resolver: zodResolver(formSchema),
     defaultValues: {
       ...orcamento,
+      // @ts-ignore
       dataValidade: orcamento.dataValidade.toDate(), // Convert timestamp to Date
     },
   });
@@ -124,7 +126,7 @@ export function EditOrcamentoForm({
   );
 
   async function onSubmit(values: z.infer<typeof formSchema>) {
-    if (!firestore) return;
+    if (!firestore || !user) return;
 
     // Final stock check before submission
     for (const item of values.itens) {
@@ -156,6 +158,24 @@ export function EditOrcamentoForm({
       };
       
       updateDocumentNonBlocking(orcamentoDocRef, orcamentoData);
+
+      // Create notification if status changed
+      if (values.status !== orcamento.status) {
+        const notificacoesRef = collection(firestore, 'notificacoes');
+        const newNotifRef = doc(notificacoesRef);
+        const notificacao = {
+          id: newNotifRef.id,
+          userId: user.uid,
+          title: `Orçamento ${values.status === 'aprovado' ? 'Aprovado' : 'Rejeitado'}`,
+          description: `O orçamento #${orcamento.id.substring(0, 4)} para o cliente ${clients.find(c=>c.id === values.clienteId)?.nome} foi ${values.status}.`,
+          type: 'orcamento',
+          referenceId: orcamento.id,
+          isRead: false,
+          createdAt: serverTimestamp(),
+        };
+        addDocumentNonBlocking(newNotifRef, notificacao);
+      }
+
 
       toast({
         title: 'Sucesso!',
@@ -452,3 +472,5 @@ export function EditOrcamentoForm({
     </Form>
   );
 }
+
+    

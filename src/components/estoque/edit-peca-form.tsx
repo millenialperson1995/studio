@@ -13,9 +13,9 @@ import {
   FormMessage,
 } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
-import { updateDocumentNonBlocking } from '@/firebase/non-blocking-updates';
-import { doc } from 'firebase/firestore';
-import { useFirestore } from '@/firebase';
+import { updateDocumentNonBlocking, addDocumentNonBlocking } from '@/firebase/non-blocking-updates';
+import { doc, collection, serverTimestamp } from 'firebase/firestore';
+import { useFirestore, useUser } from '@/firebase';
 import { useToast } from '@/hooks/use-toast';
 import type { Peca } from '@/lib/types';
 
@@ -37,6 +37,7 @@ type EditPecaFormProps = {
 
 export function EditPecaForm({ peca, setDialogOpen }: EditPecaFormProps) {
   const firestore = useFirestore();
+  const { user } = useUser();
   const { toast } = useToast();
 
   const form = useForm<z.infer<typeof formSchema>>({
@@ -48,15 +49,34 @@ export function EditPecaForm({ peca, setDialogOpen }: EditPecaFormProps) {
   });
 
   async function onSubmit(values: z.infer<typeof formSchema>) {
-    if (!firestore) return;
+    if (!firestore || !user) return;
 
     try {
       const pecaDocRef = doc(firestore, 'pecas', peca.id);
+      const isEstoqueBaixo = values.quantidadeEstoque <= values.quantidadeMinima;
       const pecaData = {
         ...values,
-        alertaEstoqueBaixo: values.quantidadeEstoque <= values.quantidadeMinima,
+        alertaEstoqueBaixo: isEstoqueBaixo,
       };
       updateDocumentNonBlocking(pecaDocRef, pecaData);
+
+      // Check if stock was not low before and is now
+      if (isEstoqueBaixo && !peca.alertaEstoqueBaixo) {
+        const notificacoesRef = collection(firestore, 'notificacoes');
+        const newNotifRef = doc(notificacoesRef);
+        const notificacao = {
+          id: newNotifRef.id,
+          userId: user.uid,
+          title: 'Estoque Baixo',
+          description: `A peça "${values.descricao}" (${values.codigo}) atingiu o estoque mínimo.`,
+          type: 'estoque',
+          referenceId: peca.id,
+          isRead: false,
+          createdAt: serverTimestamp(),
+        };
+        addDocumentNonBlocking(newNotifRef, notificacao);
+      }
+
 
       toast({
         title: 'Sucesso!',
@@ -154,3 +174,5 @@ export function EditPecaForm({ peca, setDialogOpen }: EditPecaFormProps) {
     </Form>
   );
 }
+
+    

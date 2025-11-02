@@ -21,9 +21,9 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
-import { updateDocumentNonBlocking } from '@/firebase/non-blocking-updates';
+import { updateDocumentNonBlocking, addDocumentNonBlocking } from '@/firebase/non-blocking-updates';
 import { doc, runTransaction, Transaction, serverTimestamp, getDoc, collection, getDocs, query, where } from 'firebase/firestore';
-import { useFirestore } from '@/firebase';
+import { useFirestore, useUser } from '@/firebase';
 import { useToast } from '@/hooks/use-toast';
 import type { OrdemServico, Cliente, Veiculo, Peca, Servico, ItemOrcamento } from '@/lib/types';
 import { Trash2, PlusCircle, CalendarIcon } from 'lucide-react';
@@ -71,6 +71,7 @@ export function EditOrdemServicoForm({
   setDialogOpen,
 }: EditOrdemServicoFormProps) {
   const firestore = useFirestore();
+  const { user } = useUser();
   const { toast } = useToast();
   const [selectedClientId, setSelectedClientId] = useState(ordemServico.clienteId);
   
@@ -150,13 +151,13 @@ export function EditOrdemServicoForm({
   );
 
   async function onSubmit(values: z.infer<typeof formSchema>) {
-    if (!firestore) return;
+    if (!firestore || !user) return;
     
     // Final stock check before submission
     for (const item of values.pecas) {
         if (item.itemId) {
             const pecaRef = doc(firestore, 'pecas', item.itemId);
-            const pecaDoc = await doc(pecaRef).get();
+            const pecaDoc = await getDoc(pecaRef);
             if (pecaDoc.exists()) {
                 const pecaData = pecaDoc.data() as Peca;
                 const estoqueDisponivel = pecaData.quantidadeEstoque - (pecaData.quantidadeReservada || 0);
@@ -229,6 +230,23 @@ export function EditOrdemServicoForm({
             };
 
             transaction.update(ordemDocRef, finalValues);
+
+            // Create notification if status changed
+            if (values.status !== ordemServico.status) {
+              const notificacoesRef = collection(firestore, 'notificacoes');
+              const newNotifRef = doc(notificacoesRef);
+              const notificacao = {
+                id: newNotifRef.id,
+                userId: user.uid,
+                title: `OS ${values.status.charAt(0).toUpperCase() + values.status.slice(1)}`,
+                description: `A OS #${ordemServico.id.substring(0, 4)} para ${clients.find(c=>c.id === values.clienteId)?.nome} foi atualizada para "${values.status}".`,
+                type: 'os',
+                referenceId: ordemServico.id,
+                isRead: false,
+                createdAt: serverTimestamp(),
+              };
+              addDocumentNonBlocking(newNotifRef, notificacao);
+            }
         });
 
         toast({
@@ -529,3 +547,5 @@ export function EditOrdemServicoForm({
     </Form>
   );
 }
+
+    
