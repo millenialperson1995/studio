@@ -27,19 +27,29 @@ export const generateOrcamentoPDF = (
   // 1. Header
   const nomeEmpresa = oficina?.nomeEmpresa || 'Nome da Sua Empresa';
   const cnpj = oficina?.cnpj ? `CNPJ: ${oficina.cnpj}` : '';
-  const telefone = oficina?.telefone ? `· ${oficina.telefone}` : '';
-  const enderecoOficina = oficina ? `${oficina.endereco}, ${oficina.cidade}-${oficina.uf}` : 'Seu Endereço, Sua Cidade';
-  const companyInfo = `${cnpj} · ${enderecoOficina} ${telefone}`;
-
+  const telefone = oficina?.telefone ? `Telefone: ${oficina.telefone}` : '';
+  const email = oficina?.email ? `Email: ${oficina.email}` : '';
+  const enderecoOficina = oficina ? `${oficina.endereco}, ${oficina.cidade}-${oficina.uf}, CEP: ${oficina.cep}` : 'Seu Endereço, Sua Cidade';
+  
   doc.setFontSize(22);
   doc.setFont('helvetica', 'bold');
   doc.text(nomeEmpresa, pageWidth / 2, currentY, { align: 'center' });
-  currentY += 8;
+  currentY += 10;
 
   doc.setFontSize(10);
   doc.setFont('helvetica', 'normal');
-  doc.text(companyInfo, pageWidth / 2, currentY, { align: 'center' });
-  currentY += 10;
+  if(cnpj) {
+      doc.text(cnpj, pageWidth / 2, currentY, { align: 'center' });
+      currentY += 5;
+  }
+  doc.text(enderecoOficina, pageWidth / 2, currentY, { align: 'center' });
+  currentY += 5;
+
+  const contactInfo = [telefone, email].filter(Boolean).join(' · ');
+  if(contactInfo) {
+      doc.text(contactInfo, pageWidth / 2, currentY, { align: 'center' });
+      currentY += 8;
+  }
   
   doc.setLineWidth(0.5);
   doc.line(margin, currentY, pageWidth - margin, currentY);
@@ -149,5 +159,3 @@ export const generateOrcamentoPDF = (
   // 6. Save the PDF
   doc.save(`Orcamento-${cliente.nome.split(' ')[0]}-${orcamento.id.substring(0, 4)}.pdf`);
 };
-
-    

@@ -66,11 +66,19 @@ const formatCNPJ = (value: string): string => {
   return value.substring(0, 18); // Limita o tamanho
 };
 
+const formatTelefone = (value: string): string => {
+    if (!value) return '';
+    value = value.replace(/\D/g, ''); // Remove tudo que não é dígito
+    value = value.replace(/^(\d{2})(\d)/, '($1) $2');
+    value = value.replace(/(\d)(\d{4})$/, '$1-$2');
+    return value.substring(0, 15); // Limita o tamanho para (xx) xxxxx-xxxx
+}
+
 
 const formSchema = z.object({
   nomeEmpresa: z.string().min(2, 'O nome da empresa é obrigatório.'),
   cnpj: z.string().refine(validateCNPJ, 'CNPJ inválido.'),
-  telefone: z.string().min(10, 'O telefone deve ter pelo menos 10 dígitos.'),
+  telefone: z.string().min(14, 'O telefone deve ter pelo menos 10 dígitos.'),
   email: z.string().email('Formato de e-mail inválido.').optional().or(z.literal('')),
   cep: z.string().min(8, 'O CEP deve ter 8 ou 9 caracteres.').max(9, 'O CEP deve ter no máximo 9 caracteres.'),
   endereco: z.string().min(3, 'O endereço é obrigatório.'),
@@ -207,7 +215,14 @@ export function OficinaForm({ oficina }: OficinaFormProps) {
                 <FormItem>
                 <FormLabel>Telefone</FormLabel>
                 <FormControl>
-                    <Input placeholder="(81) 99999-9999" {...field} />
+                    <Input 
+                        placeholder="(81) 99999-9999" 
+                        {...field} 
+                        onChange={(e) => {
+                            const formatted = formatTelefone(e.target.value);
+                            field.onChange(formatted);
+                        }}
+                    />
                 </FormControl>
                 <FormMessage />
                 </FormItem>
