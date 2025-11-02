@@ -18,6 +18,7 @@ import { doc, serverTimestamp } from 'firebase/firestore';
 import { useFirestore, useUser } from '@/firebase';
 import { useToast } from '@/hooks/use-toast';
 import type { Oficina } from '@/lib/types';
+import { useEffect } from 'react';
 
 const formSchema = z.object({
   nomeEmpresa: z.string().min(2, 'O nome da empresa é obrigatório.'),
@@ -52,6 +53,32 @@ export function OficinaForm({ oficina }: OficinaFormProps) {
       uf: oficina?.uf || '',
     },
   });
+
+  const cepValue = form.watch('cep');
+
+  useEffect(() => {
+    const fetchAddress = async () => {
+      const cep = cepValue.replace(/\D/g, '');
+      if (cep.length !== 8) {
+        return;
+      }
+
+      try {
+        const response = await fetch(`https://viacep.com.br/ws/${cep}/json/`);
+        const data = await response.json();
+        if (!data.erro) {
+          form.setValue('endereco', data.logradouro, { shouldValidate: true });
+          form.setValue('cidade', data.localidade, { shouldValidate: true });
+          form.setValue('uf', data.uf, { shouldValidate: true });
+        }
+      } catch (error) {
+        console.error("Failed to fetch CEP", error);
+      }
+    };
+
+    fetchAddress();
+  }, [cepValue, form]);
+
 
   async function onSubmit(values: z.infer<typeof formSchema>) {
     if (!user || !firestore) {
@@ -211,5 +238,3 @@ export function OficinaForm({ oficina }: OficinaFormProps) {
     </Form>
   );
 }
-
-    

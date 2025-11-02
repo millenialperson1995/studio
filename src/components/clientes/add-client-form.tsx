@@ -18,6 +18,7 @@ import { addDocumentNonBlocking } from '@/firebase/non-blocking-updates';
 import { collection, serverTimestamp, doc } from 'firebase/firestore';
 import { useFirestore } from '@/firebase';
 import { useToast } from '@/hooks/use-toast';
+import { useEffect } from 'react';
 
 const formSchema = z.object({
   nome: z.string().min(2, 'O nome deve ter pelo menos 2 caracteres.'),
@@ -58,6 +59,33 @@ export function AddClientForm({ setDialogOpen }: AddClientFormProps) {
       pontoReferencia: '',
     },
   });
+
+  const cepValue = form.watch('cep');
+
+  useEffect(() => {
+    const fetchAddress = async () => {
+      const cep = cepValue.replace(/\D/g, '');
+      if (cep.length !== 8) {
+        return;
+      }
+
+      try {
+        const response = await fetch(`https://viacep.com.br/ws/${cep}/json/`);
+        const data = await response.json();
+        if (!data.erro) {
+          form.setValue('endereco', data.logradouro, { shouldValidate: true });
+          form.setValue('bairro', data.bairro, { shouldValidate: true });
+          form.setValue('cidade', data.localidade, { shouldValidate: true });
+          form.setValue('uf', data.uf, { shouldValidate: true });
+        }
+      } catch (error) {
+        console.error("Failed to fetch CEP", error);
+      }
+    };
+
+    fetchAddress();
+  }, [cepValue, form]);
+
 
   async function onSubmit(values: z.infer<typeof formSchema>) {
     if (!user) {
