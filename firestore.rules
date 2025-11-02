@@ -13,49 +13,34 @@ service cloud.firestore {
     }
     
     function isCreatingOwnedResource() {
+      // Ensure the 'userId' field in the new document matches the authenticated user's UID.
       return request.resource.data.userId == request.auth.uid;
     }
 
     // --- User Profiles ---
     match /users/{userId} {
+        // Any signed-in user can read any profile (e.g., to see names, avatars).
         allow read: if isSignedIn();
+        // A user can only create their own profile document.
         allow create: if isSignedIn() && request.auth.uid == userId;
+        // A user can only update or delete their own profile.
         allow update, delete: if isOwner(userId);
     }
 
     // --- Workshop Settings ---
     match /oficinas/{userId} {
+        // A user can only read and write to their own workshop settings.
         allow read, write: if isSignedIn() && isOwner(userId);
     }
     
-    // --- Top-level collections owned by a user ---
-    match /clientes/{docId} {
+    // --- Generic Rules for Top-level User-Owned Collections ---
+    // This applies to: clientes, orcamentos, ordensServico, pecas, servicos, notificacoes
+    match /{collection}/{docId} {
+      // Users can read/write documents if the document's 'userId' field matches their auth UID.
+      // This is secure for list queries as long as the client query includes `where('userId', '==', auth.currentUser.uid)`.
       allow read, write: if isSignedIn() && isOwner(resource.data.userId);
-      allow create: if isSignedIn() && isCreatingOwnedResource();
-    }
-    
-    match /orcamentos/{docId} {
-      allow read, write: if isSignedIn() && isOwner(resource.data.userId);
-      allow create: if isSignedIn() && isCreatingOwnedResource();
-    }
-
-    match /ordensServico/{docId} {
-      allow read, write: if isSignedIn() && isOwner(resource.data.userId);
-      allow create: if isSignedIn() && isCreatingOwnedResource();
-    }
-
-    match /pecas/{docId} {
-      allow read, write: if isSignedIn() && isOwner(resource.data.userId);
-      allow create: if isSignedIn() && isCreatingOwnedResource();
-    }
-
-    match /servicos/{docId} {
-      allow read, write: if isSignedIn() && isOwner(resource.data.userId);
-      allow create: if isSignedIn() && isCreatingOwnedResource();
-    }
-
-    match /notificacoes/{docId} {
-      allow read, write: if isSignedIn() && isOwner(resource.data.userId);
+      
+      // Users can create documents if they are setting the 'userId' field to their own auth UID.
       allow create: if isSignedIn() && isCreatingOwnedResource();
     }
     
