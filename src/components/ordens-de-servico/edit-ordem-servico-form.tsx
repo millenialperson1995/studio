@@ -26,7 +26,7 @@ import { useFirestore, useUser } from '@/firebase';
 import { useToast } from '@/hooks/use-toast';
 import type { OrdemServico, Cliente, Veiculo, Peca, Servico } from '@/lib/types';
 import { Trash2, PlusCircle, CalendarIcon } from 'lucide-react';
-import { useState, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Popover, PopoverContent, PopoverTrigger } from '../ui/popover';
 import { Calendar } from '../ui/calendar';
 import { cn } from '@/lib/utils';
@@ -123,8 +123,8 @@ export function EditOrdemServicoForm({
   const { fields: servicosFields, append: appendServico, remove: removeServico, update: updateServico } = useFieldArray({ control: form.control, name: 'servicos' });
   const { fields: pecasFields, append: appendPeca, remove: removePeca, update: updatePeca } = useFieldArray({ control: form.control, name: 'pecas' });
 
-  const servicosValues = form.watch('servicos');
-  const pecasValues = form.watch('pecas');
+  const watchedServicos = form.watch('servicos');
+  const watchedPecas = form.watch('pecas');
   const statusValue = form.watch('status');
   const paymentStatus = form.watch('statusPagamento');
 
@@ -138,11 +138,15 @@ export function EditOrdemServicoForm({
   }, [statusValue, paymentStatus, form]);
 
 
-  useEffect(() => {
-    const totalServicos = servicosValues.reduce((sum, servico) => sum + (servico.valor || 0), 0);
-    const totalPecas = pecasValues.reduce((sum, peca) => sum + ((peca.quantidade || 0) * (peca.valorUnitario || 0)), 0);
-    form.setValue('valorTotal', totalServicos + totalPecas);
-  }, [servicosValues, pecasValues, form]);
+  const totalValue = React.useMemo(() => {
+    const totalServicos = watchedServicos.reduce((sum, servico) => sum + (servico.valor || 0), 0);
+    const totalPecas = watchedPecas.reduce((sum, peca) => sum + ((peca.quantidade || 0) * (peca.valorUnitario || 0)), 0);
+    const newTotal = totalServicos + totalPecas;
+     if (form.getValues('valorTotal') !== newTotal) {
+        form.setValue('valorTotal', newTotal);
+    }
+    return newTotal;
+  }, [watchedServicos, watchedPecas, form]);
 
 
   const filteredVehicles = vehicles.filter(
@@ -519,7 +523,7 @@ export function EditOrdemServicoForm({
         <div className="flex flex-col-reverse sm:flex-row items-center justify-between pt-4 sticky bottom-0 bg-background/95 pb-4">
             <div className="text-lg font-semibold mt-4 sm:mt-0">
                 <span>Valor Total: </span>
-                <span>{form.watch('valorTotal').toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}</span>
+                <span>{totalValue.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}</span>
             </div>
             <Button type="submit" disabled={form.formState.isSubmitting}>
                 {form.formState.isSubmitting ? 'Salvando...' : 'Salvar Alterações'}
