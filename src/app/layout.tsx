@@ -5,7 +5,7 @@ import { cn } from '@/lib/utils';
 import { FirebaseClientProvider } from '@/firebase';
 
 export const metadata: Metadata = {
-  title: 'Retífica Ágil',
+  title: 'Retífica Figueirêdo',
   description: 'Sistema de Gestão para Retíficas',
 };
 

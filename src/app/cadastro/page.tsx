@@ -31,7 +31,7 @@ export default function CadastroPage() {
       <div className="w-full max-w-md mx-auto flex flex-col items-center text-center">
         <Wrench className="h-12 w-12 text-primary mb-4" />
         <h1 className="text-3xl font-bold text-gray-900 dark:text-gray-50">
-          Bem-vindo à Retífica Ágil
+          Bem-vindo à Retífica Figueirêdo
         </h1>
         <p className="text-gray-500 dark:text-gray-400 mb-8">
           Crie sua conta para gerenciar sua oficina
