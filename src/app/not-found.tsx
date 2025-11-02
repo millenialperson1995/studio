@@ -19,7 +19,7 @@ export default function NotFound() {
           Oops! O conteúdo que você está procurando não existe. Pode ter sido movido ou você digitou o endereço errado.
         </p>
         <Button asChild>
-          <Link href="/">Voltar para o Dashboard</Link>
+          <Link href="/">Voltar</Link>
         </Button>
       </div>
     </main>
