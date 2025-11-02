@@ -122,7 +122,7 @@ export function EditClientForm({ client, setDialogOpen }: EditClientFormProps) {
 
   return (
     <Form {...form}>
-      <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+      <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4 max-h-[70vh] overflow-y-auto p-1 pr-4">
         <FormField
           control={form.control}
           name="nome"
@@ -182,7 +182,7 @@ export function EditClientForm({ client, setDialogOpen }: EditClientFormProps) {
                 control={form.control}
                 name="endereco"
                 render={({ field }) => (
-                <FormItem className='col-span-2'>
+                <FormItem className='sm:col-span-2'>
                     <FormLabel>Endereço</FormLabel>
                     <FormControl>
                     <Input placeholder="Rua, Avenida, etc." {...field} />
