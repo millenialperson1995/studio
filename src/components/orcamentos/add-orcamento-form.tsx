@@ -113,21 +113,15 @@ export function AddOrcamentoForm({
     name: 'itens',
   });
 
-  const itensValues = form.watch('itens');
+  const watchedItens = form.watch('itens');
+  const totalValue = watchedItens.reduce((sum, item) => {
+      const itemTotal = (item.quantidade || 0) * (item.valorUnitario || 0);
+      return sum + itemTotal;
+  }, 0);
 
   useEffect(() => {
-    const updatedItens = itensValues.map(item => ({
-      ...item,
-      valorTotal: (item.quantidade || 0) * (item.valorUnitario || 0),
-    }));
-
-    const total = updatedItens.reduce((sum, item) => sum + item.valorTotal, 0);
-
-    // This checks if the total is different before setting the value to avoid infinite loops
-    if (form.getValues('valorTotal') !== total) {
-      form.setValue('valorTotal', total, { shouldValidate: true });
-    }
-  }, [itensValues, form]);
+    form.setValue('valorTotal', totalValue, { shouldValidate: true });
+  }, [totalValue, form]);
 
 
   const filteredVehicles = vehicles.filter(
@@ -163,11 +157,17 @@ export function AddOrcamentoForm({
       const orcamentosCollectionRef = collection(firestore, 'orcamentos');
       const newOrcamentoRef = doc(orcamentosCollectionRef);
 
+      const finalItens = values.itens.map(item => ({
+          ...item,
+          valorTotal: (item.quantidade || 0) * (item.valorUnitario || 0)
+      }));
+
       const orcamentoData = {
         ...values,
+        itens: finalItens,
+        valorTotal: totalValue,
         id: newOrcamentoRef.id,
         userId: user.uid, // Associate data with the logged-in user
-        itens: values.itens.map(item => ({...item, valorTotal: (item.quantidade || 0) * (item.valorUnitario || 0)})),
         dataCriacao: serverTimestamp(),
         createdAt: serverTimestamp(),
       };
@@ -275,8 +275,8 @@ export function AddOrcamentoForm({
              <div className="col-span-2">Subtotal</div>
           </div>
           {fields.map((field, index) => {
-            const qty = form.watch(`itens.${index}.quantidade`) || 0;
-            const price = form.watch(`itens.${index}.valorUnitario`) || 0;
+            const qty = watchedItens[index]?.quantidade || 0;
+            const price = watchedItens[index]?.valorUnitario || 0;
             const total = qty * price;
             
             return (
@@ -459,7 +459,7 @@ export function AddOrcamentoForm({
         <div className="flex flex-col-reverse sm:flex-row items-center justify-between pt-4">
             <div className="text-lg font-semibold mt-4 sm:mt-0">
                 <span>Valor Total: </span>
-                <span>{form.watch('valorTotal').toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}</span>
+                <span>{totalValue.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}</span>
             </div>
             <Button type="submit" disabled={form.formState.isSubmitting}>
                 {form.formState.isSubmitting ? 'Salvando...' : 'Salvar Orçamento'}
