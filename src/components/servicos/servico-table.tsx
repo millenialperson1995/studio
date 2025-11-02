@@ -42,6 +42,7 @@ import { doc } from 'firebase/firestore';
 import { useFirestore } from '@/firebase';
 import { useToast } from '@/hooks/use-toast';
 import { EditServicoForm } from './edit-servico-form';
+import { Card, CardContent } from '../ui/card';
 
 interface ServicoTableProps {
   servicos: Servico[];
@@ -78,9 +79,12 @@ export default function ServicoTable({ servicos = [] }: ServicoTableProps) {
     setSelectedServico(null);
   };
 
+  const formatCurrency = (value: number) => `R$ ${value.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`;
+
   return (
     <>
-      <div className="relative w-full overflow-auto rounded-md border">
+      {/* Desktop Table View */}
+      <div className="relative w-full overflow-auto rounded-md border hidden md:block">
         <Table>
           <TableHeader>
             <TableRow>
@@ -99,7 +103,7 @@ export default function ServicoTable({ servicos = [] }: ServicoTableProps) {
                 <TableRow key={servico.id}>
                   <TableCell className="font-medium">{servico.codigo}</TableCell>
                   <TableCell>{servico.descricao}</TableCell>
-                  <TableCell>{`R$ ${servico.valorPadrao.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`}</TableCell>
+                  <TableCell>{formatCurrency(servico.valorPadrao)}</TableCell>
                   <TableCell>
                     <Badge variant={servico.ativo ? 'default' : 'outline'} className="text-xs">
                         {servico.ativo ? 'Ativo' : 'Inativo'}
@@ -140,6 +144,64 @@ export default function ServicoTable({ servicos = [] }: ServicoTableProps) {
             )}
           </TableBody>
         </Table>
+      </div>
+
+       {/* Mobile Card View */}
+      <div className="grid grid-cols-1 gap-4 md:hidden">
+         {servicos.length > 0 ? (
+              servicos.map((servico) => (
+                <Card key={servico.id} className="w-full">
+                    <CardContent className="p-4 flex flex-col space-y-2">
+                         <div className="flex justify-between items-start">
+                             <div>
+                                <p className="font-bold text-base">{servico.descricao}</p>
+                                <p className="text-sm text-muted-foreground">{servico.codigo}</p>
+                             </div>
+                             <DropdownMenu>
+                                <DropdownMenuTrigger asChild>
+                                    <Button aria-haspopup="true" size="icon" variant="ghost">
+                                    <MoreHorizontal className="h-4 w-4" />
+                                    <span className="sr-only">Toggle menu</span>
+                                    </Button>
+                                </DropdownMenuTrigger>
+                                <DropdownMenuContent align="end">
+                                    <DropdownMenuLabel>Ações</DropdownMenuLabel>
+                                    <DropdownMenuItem onClick={() => handleEditClick(servico)}>
+                                        <Pencil className="mr-2 h-4 w-4" />
+                                        Editar
+                                    </DropdownMenuItem>
+                                    <DropdownMenuItem
+                                    className="text-destructive focus:text-destructive focus:bg-destructive/10"
+                                    onClick={() => handleDeleteClick(servico)}
+                                    >
+                                        <Trash2 className="mr-2 h-4 w-4" />
+                                        Excluir
+                                    </DropdownMenuItem>
+                                </DropdownMenuContent>
+                            </DropdownMenu>
+                        </div>
+
+                        <div className="flex justify-between items-center text-sm pt-2">
+                           <div className="text-muted-foreground">Status</div>
+                           <div>
+                                <Badge variant={servico.ativo ? 'default' : 'outline'} className="text-xs">
+                                    {servico.ativo ? 'Ativo' : 'Inativo'}
+                                </Badge>
+                           </div>
+                        </div>
+
+                        <div className="flex justify-between items-center text-sm">
+                           <div className="text-muted-foreground">Valor</div>
+                           <div className="font-semibold">{formatCurrency(servico.valorPadrao)}</div>
+                        </div>
+                    </CardContent>
+                </Card>
+              ))
+            ) : (
+                <div className="text-center text-muted-foreground p-8">
+                    Nenhum serviço encontrado.
+                </div>
+            )}
       </div>
 
       <AlertDialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
