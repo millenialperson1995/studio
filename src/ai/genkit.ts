@@ -5,5 +5,5 @@ import * as dotenv from 'dotenv';
 dotenv.config();
 
 export const ai = genkit({
-  plugins: [googleAI()],
+  plugins: [googleAI({ apiVersion: 'v1' })],
 });
