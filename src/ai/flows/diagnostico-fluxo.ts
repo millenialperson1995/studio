@@ -30,7 +30,7 @@ const DiagnosticoMotorOutputSchema = z.object({
       isCritico: z.boolean().describe('Indica se o passo é crítico para o diagnóstico.'),
   })).describe('Uma lista de passos investigativos para confirmar o diagnóstico.'),
   servicosSugeridos: z.array(ItemSchema).describe('Uma lista de serviços da retífica sugeridos para corrigir o problema. Deve usar APENAS itens da lista de `servicosDisponiveis`.'),
-  pecasSugeridas: z.array(ItemSchema).describe('Uma lista de peças que provavelmente serão necessárias. Deve usar APENAS itens da lista de `pecasDisponiveis`.'),
+  pecasSugeridas: z_array(ItemSchema).describe('Uma lista de peças que provavelmente serão necessárias. Deve usar APENAS itens da lista de `pecasDisponiveis`.'),
 });
 
 
@@ -80,7 +80,7 @@ const diagnosticoMotorFlow = ai.defineFlow(
     outputSchema: DiagnosticoMotorOutputSchema,
   },
   async (input) => {
-    const { output } = await diagnosticoPrompt(input, {model: googleAI.model('gemini-2.5-flash-lite')});
+    const { output } = await diagnosticoPrompt(input);
     
     if (!output) {
       throw new Error("A IA não conseguiu gerar um diagnóstico válido.");
