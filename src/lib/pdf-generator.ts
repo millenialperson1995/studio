@@ -12,7 +12,7 @@ declare module 'jspdf' {
   }
 }
 
-const drawHeader = (doc: jsPDF, oficina: Oficina | null) => {
+const drawHeader = (doc: jsPDF, oficina: Oficina | null, title: string) => {
   const pageHeight = doc.internal.pageSize.getHeight();
   const pageWidth = doc.internal.pageSize.getWidth();
   const margin = 15;
@@ -24,25 +24,24 @@ const drawHeader = (doc: jsPDF, oficina: Oficina | null) => {
   const email = oficina?.email ? `Email: ${oficina.email}` : '';
   const enderecoOficina = oficina ? `${oficina.endereco}, ${oficina.cidade}-${oficina.uf}, CEP: ${oficina.cep}` : 'Seu Endereço, Sua Cidade';
   
-  doc.setFontSize(22);
+  doc.setFontSize(18);
   doc.setFont('helvetica', 'bold');
-  doc.text(nomeEmpresa, pageWidth / 2, currentY, { align: 'center' });
+  doc.text(title, pageWidth / 2, currentY, { align: 'center' });
   currentY += 10;
+  
+  doc.setFontSize(12);
+  doc.setFont('helvetica', 'bold');
+  doc.text(nomeEmpresa, margin, currentY);
+  currentY += 6;
 
-  doc.setFontSize(10);
+  doc.setFontSize(9);
   doc.setFont('helvetica', 'normal');
-  if(cnpj) {
-      doc.text(cnpj, pageWidth / 2, currentY, { align: 'center' });
-      currentY += 5;
-  }
-  doc.text(enderecoOficina, pageWidth / 2, currentY, { align: 'center' });
-  currentY += 5;
+   doc.text(enderecoOficina, margin, currentY);
+   currentY += 4;
+   const contactInfo = [cnpj, telefone, email].filter(Boolean).join(' | ');
+   doc.text(contactInfo, margin, currentY);
 
-  const contactInfo = [telefone, email].filter(Boolean).join(' · ');
-  if(contactInfo) {
-      doc.text(contactInfo, pageWidth / 2, currentY, { align: 'center' });
-      currentY += 8;
-  }
+  currentY += 8;
   
   doc.setLineWidth(0.5);
   doc.line(margin, currentY, pageWidth - margin, currentY);
@@ -62,7 +61,7 @@ const drawFooter = (doc: jsPDF, documentType: string, creationDate: Date) => {
         doc.line(margin, footerY - 5, pageWidth - margin, footerY - 5);
 
         doc.setFontSize(8);
-        doc.text(`${documentType} gerado em: ${format(creationDate, 'dd/MM/yyyy')}.`, margin, footerY);
+        doc.text(`${documentType} gerado em: ${format(new Date(), 'dd/MM/yyyy HH:mm')}.`, margin, footerY);
         doc.text(`Página ${i} de ${pageCount}`, pageWidth - margin, footerY, { align: 'right' });
     }
 }
@@ -79,7 +78,7 @@ export const generateOrcamentoPDF = (
   const pageWidth = doc.internal.pageSize.getWidth();
   const margin = 15;
   
-  let currentY = drawHeader(doc, oficina);
+  let currentY = drawHeader(doc, oficina, 'Orçamento de Peças e Serviços');
   currentY += 8;
 
   // Orçamento Info
@@ -123,8 +122,8 @@ export const generateOrcamentoPDF = (
   doc.text(clientLines, margin, currentY, { maxWidth: halfWidth });
   doc.text(vehicleLines, margin + halfWidth + 10, currentY, { maxWidth: halfWidth });
 
-  const clientBlockHeight = doc.getTextDimensions(clientLines.join('\\n'), { maxWidth: halfWidth }).h;
-  const vehicleBlockHeight = doc.getTextDimensions(vehicleLines.join('\\n'), { maxWidth: halfWidth }).h;
+  const clientBlockHeight = doc.getTextDimensions(clientLines.join('\n'), { maxWidth: halfWidth }).h;
+  const vehicleBlockHeight = doc.getTextDimensions(vehicleLines.join('\n'), { maxWidth: halfWidth }).h;
   
   currentY += Math.max(clientBlockHeight, vehicleBlockHeight) + 10;
   
@@ -190,7 +189,7 @@ export const generateOrdemServicoPDF = (
   const pageWidth = doc.internal.pageSize.getWidth();
   const margin = 15;
   
-  let currentY = drawHeader(doc, oficina);
+  let currentY = drawHeader(doc, oficina, 'Ordem de Serviço');
   currentY += 8;
 
   // OS Info

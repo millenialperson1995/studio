@@ -38,7 +38,7 @@ import {
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { MoreHorizontal, Pencil, Trash2, FilePlus2, FileDown } from 'lucide-react';
-import type { Orcamento, Cliente, Veiculo, ItemServico, OrdemServico, Peca, Servico, ItemPeca, Oficina, ItemOrcamento } from '@/lib/types';
+import type { Orcamento, Cliente, Veiculo, ItemServico, OrdemServico, Peca, Servico, Oficina, ItemOrcamento } from '@/lib/types';
 import { deleteDocumentNonBlocking, addDocumentNonBlocking, updateDocumentNonBlocking } from '@/firebase/non-blocking-updates';
 import { doc, collection, serverTimestamp, getDoc, runTransaction, Transaction } from 'firebase/firestore';
 import { useFirestore, useUser } from '@/firebase';
