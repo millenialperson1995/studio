@@ -6,9 +6,8 @@ import { cn } from '@/lib/utils';
 import { FirebaseClientProvider } from '@/firebase';
 
 export const metadata: Metadata = {
-  title: 'Retífica Figueirêdo',
+  title: 'Retífica Figueiredo',
   description: 'Sistema de Gestão para Retíficas',
-  manifest: '/manifest.json',
   icons: {
     icon: '/favicon.ico',
   },
