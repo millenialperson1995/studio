@@ -159,20 +159,20 @@ export default function OrdemServicoTable({
 
   const handleDeleteConfirm = async () => {
     if (!selectedOrdem || !firestore) return;
-
+  
     try {
       await runTransaction(firestore, async (transaction: Transaction) => {
         const ordemDocRef = doc(firestore, 'ordensServico', selectedOrdem.id);
         const ordemDoc = await transaction.get(ordemDocRef);
-
+  
         if (!ordemDoc.exists()) {
           throw new Error('Ordem de serviço não encontrada.');
         }
-
+  
         const osData = ordemDoc.data() as OrdemServico;
-
-        // Only un-reserve stock if the OS is NOT 'concluida' and came from a quote.
-        if (osData.status !== 'concluida' && osData.orcamentoId) {
+  
+        // 1. Un-reserve parts if the OS is not 'concluida'
+        if (osData.status !== 'concluida') {
           for (const itemPeca of osData.pecas) {
             if (itemPeca.itemId) {
               const pecaRef = doc(firestore, 'pecas', itemPeca.itemId);
@@ -186,24 +186,34 @@ export default function OrdemServicoTable({
             }
           }
         }
-        
+  
+        // 2. Reset the original quote status if it exists
+        if (osData.orcamentoId) {
+          const orcamentoRef = doc(firestore, 'orcamentos', osData.orcamentoId);
+          transaction.update(orcamentoRef, {
+            status: 'pendente',
+            ordemServicoId: null, // Using null to remove the field
+          });
+        }
+  
+        // 3. Delete the service order
         transaction.delete(ordemDocRef);
       });
-
+  
       toast({
         title: 'Ordem de Serviço excluída',
-        description: 'A OS e as reservas de peças associadas foram removidas.',
+        description: 'A OS foi removida, o estoque foi ajustado e o orçamento original foi restaurado.',
       });
     } catch (error: any) {
-        toast({
-            variant: 'destructive',
-            title: 'Erro ao excluir OS',
-            description: error.message || 'Não foi possível excluir a Ordem de Serviço.',
-            duration: 7000,
-        });
+      toast({
+        variant: 'destructive',
+        title: 'Erro ao excluir OS',
+        description: error.message || 'Não foi possível excluir a Ordem de Serviço.',
+        duration: 7000,
+      });
     } finally {
-        setIsDeleteDialogOpen(false);
-        setSelectedOrdem(null);
+      setIsDeleteDialogOpen(false);
+      setSelectedOrdem(null);
     }
   };
   
@@ -279,6 +289,7 @@ export default function OrdemServicoTable({
                         </DropdownMenuItem>
                         <DropdownMenuItem
                           onClick={() => handleEditClick(ordem)}
+                          disabled={ordem.status === 'concluida' || ordem.status === 'cancelada'}
                         >
                           <Pencil className="mr-2 h-4 w-4" />
                           Editar

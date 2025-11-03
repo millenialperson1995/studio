@@ -91,15 +91,19 @@ export function EditOrdemServicoForm({
     .superRefine((pecas, ctx) => {
         pecas.forEach((item, index) => {
           if (item.itemId) {
-            const peca = pecasMap.get(item.itemId);
-            if (peca) {
+            const pecaInfo = pecasMap.get(item.itemId);
+            if (pecaInfo) {
+              // Find the original quantity of this part in the service order being edited
               const pecaOriginal = ordemServico.pecas.find(p => p.itemId === item.itemId);
-              const quantidadeOriginal = pecaOriginal?.quantidade || 0;
-              // Check against physical stock, allowing for the quantity already in the OS
-              if (item.quantidade > peca.quantidadeEstoque + quantidadeOriginal) {
+              const quantidadeOriginalNaOS = pecaOriginal?.quantidade || 0;
+              
+              // The available stock is the physical stock + what was originally reserved for THIS OS
+              const estoqueDisponivelParaEstaOS = pecaInfo.quantidadeEstoque + quantidadeOriginalNaOS;
+
+              if (item.quantidade > estoqueDisponivelParaEstaOS) {
                 ctx.addIssue({
                   code: z.ZodIssueCode.custom,
-                  message: `Estoque físico insuficiente. Total: ${peca.quantidadeEstoque}`,
+                  message: `Estoque físico insuficiente. Total em estoque: ${pecaInfo.quantidadeEstoque}`,
                   path: [index, 'quantidade'],
                 });
               }
