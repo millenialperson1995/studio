@@ -16,10 +16,11 @@ import {
   CardHeader,
   CardTitle,
   CardDescription,
+  CardFooter,
 } from '@/components/ui/card';
 import { useCollection, useFirestore, useUser, useVehicles } from '@/firebase';
 import { useMemoFirebase } from '@/firebase/provider';
-import { collection, query, where } from 'firebase/firestore';
+import { collection, query, where, orderBy } from 'firebase/firestore';
 import type { Orcamento, Cliente, Servico, Peca } from '@/lib/types';
 import {
   Dialog,
@@ -34,8 +35,11 @@ import { AddOrcamentoForm } from '@/components/orcamentos/add-orcamento-form';
 import AuthenticatedPage from '@/components/layout/authenticated-page';
 import { toDate } from '@/lib/utils';
 
+const ITEMS_PER_PAGE = 5;
+
 function OrcamentosContent() {
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
+  const [currentPage, setCurrentPage] = useState(1);
   const firestore = useFirestore();
   const { user } = useUser();
   const { vehicles, isLoading: isLoadingVehicles } = useVehicles();
@@ -70,7 +74,12 @@ function OrcamentosContent() {
     if (!orcamentos) return [];
     return [...orcamentos].sort((a, b) => toDate(b.createdAt).getTime() - toDate(a.createdAt).getTime());
   }, [orcamentos]);
-
+  
+  const totalPages = Math.ceil((sortedOrcamentos?.length || 0) / ITEMS_PER_PAGE);
+  const paginatedOrcamentos = sortedOrcamentos.slice(
+    (currentPage - 1) * ITEMS_PER_PAGE,
+    currentPage * ITEMS_PER_PAGE
+  );
 
   const isLoading = isLoadingOrcamentos || isLoadingClients || isLoadingVehicles || isLoadingServicos || isLoadingPecas;
 
@@ -116,12 +125,39 @@ function OrcamentosContent() {
         </CardHeader>
         <CardContent>
           <OrcamentoTable
-            orcamentos={sortedOrcamentos || []}
+            orcamentos={paginatedOrcamentos || []}
             clients={clients || []}
             servicos={servicos || []}
             pecas={pecas || []}
           />
         </CardContent>
+        {totalPages > 1 && (
+            <CardFooter>
+                <div className="flex w-full items-center justify-between text-xs text-muted-foreground">
+                    <div>
+                        Página {currentPage} de {totalPages}
+                    </div>
+                    <div className="flex items-center gap-2">
+                        <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
+                            disabled={currentPage === 1}
+                        >
+                            Anterior
+                        </Button>
+                        <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))}
+                            disabled={currentPage === totalPages}
+                        >
+                            Próxima
+                        </Button>
+                    </div>
+                </div>
+            </CardFooter>
+        )}
       </Card>
     </main>
   );
