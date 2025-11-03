@@ -90,7 +90,6 @@ export default function ServicoTable({ servicos = [] }: ServicoTableProps) {
             <TableRow>
               <TableHead>Código</TableHead>
               <TableHead>Descrição</TableHead>
-              <TableHead>Qtd.</TableHead>
               <TableHead>Valor</TableHead>
               <TableHead>Status</TableHead>
               <TableHead>
@@ -104,7 +103,6 @@ export default function ServicoTable({ servicos = [] }: ServicoTableProps) {
                 <TableRow key={servico.id}>
                   <TableCell className="font-medium">{servico.codigo}</TableCell>
                   <TableCell>{servico.descricao}</TableCell>
-                  <TableCell>{servico.quantidade}</TableCell>
                   <TableCell>{formatCurrency(servico.valorPadrao)}</TableCell>
                   <TableCell>
                     <Badge variant={servico.ativo ? 'default' : 'outline'} className="text-xs">
@@ -139,7 +137,7 @@ export default function ServicoTable({ servicos = [] }: ServicoTableProps) {
               ))
             ) : (
               <TableRow>
-                <TableCell colSpan={6} className="h-24 text-center">
+                <TableCell colSpan={5} className="h-24 text-center">
                   Nenhum serviço encontrado.
                 </TableCell>
               </TableRow>
@@ -192,11 +190,6 @@ export default function ServicoTable({ servicos = [] }: ServicoTableProps) {
                            </div>
                         </div>
                         
-                        <div className="flex justify-between items-center text-sm">
-                           <div className="text-muted-foreground">Qtd.</div>
-                           <div>{servico.quantidade}</div>
-                        </div>
-
                         <div className="flex justify-between items-center text-sm">
                            <div className="text-muted-foreground">Valor</div>
                            <div className="font-semibold">{formatCurrency(servico.valorPadrao)}</div>

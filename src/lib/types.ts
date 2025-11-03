@@ -42,7 +42,6 @@ export interface Servico {
   userId: string;
   codigo: string;
   descricao: string;
-  quantidade: number;
   valorPadrao: number;
   tempoMedio: number; // in hours
   categoria: string;
@@ -57,7 +56,7 @@ export interface Veiculo {
   placa: string;
   fabricante: string;
   modelo: string;
-  ano: number;
+  ano: number | null;
   motor?: string;
   cilindros?: string;
   numeroMotor?: string;
@@ -104,7 +103,7 @@ export interface Orcamento {
   pdfUrl?: string;
   cliente?: Cliente;
   veiculo?: Veiculo;
-  ordemServicoId?: string;
+  ordemServicoId?: string | null;
   createdAt?: any;
 }
 
