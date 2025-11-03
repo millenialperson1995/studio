@@ -22,7 +22,7 @@ import {
 } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
 import { doc, runTransaction, Transaction } from 'firebase/firestore';
-import { useFirestore, useUser, useVehicles } from '@/firebase';
+import { useFirestore, useUser } from '@/firebase';
 import { useToast } from '@/hooks/use-toast';
 import type { OrdemServico, Cliente, Peca, Servico, Veiculo } from '@/lib/types';
 import { Trash2, PlusCircle, CalendarIcon } from 'lucide-react';

@@ -22,7 +22,6 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
-import { addDocumentNonBlocking } from '@/firebase/non-blocking-updates';
 import { collection, serverTimestamp, doc, runTransaction, Transaction } from 'firebase/firestore';
 import { useFirestore, useUser } from '@/firebase';
 import { useToast } from '@/hooks/use-toast';
@@ -164,7 +163,7 @@ export function AddOrdemServicoForm({
                 const pecaData = pecaDoc.data() as Peca;
                 const estoqueDisponivel = pecaData.quantidadeEstoque - (pecaData.quantidadeReservada || 0);
                 if (itemPeca.quantidade > estoqueDisponivel) {
-                    throw new Error(`Estoque insuficiente para: ${pecaData.descricao}. Disponível: ${estoqueDisponivel}`);
+                    throw new Error(`Estoque insuficiente para: ${pecaData.descricao}. Disponível: ${estoqueDisponivel}, solicitado: ${itemPeca.quantidade}.`);
                 }
                 // Reserve the part
                 transaction.update(pecaRef, {
@@ -199,6 +198,7 @@ export function AddOrdemServicoForm({
         variant: 'destructive',
         title: 'Erro ao Criar OS',
         description: error.message || 'Não foi possível criar a Ordem de Serviço. Tente novamente.',
+        duration: 7000,
       });
     }
   }
