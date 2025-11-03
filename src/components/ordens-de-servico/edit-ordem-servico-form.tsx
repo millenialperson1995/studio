@@ -130,10 +130,12 @@ export function EditOrdemServicoForm({
   const paymentStatus = form.watch('statusPagamento');
 
   const selectedItemIds = useMemo(() => {
-    const servicosIds = watchedServicos.map(s => s.descricao);
+    // We don't have a unique ID for manually entered services, so we use their description
+    const servicosIds = watchedServicos.map(s => s.descricao); 
     const pecasIds = watchedPecas.map(p => p.itemId).filter(Boolean) as string[];
     return [...servicosIds, ...pecasIds];
   }, [watchedServicos, watchedPecas]);
+
 
    useEffect(() => {
     if (statusValue === 'concluida' && !form.getValues('dataConclusao')) {

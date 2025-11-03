@@ -3,7 +3,7 @@
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useForm, useFieldArray } from 'react-hook-form';
 import { z } from 'zod';
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { Button } from '@/components/ui/button';
 import {
   Form,
@@ -123,6 +123,14 @@ export function AddOrdemServicoForm({
 
   const watchedServicos = form.watch('servicos');
   const watchedPecas = form.watch('pecas');
+  
+  const selectedItemIds = useMemo(() => {
+    // We don't have a unique ID for manually entered services, so we use their description
+    const servicosIds = watchedServicos.map(s => s.descricao); 
+    const pecasIds = watchedPecas.map(p => p.itemId).filter(Boolean) as string[];
+    return [...servicosIds, ...pecasIds];
+  }, [watchedServicos, watchedPecas]);
+
 
   const totalValue = React.useMemo(() => {
     const totalServicos = watchedServicos.reduce((sum, servico) => sum + (servico.valor || 0), 0);
@@ -342,6 +350,7 @@ export function AddOrdemServicoForm({
                                 pecas={[]}
                                 servicos={servicos}
                                 onSelect={(item, type) => handleItemSelect(index, item, type, 'servicos')}
+                                selectedItemIds={selectedItemIds}
                                 trigger={
                                     <FormControl>
                                         <Input placeholder="Selecione ou digite um serviço" {...field} />
@@ -391,6 +400,7 @@ export function AddOrdemServicoForm({
                                 pecas={pecas}
                                 servicos={[]}
                                 onSelect={(item, type) => handleItemSelect(index, item, type, 'pecas')}
+                                selectedItemIds={selectedItemIds}
                                 trigger={
                                     <FormControl>
                                         <Input placeholder="Selecione ou digite uma peça" {...field} />
