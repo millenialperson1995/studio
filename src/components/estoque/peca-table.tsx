@@ -39,7 +39,7 @@ import { MoreHorizontal, Pencil, Trash2 } from 'lucide-react';
 import type { Peca } from '@/lib/types';
 import { deleteDocumentNonBlocking } from '@/firebase/non-blocking-updates';
 import { doc, getDocs, collection, query, where, limit } from 'firebase/firestore';
-import { useFirestore } from '@/firebase';
+import { useFirestore, useUser } from '@/firebase';
 import { useToast } from '@/hooks/use-toast';
 import { EditPecaForm } from './edit-peca-form';
 import { Card, CardContent } from '../ui/card';
@@ -50,6 +50,7 @@ interface PecaTableProps {
 
 export default function PecaTable({ pecas = [] }: PecaTableProps) {
   const firestore = useFirestore();
+  const { user } = useUser();
   const { toast } = useToast();
   
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
@@ -67,28 +68,22 @@ export default function PecaTable({ pecas = [] }: PecaTableProps) {
   };
 
   const checkForDependencies = async (pecaId: string): Promise<string[]> => {
-    if (!firestore) return ['Erro de conexão com o banco de dados.'];
+    if (!firestore || !user) return ['Erro de conexão com o banco de dados.'];
 
     const dependencies: string[] = [];
 
-    // Check for orcamentos
-    const orcamentosQuery = query(
-      collection(firestore, 'orcamentos'),
-      where('itens', 'array-contains', { itemId: pecaId }), // This is not a valid query. Firestore can't query inside array of objects this way.
-      limit(1)
-    );
-     // We need to fetch all and filter client-side, which is inefficient.
-     // For this app's scale, it's okay, but for larger apps, a different data model would be needed (e.g., a subcollection of item IDs).
-     const allOrcamentosSnap = await getDocs(collection(firestore, 'orcamentos'));
+     const orcamentosQuery = query(collection(firestore, 'orcamentos'), where('userId', '==', user.uid));
+     const ordensQuery = query(collection(firestore, 'ordensServico'), where('userId', '==', user.uid));
+
+     const allOrcamentosSnap = await getDocs(orcamentosQuery);
      const foundInOrcamento = allOrcamentosSnap.docs.some(doc => 
-         doc.data().itens.some((item: any) => item.itemId === pecaId)
+         doc.data().itens.some((item: any) => item.itemId === pecaId && item.tipo === 'peca')
      );
     if (foundInOrcamento) {
       dependencies.push('orçamentos');
     }
 
-    // Check for ordens de serviço
-     const allOrdensSnap = await getDocs(collection(firestore, 'ordensServico'));
+     const allOrdensSnap = await getDocs(ordensQuery);
      const foundInOrdem = allOrdensSnap.docs.some(doc =>
         doc.data().pecas.some((peca: any) => peca.itemId === pecaId)
      );
