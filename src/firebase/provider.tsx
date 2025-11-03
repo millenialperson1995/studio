@@ -2,11 +2,9 @@
 
 import React, { DependencyList, createContext, useContext, ReactNode, useMemo, useState, useEffect } from 'react';
 import { FirebaseApp } from 'firebase/app';
-import { Firestore, collection, onSnapshot, query, where } from 'firebase/firestore';
+import { Firestore, collection, onSnapshot, query, where, getDocs, collectionGroup } from 'firebase/firestore';
 import { Auth, User, onAuthStateChanged } from 'firebase/auth';
 import { FirebaseErrorListener } from '@/components/FirebaseErrorListener';
-import { errorEmitter } from './error-emitter';
-import { FirestorePermissionError } from './errors';
 import type { Veiculo, Cliente } from '@/lib/types';
 
 
@@ -87,9 +85,6 @@ export const FirebaseProvider: React.FC<FirebaseProviderProps> = ({
     error: null,
   });
 
-  const [clients, setClients] = useState<Cliente[]>([]);
-  const [isLoadingClients, setIsLoadingClients] = useState(true);
-
   // Effect to subscribe to Firebase auth state changes
   useEffect(() => {
     if (!auth) { 
@@ -112,84 +107,30 @@ export const FirebaseProvider: React.FC<FirebaseProviderProps> = ({
     return () => unsubscribe(); 
   }, [auth]); 
 
-  // Effect to fetch clients for the authenticated user
-  useEffect(() => {
-      const { user, isUserLoading } = userAuthState;
-      if (isUserLoading || !user || !firestore) {
-          setClients([]);
-          setIsLoadingClients(!user);
-          return;
-      }
-      setIsLoadingClients(true);
-      const clientsQuery = query(collection(firestore, 'clientes'), where('userId', '==', user.uid));
-      const unsubscribe = onSnapshot(clientsQuery, (snapshot) => {
-          const clientsData = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Cliente));
-          setClients(clientsData);
-          setIsLoadingClients(false);
-      }, (error) => {
-          console.error("FirebaseProvider: Error fetching clients:", error);
-          setClients([]);
-          setIsLoadingClients(false);
-      });
 
-      return () => unsubscribe();
-  }, [userAuthState.user, userAuthState.isUserLoading, firestore]);
-
-  // Effect to fetch all vehicles for the authenticated user based on their clients
+  // Effect to fetch all vehicles for the authenticated user
   useEffect(() => {
     const { user, isUserLoading } = userAuthState;
     
-    if (isUserLoading || isLoadingClients || !user) {
-        return; // Wait until user and clients are loaded
-    }
-
-    if (clients.length === 0) {
-      setVehiclesState({ vehicles: [], isLoading: false, error: null });
-      return;
+    if (isUserLoading || !user || !firestore) {
+        setVehiclesState({ vehicles: [], isLoading: !user, error: null });
+        return;
     }
 
     setVehiclesState(prevState => ({ ...prevState, isLoading: true }));
-    const unsubscribers: (() => void)[] = [];
-    let allVehicles: Veiculo[] = [];
-
-    clients.forEach(cliente => {
-        const vehiclesQuery = query(collection(firestore, 'clientes', cliente.id, 'veiculos'), where('userId', '==', user.uid));
-
-        const unsubscribe = onSnapshot(vehiclesQuery, (snapshot) => {
-            
-            allVehicles = allVehicles.filter(v => v.clienteId !== cliente.id);
-
-            snapshot.forEach((doc) => {
-                allVehicles.push(doc.data() as Veiculo);
-            });
-            
-            setVehiclesState(prevState => ({ ...prevState, vehicles: [...allVehicles] }));
-
-        }, (error) => {
-            console.error(`FirebaseProvider: Error fetching vehicles for client ${cliente.id}:`, error);
-            setVehiclesState(prevState => ({...prevState, error: error as Error }));
-        });
-        unsubscribers.push(unsubscribe);
+    
+    const vehiclesQuery = query(collectionGroup(firestore, 'veiculos'), where('userId', '==', user.uid));
+    
+    const unsubscribe = onSnapshot(vehiclesQuery, (snapshot) => {
+        const vehiclesData = snapshot.docs.map(doc => ({ ...doc.data(), id: doc.id } as Veiculo));
+        setVehiclesState({ vehicles: vehiclesData, isLoading: false, error: null });
+    }, (error) => {
+        console.error("FirebaseProvider: Error fetching vehicles:", error);
+        setVehiclesState({ vehicles: [], isLoading: false, error: error as Error });
     });
 
-    Promise.all(clients.map(c => new Promise(res => {
-      const q = query(collection(firestore, 'clientes', c.id, 'veiculos'), where('userId', '==', user.uid));
-      const unsub = onSnapshot(q, () => {
-        unsub(); 
-        res(true);
-      }, () => {
-        unsub();
-        res(true);
-      });
-    }))).then(() => {
-       setVehiclesState(prevState => ({ ...prevState, isLoading: false }));
-    });
-
-
-    return () => {
-      unsubscribers.forEach(unsub => unsub());
-    };
-  }, [clients, isLoadingClients, userAuthState.user, userAuthState.isUserLoading, firestore]);
+    return () => unsubscribe();
+  }, [userAuthState.user, userAuthState.isUserLoading, firestore]);
 
   // Memoize the context value
   const contextValue = useMemo((): FirebaseContextState => {
