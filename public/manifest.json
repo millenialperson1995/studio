@@ -4,6 +4,11 @@
   "description": "Sistema de Gestão para Retíficas de Motores",
   "icons": [
     {
+      "src": "/icons/logo.png",
+      "sizes": "32x32",
+      "type": "image/png"
+    },
+    {
       "src": "/icons/icon-192x192.png",
       "sizes": "192x192",
       "type": "image/png"

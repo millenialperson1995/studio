@@ -15,7 +15,7 @@ interface LogoImageProps {
 const LogoImage: React.FC<LogoImageProps> = ({ width = 64, height = 64, className }) => {
     return (
         <Image
-            src={logoDataUri}
+            src="/icons/logo.png"
             alt="Logo da Retífica Figueirêdo"
             width={width}
             height={height}

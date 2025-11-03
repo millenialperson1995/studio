@@ -14,10 +14,8 @@ declare module 'jspdf' {
 
 // Function to get the logo and convert it to a data URI
 const getLogoDataUri = (): string => {
-    // This is the base64 representation of your logo.png file.
-    // This avoids network requests and ensures the logo is always available for PDF generation.
-    const base64Image = "iVBORw0KGgoAAAANSUhEUgAAAQAAAAEACAYAAABccqhmAAAABGdBTUEAALGPC/xhBQAAAAFzUkdCAK7OHOkAAAAJcEhZcwAACxMAAAsTAQCanBgAAAAjdEVYdFNvZnR3YXJlAFRodW5kZXJiaXJkRwAAeJxj/gE7A8//Z/i3/gGPDwD+8Y+BigEADk0EaHjarjG3TjJ3D2MzgEAs4L4b8i4wA+n6/6e/f//79y/Gj/8YwEAGAB0DEBJAuAwgH8B8c8B/J+hY+iYPCwO4/f/D3+Mj/8z/P3P/79/GH4w/jD+PP48/rz+vP59/f39+1/e37u36+5t/AYG/v379++fv37/9gUDg4GBgYGBgYGBgYGBgYFBgUGBQYFBgUGBQYFBgUGBQYFBgUGBQYFBgUGBQYFBgUGBQYFBgUGBQYFBgUGBQYFBgUGBQYFBgUGBQYFBgUGBQYFBgUGBQYFBgUGBQYFBgUGBQYFBgUGBQYFBgUGBQYFBgUGBQYFBgUGBQYFBgUGBQYFBgUGBQYFBgUGBQYFBgUGBQYFBgUGBQYFBgUGBQYFBgUGBQYFBgUGBQYFBgUGBQYFBgUGBQYFBgUGBQYFBgUGBQYFBgUGBQYFBgUGBQYFBgUGBQYFBgUGBQYFBgUGBQYFBgUGBQYFBgUGBQYFBgUGBQYFBgUGBQYFBgUGBQYFBgUGBQYFBgUGBQYFBgUGBQYFBgUGBQYFBgUGBQYFBgUGBQYFBgUGBQYFBgUGBQYFBgUGBQYFBgUGBQYFBgUGBQYFBgUGBQYFBgUGBQYFBgUGBQYFBgUGBQYFBgUGBQYFBgUGBQYFBgUGBQYFBgUGBQYFBgUGBQYFBgUGBQYFBgUGBQYFBgUGBQYFBgUGBQYFBgUGBQYFBgUGBQYFBgUGBQYFBgUGBQYFBgUGBQYFBgUGBQYFBgUGBQYFBgUGBQYFBgUGBQYFBgUGBQYFBgUGBQYFBgUGBQYFBgUGBQYFBgUGBQYFBgUGBQYFBgUGBQYFBgUGBQYFBgUGBQYFBgUGBQYFBgUGBQYFBgUGBQYFBgUGBQYFBgUGBQYFBgUGBQYFBgUGBQYFBgUGBQYFBgUGBQYFBgUGBQYFBgUGBQYFBgUGBQYFBgUGBQYFBgUGBQYFBgUGBQYFBgUGBQYFBgUGBQYFBgUGBQYFBgUGBQYFBgUGBQYFBgUGBQYFBgUGBQYFBgUGBQYFBgUGBQYFBgUGBQYFBgUGBQYFBgUGBQYFBgUGBQYFBgUGBQYFBgUGBQYFBgUGBQYFBgUGBQYFBgUGBQYFBgUGBQYFBgUGBQYFBgUGBQYFBgUGBQYFBgUGBQYFBgUGBQYFBgUGBQYFBgUGBQYFBgUGBQYFBgUGBQYFBgUGBQYFBgUGBQYFBgUGBQYFBgUGBQYFBgUGBQYFBgUGBQYFBgUGBQYFBgUGBQYFBgUGBQYFBgUGBQYFBgUGBQYFBgUGBQYFBgUGBQYFBgUGBQYFBgUGBQYFBgUGBQYFBgUGBQYFBgUGBQYFBgUGBQYFBgUGBQYFBgUGBQYFBgUGBQYFBgUGBQYFBgUGBQYFBgUGBQYFBgUGBQYFBgUGBQYFBgUGBQYFBgUGBQYFBgUGBQYFBgUGBQYFBgUGBQYFBgUGBQYFBgUGBQYFBgUGBQYFBgUGBQYFBgUGBQYFBgUGBQYFBgUGBQYFBgUGBQYFBgUGBQYFBgUGBQYFBgUGBQYFBgUGBQYFBgUGBQYFBgUGBQYFBgUGBQYFBgUGBQYFBgUGBQYFBgUGBQYFBgUGBQYFBgUGBQYFBgUGBQYFBgUGBQYFBgUGBQYFBgUGBQYFBgUGBQYFBgUGBQYFBgUGBQYFBgUGBQYFBgUGBQYFBgUGBQYFBgUGBQYFBgUGBQYFBgU-";
-    return `data:image/png;base64,${base64Image}`;
+    // Just return the path to the logo file
+    return '/icons/logo.png';
 };
 
 
@@ -27,11 +25,8 @@ const drawHeader = (doc: jsPDF, oficina: Oficina | null, title: string) => {
   const margin = 15;
   let currentY = 20;
 
-  const logoDataUri = getLogoDataUri();
-  
-  if (logoDataUri) {
-      doc.addImage(logoDataUri, 'PNG', margin, currentY, 30, 30);
-  }
+  // Logo path is relative to the public directory
+  doc.addImage(`${process.env.PUBLIC_URL || ''}${getLogoDataUri()}`, 'PNG', margin, currentY, 30, 30);
 
   const nomeEmpresa = oficina?.nomeEmpresa || 'Retífica Figueirêdo';
   const cnpj = oficina?.cnpj ? `CNPJ: ${oficina.cnpj}` : '';
@@ -39,7 +34,7 @@ const drawHeader = (doc: jsPDF, oficina: Oficina | null, title: string) => {
   const email = oficina?.email ? `Email: ${oficina.email}` : '';
   const enderecoOficina = oficina ? `${oficina.endereco}, ${oficina.cidade}-${oficina.uf}, CEP: ${oficina.cep}` : 'Endereço da Oficina';
   
-  const headerTextX = logoDataUri ? margin + 40 : margin;
+  const headerTextX = margin + 40; // Always add space for logo
 
   doc.setFontSize(18);
   doc.setFont('helvetica', 'bold');
