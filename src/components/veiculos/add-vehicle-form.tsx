@@ -75,7 +75,7 @@ export function AddVehicleForm({
         ...values,
         ano: values.ano || null,
         id: newVehicleRef.id,
-        userId: user.uid,
+        userId: user.uid, // Explicitly set userId on the vehicle document
         createdAt: serverTimestamp(),
       };
       
