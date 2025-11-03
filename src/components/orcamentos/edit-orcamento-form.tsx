@@ -46,6 +46,8 @@ const itemSchema = z.object({
 const formSchema = z.object({
   clienteId: z.string().min(1, 'Selecione um cliente.'),
   veiculoId: z.string().min(1, 'Selecione um veículo.'),
+  clienteNome: z.string(), // Denormalized
+  veiculoInfo: z.string(), // Denormalized
   dataValidade: z.date({
     required_error: 'A data de validade é obrigatória.',
   }),
@@ -151,6 +153,26 @@ export function EditOrcamentoForm({
     })
   }
 
+  const handleClientChange = (clientId: string) => {
+    const client = clients.find(c => c.id === clientId);
+    if(client) {
+        form.setValue('clienteId', clientId);
+        form.setValue('clienteNome', client.nome);
+        setSelectedClientId(clientId);
+        form.setValue('veiculoId', ''); // Reset vehicle
+        form.setValue('veiculoInfo', '');
+    }
+  }
+  
+  const handleVehicleChange = (vehicleId: string) => {
+    const vehicle = vehicles.find(v => v.id === vehicleId);
+    if(vehicle) {
+        form.setValue('veiculoId', vehicleId);
+        form.setValue('veiculoInfo', `${vehicle.fabricante} ${vehicle.modelo} (${vehicle.placa})`);
+    }
+  }
+
+
   return (
     <Form {...form}>
       <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6 max-h-[80vh] overflow-y-auto p-1 pr-4">
@@ -162,11 +184,7 @@ export function EditOrcamentoForm({
               <FormItem className="flex-1">
                 <FormLabel>Cliente</FormLabel>
                 <Select
-                  onValueChange={(value) => {
-                    field.onChange(value);
-                    setSelectedClientId(value);
-                    form.setValue('veiculoId', ''); // Reset vehicle
-                  }}
+                  onValueChange={handleClientChange}
                   defaultValue={field.value}
                 >
                   <FormControl>
@@ -193,7 +211,7 @@ export function EditOrcamentoForm({
               <FormItem className="flex-1">
                 <FormLabel>Veículo</FormLabel>
                 <Select
-                  onValueChange={field.onChange}
+                  onValueChange={handleVehicleChange}
                   value={field.value}
                   disabled={!selectedClientId}
                 >

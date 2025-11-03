@@ -10,9 +10,7 @@ import { Badge } from '@/components/ui/badge';
 import { OrdemServico, Orcamento } from '@/lib/types';
 import { ScrollArea } from '../ui/scroll-area';
 
-// Corrected type definition from interface to type
-type EnrichedItem = OrdemServico | Orcamento;
-
+type EnrichedItem = (Orcamento | OrdemServico) & { clienteNome: string };
 
 interface RecentActivityCardProps {
   title: string;
@@ -56,11 +54,11 @@ export default function RecentActivityCard({ title, items, icon, emptyMessage }:
               items.map((item) => (
                 <div key={item.id} className="flex items-center gap-4">
                   <Avatar className="hidden h-9 w-9 sm:flex">
-                    <AvatarFallback>{item.cliente?.nome.charAt(0) || '?'}</AvatarFallback>
+                    <AvatarFallback>{item.clienteNome?.charAt(0) || '?'}</AvatarFallback>
                   </Avatar>
                   <div className="grid gap-1 flex-1">
                     <p className="text-sm font-medium leading-none truncate">
-                      {item.cliente?.nome || 'Cliente não encontrado'}
+                      {item.clienteNome || 'Cliente não encontrado'}
                     </p>
                     <p className="text-sm text-muted-foreground truncate">
                       ID: {item.id.substring(0, 8)}...

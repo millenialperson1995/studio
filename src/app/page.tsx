@@ -106,23 +106,13 @@ function DashboardContent() {
     }));
 
     // Recent Activity Lists
-    const clientsMap = new Map(clientes.map(c => [c.id, c]));
-
     const pendingQuotes = orcamentos
         .filter(o => o.status === 'pendente')
         .sort((a, b) => toDate(b.dataCriacao).getTime() - toDate(a.dataCriacao).getTime())
-        .map(o => ({
-            ...o,
-            cliente: clientsMap.get(o.clienteId),
-        }))
         .slice(0, 5);
 
     const recentOrders = ordensServico
         .sort((a, b) => toDate(b.dataEntrada).getTime() - toDate(a.dataEntrada).getTime())
-        .map(os => ({
-            ...os,
-            cliente: clientsMap.get(os.clienteId),
-        }))
         .slice(0, 5);
 
 

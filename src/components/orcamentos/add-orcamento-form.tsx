@@ -46,6 +46,8 @@ const itemSchema = z.object({
 const formSchema = z.object({
   clienteId: z.string().min(1, 'Selecione um cliente.'),
   veiculoId: z.string().min(1, 'Selecione um veículo.'),
+  clienteNome: z.string(), // Denormalized
+  veiculoInfo: z.string(), // Denormalized
   dataValidade: z.date({
     required_error: 'A data de validade é obrigatória.',
   }),
@@ -80,6 +82,8 @@ export function AddOrcamentoForm({
     defaultValues: {
       clienteId: '',
       veiculoId: '',
+      clienteNome: '',
+      veiculoInfo: '',
       dataValidade: new Date(new Date().setDate(new Date().getDate() + 15)), // Default 15 days
       status: 'pendente',
       observacoes: '',
@@ -157,6 +161,25 @@ export function AddOrcamentoForm({
         valorTotal: type === 'peca' ? (item as Peca).valorVenda : (item as Servico).valorPadrao, // For service, this is the manual total
     })
   }
+  
+  const handleClientChange = (clientId: string) => {
+    const client = clients.find(c => c.id === clientId);
+    if(client) {
+        form.setValue('clienteId', clientId);
+        form.setValue('clienteNome', client.nome);
+        setSelectedClientId(clientId);
+        form.setValue('veiculoId', ''); // Reset vehicle
+        form.setValue('veiculoInfo', '');
+    }
+  }
+  
+  const handleVehicleChange = (vehicleId: string) => {
+    const vehicle = vehicles.find(v => v.id === vehicleId);
+    if(vehicle) {
+        form.setValue('veiculoId', vehicleId);
+        form.setValue('veiculoInfo', `${vehicle.fabricante} ${vehicle.modelo} (${vehicle.placa})`);
+    }
+  }
 
   return (
     <Form {...form}>
@@ -169,11 +192,7 @@ export function AddOrcamentoForm({
               <FormItem className="flex-1">
                 <FormLabel>Cliente</FormLabel>
                 <Select
-                  onValueChange={(value) => {
-                    field.onChange(value);
-                    setSelectedClientId(value);
-                    form.setValue('veiculoId', ''); // Reset vehicle on client change
-                  }}
+                  onValueChange={handleClientChange}
                   defaultValue={field.value}
                 >
                   <FormControl>
@@ -200,7 +219,7 @@ export function AddOrcamentoForm({
               <FormItem className="flex-1">
                 <FormLabel>Veículo</FormLabel>
                 <Select
-                  onValueChange={field.onChange}
+                  onValueChange={handleVehicleChange}
                   value={field.value}
                   disabled={!selectedClientId}
                 >

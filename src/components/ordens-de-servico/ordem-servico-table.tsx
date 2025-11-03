@@ -98,9 +98,6 @@ export default function OrdemServicoTable({
     null
   );
 
-  const clientsMap = useMemo(() => new Map(clients.map((c) => [c.id, c])), [clients]);
-  const vehiclesMap = useMemo(() => new Map(vehicles.map((v) => [v.id, v])), [vehicles]);
-
   const handleEditClick = (ordem: OrdemServico) => {
     setSelectedOrdem(ordem);
     setIsEditDialogOpen(true);
@@ -127,8 +124,9 @@ export default function OrdemServicoTable({
   const handleDownloadPDF = async (ordem: OrdemServico) => {
     if (!firestore || !user) return;
     
-    const cliente = clientsMap.get(ordem.clienteId);
-    const veiculo = vehiclesMap.get(ordem.veiculoId);
+    // Find client and vehicle from the main lists, not from denormalized data
+    const cliente = clients.find(c => c.id === ordem.clienteId);
+    const veiculo = vehicles.find(v => v.id === ordem.veiculoId);
     
     try {
       const oficinaDocRef = doc(firestore, 'oficinas', user.uid);
@@ -224,18 +222,6 @@ export default function OrdemServicoTable({
       return format(jsDate, 'dd/MM/yyyy');
   }
 
-  const enrichedOrdens = useMemo(() => {
-    return ordensServico.map((ordem) => {
-      const cliente = clientsMap.get(ordem.clienteId);
-      const veiculo = vehiclesMap.get(ordem.veiculoId);
-      return {
-        ...ordem,
-        clienteNome: cliente?.nome || 'Desconhecido',
-        veiculoDesc: veiculo ? `${veiculo.fabricante} ${veiculo.modelo} (${veiculo.placa})` : 'Desconhecido',
-      }
-    });
-  }, [ordensServico, clientsMap, vehiclesMap]);
-
   return (
     <>
       <div className="relative w-full overflow-auto rounded-md border">
@@ -253,8 +239,8 @@ export default function OrdemServicoTable({
             </TableRow>
           </TableHeader>
           <TableBody>
-            {enrichedOrdens.length > 0 ? (
-              enrichedOrdens.map((ordem) => (
+            {ordensServico.length > 0 ? (
+              ordensServico.map((ordem) => (
                 <TableRow key={ordem.id}>
                   <TableCell>
                      <div className="font-medium">{ordem.clienteNome}</div>
@@ -262,7 +248,7 @@ export default function OrdemServicoTable({
                        OS Aberta em: {formatDate(ordem.dataEntrada)}
                     </div>
                   </TableCell>
-                   <TableCell className="hidden lg:table-cell text-muted-foreground">{ordem.veiculoDesc}</TableCell>
+                   <TableCell className="hidden lg:table-cell text-muted-foreground">{ordem.veiculoInfo}</TableCell>
                    <TableCell className="hidden md:table-cell">{`R$ ${ordem.valorTotal.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`}</TableCell>
                    <TableCell className="hidden sm:table-cell">
                     <Badge variant={statusVariantMap[ordem.status]} className="text-xs">

@@ -94,6 +94,8 @@ export interface Orcamento {
   userId: string;
   clienteId: string;
   veiculoId: string;
+  clienteNome: string; // Denormalized
+  veiculoInfo: string; // Denormalized: "Marca Modelo (Placa)"
   dataCriacao: any; // Can be Date or Firestore Timestamp
   dataValidade: any; // Can be Date or Firestore Timestamp
   status: 'pendente' | 'aprovado' | 'rejeitado';
@@ -101,8 +103,6 @@ export interface Orcamento {
   valorTotal: number;
   observacoes: string;
   pdfUrl?: string;
-  cliente?: Cliente;
-  veiculo?: Veiculo;
   ordemServicoId?: string | null;
   createdAt?: any;
 }
@@ -127,6 +127,8 @@ export interface OrdemServico {
   orcamentoId?: string;
   clienteId: string;
   veiculoId: string;
+  clienteNome: string; // Denormalized
+  veiculoInfo: string; // Denormalized
   status: 'pendente' | 'andamento' | 'concluida' | 'cancelada';
   statusPagamento: 'Pendente' | 'Pago' | 'Vencido';
   dataEntrada: any;
@@ -138,8 +140,6 @@ export interface OrdemServico {
   pecas: ItemPeca[];
   valorTotal: number;
   observacoes: string;
-  cliente?: Cliente;
-  veiculo?: Veiculo;
   createdAt?: any;
 }
 
@@ -157,5 +157,3 @@ export interface Peca {
   alertaEstoqueBaixo: boolean;
   createdAt?: any;
 }
-
-    

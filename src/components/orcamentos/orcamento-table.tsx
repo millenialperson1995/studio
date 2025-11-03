@@ -221,6 +221,8 @@ export default function OrcamentoTable({
             orcamentoId: orcamento.id,
             clienteId: orcamento.clienteId,
             veiculoId: orcamento.veiculoId,
+            clienteNome: orcamento.clienteNome,
+            veiculoInfo: orcamento.veiculoInfo,
             status: 'pendente',
             statusPagamento: 'Pendente',
             dataEntrada: serverTimestamp(),
@@ -265,14 +267,6 @@ export default function OrcamentoTable({
       return format(jsDate, 'dd/MM/yyyy');
   }
 
-  const enrichedOrcamentos = useMemo(() => {
-    return orcamentos.map((orc) => ({
-      ...orc,
-      cliente: clientsMap.get(orc.clienteId),
-      veiculo: vehiclesMap.get(orc.veiculoId),
-    }));
-  }, [orcamentos, clientsMap, vehiclesMap]);
-
   return (
     <>
       <div className="relative w-full overflow-auto rounded-md border">
@@ -290,16 +284,16 @@ export default function OrcamentoTable({
             </TableRow>
           </TableHeader>
           <TableBody>
-            {enrichedOrcamentos.length > 0 ? (
-              enrichedOrcamentos.map((orcamento) => (
+            {orcamentos.length > 0 ? (
+              orcamentos.map((orcamento) => (
                 <TableRow key={orcamento.id}>
                   <TableCell>
-                    <div className="font-medium">{orcamento.cliente?.nome || 'Desconhecido'}</div>
+                    <div className="font-medium">{orcamento.clienteNome || 'Desconhecido'}</div>
                      <div className="block sm:hidden text-xs text-muted-foreground">
                        {statusLabelMap[orcamento.status]}
                     </div>
                   </TableCell>
-                   <TableCell className="hidden md:table-cell text-muted-foreground">{orcamento.veiculo ? `${orcamento.veiculo.fabricante} ${orcamento.veiculo.modelo}` : 'Desconhecido'}</TableCell>
+                   <TableCell className="hidden md:table-cell text-muted-foreground">{orcamento.veiculoInfo || 'Desconhecido'}</TableCell>
                    <TableCell className="hidden sm:table-cell text-muted-foreground">{formatDate(orcamento.dataCriacao)}</TableCell>
                   <TableCell>{`R$ ${orcamento.valorTotal.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`}</TableCell>
                    <TableCell className="hidden sm:table-cell">

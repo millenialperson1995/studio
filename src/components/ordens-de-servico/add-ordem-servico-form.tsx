@@ -71,6 +71,8 @@ export function AddOrdemServicoForm({
   const formSchema = z.object({
     clienteId: z.string().min(1, 'Selecione um cliente.'),
     veiculoId: z.string().min(1, 'Selecione um veículo.'),
+    clienteNome: z.string(), // Denormalized
+    veiculoInfo: z.string(), // Denormalized
     dataEntrada: z.date({ required_error: 'A data de entrada é obrigatória.' }),
     dataPrevisao: z.date({ required_error: 'A data de previsão é obrigatória.' }),
     status: z.enum(['pendente', 'andamento', 'concluida', 'cancelada']),
@@ -105,6 +107,8 @@ export function AddOrdemServicoForm({
     defaultValues: {
       clienteId: '',
       veiculoId: '',
+      clienteNome: '',
+      veiculoInfo: '',
       dataEntrada: new Date(),
       dataPrevisao: new Date(new Date().setDate(new Date().getDate() + 7)),
       status: 'pendente',
@@ -129,15 +133,13 @@ export function AddOrdemServicoForm({
     return [...servicosIds, ...pecasIds];
   }, [watchedServicos, watchedPecas]);
 
-
-  // Calcular o valor total em tempo real
-  const totalValue = watchedServicos.reduce((sum, servico) => sum + (Number(servico.valor) || 0), 0) + 
-    watchedPecas.reduce((sum, peca) => sum + ((Number(peca.quantidade) || 0) * (Number(peca.valorUnitario) || 0)), 0);
-
-  // Atualizar o campo valorTotal no formulário sempre que o total mudar
   useEffect(() => {
-    form.setValue('valorTotal', totalValue);
-  }, [totalValue, form]);
+    const totalServicos = watchedServicos.reduce((sum, servico) => sum + (Number(servico.valor) || 0), 0);
+    const totalPecas = watchedPecas.reduce((sum, peca) => sum + ((Number(peca.quantidade) || 0) * (Number(peca.valorUnitario) || 0)), 0);
+    form.setValue('valorTotal', totalServicos + totalPecas);
+  }, [watchedServicos, watchedPecas, form]);
+
+  const valorTotal = form.watch('valorTotal');
 
 
   const filteredVehicles = vehicles.filter(
@@ -221,6 +223,25 @@ export function AddOrdemServicoForm({
     }
   }
 
+  const handleClientChange = (clientId: string) => {
+    const client = clients.find(c => c.id === clientId);
+    if(client) {
+        form.setValue('clienteId', clientId);
+        form.setValue('clienteNome', client.nome);
+        setSelectedClientId(clientId);
+        form.setValue('veiculoId', ''); // Reset vehicle
+        form.setValue('veiculoInfo', '');
+    }
+  }
+  
+  const handleVehicleChange = (vehicleId: string) => {
+    const vehicle = vehicles.find(v => v.id === vehicleId);
+    if(vehicle) {
+        form.setValue('veiculoId', vehicleId);
+        form.setValue('veiculoInfo', `${vehicle.fabricante} ${vehicle.modelo} (${vehicle.placa})`);
+    }
+  }
+
 
   return (
     <Form {...form}>
@@ -233,11 +254,7 @@ export function AddOrdemServicoForm({
               <FormItem className="flex-1">
                 <FormLabel>Cliente</FormLabel>
                 <Select
-                  onValueChange={(value) => {
-                    field.onChange(value);
-                    setSelectedClientId(value);
-                    form.setValue('veiculoId', '');
-                  }}
+                  onValueChange={handleClientChange}
                   defaultValue={field.value}
                 >
                   <FormControl>
@@ -259,7 +276,7 @@ export function AddOrdemServicoForm({
             render={({ field }) => (
               <FormItem className="flex-1">
                 <FormLabel>Veículo</FormLabel>
-                <Select onValueChange={field.onChange} value={field.value} disabled={!selectedClientId}>
+                <Select onValueChange={handleVehicleChange} value={field.value} disabled={!selectedClientId}>
                   <FormControl>
                     <SelectTrigger><SelectValue placeholder="Selecione um veículo" /></SelectTrigger>
                   </FormControl>
@@ -451,7 +468,7 @@ export function AddOrdemServicoForm({
         <div className="flex flex-col-reverse sm:flex-row items-center justify-between pt-4 sticky bottom-0 bg-background/95 pb-4">
             <div className="text-lg font-semibold mt-4 sm:mt-0">
                 <span>Valor Total: </span>
-                <span>{totalValue.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}</span>
+                <span>{valorTotal.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}</span>
             </div>
             <Button type="submit" disabled={form.formState.isSubmitting}>
                 {form.formState.isSubmitting ? 'Salvando...' : 'Salvar Ordem de Serviço'}
