@@ -19,7 +19,7 @@ import {
     useSidebar,
   } from '../ui/sidebar';
   import { cn } from '@/lib/utils';
-  import { Wrench as Logo } from 'lucide-react';
+  import Image from 'next/image';
 
 
   const AppSidebar = () => {
@@ -29,7 +29,7 @@ import {
       <>
         <SidebarHeader>
           <div className={cn("flex items-center gap-2 p-2", isCollapsed ? 'justify-center' : '')}>
-            <Logo className="w-8 h-8 text-primary" />
+            <Image src="/logo.svg" alt="Logo" width={32} height={32} />
             <h1
               className={`text-lg font-semibold text-foreground transition-opacity duration-200 ${isCollapsed ? 'opacity-0 w-0' : 'opacity-100'}`}
             >

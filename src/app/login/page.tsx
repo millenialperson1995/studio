@@ -26,7 +26,7 @@ import { useAuth, useUser } from '@/firebase';
 import { signInWithEmailAndPassword } from 'firebase/auth';
 import { useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
-import { Wrench } from 'lucide-react';
+import Image from 'next/image';
 import Link from 'next/link';
 
 const formSchema = z.object({
@@ -103,7 +103,7 @@ export default function LoginPage() {
   return (
     <main className="flex h-screen w-screen items-center justify-center bg-gray-100 dark:bg-gray-900 p-4">
       <div className="w-full max-w-sm mx-auto flex flex-col items-center text-center">
-        <Wrench className="h-12 w-12 text-primary mb-4" />
+        <Image src="/logo.svg" alt="Retífica Figueirêdo Logo" width={64} height={64} className="mb-4" />
         <h1 className="text-3xl font-bold text-gray-900 dark:text-gray-50">
           Retífica Figueirêdo
         </h1>

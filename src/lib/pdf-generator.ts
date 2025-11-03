@@ -12,11 +12,35 @@ declare module 'jspdf' {
   }
 }
 
-const drawHeader = (doc: jsPDF, oficina: Oficina | null, title: string) => {
+// Function to fetch the logo and convert it to a data URI
+const getLogoDataUri = async (): Promise<string | null> => {
+    try {
+        const response = await fetch('/logo.svg');
+        if (!response.ok) {
+            console.error('Logo not found or could not be fetched.');
+            return null;
+        }
+        const svgText = await response.text();
+        const base64 = btoa(svgText);
+        return `data:image/svg+xml;base64,${base64}`;
+    } catch (error) {
+        console.error("Error fetching logo for PDF:", error);
+        return null;
+    }
+};
+
+
+const drawHeader = async (doc: jsPDF, oficina: Oficina | null, title: string) => {
   const pageHeight = doc.internal.pageSize.getHeight();
   const pageWidth = doc.internal.pageSize.getWidth();
   const margin = 15;
   let currentY = 20;
+
+  const logoDataUri = await getLogoDataUri();
+  
+  if (logoDataUri) {
+      doc.addImage(logoDataUri, 'SVG', margin, currentY, 30, 30);
+  }
 
   const nomeEmpresa = oficina?.nomeEmpresa || 'Nome da Sua Empresa';
   const cnpj = oficina?.cnpj ? `CNPJ: ${oficina.cnpj}` : '';
@@ -24,24 +48,28 @@ const drawHeader = (doc: jsPDF, oficina: Oficina | null, title: string) => {
   const email = oficina?.email ? `Email: ${oficina.email}` : '';
   const enderecoOficina = oficina ? `${oficina.endereco}, ${oficina.cidade}-${oficina.uf}, CEP: ${oficina.cep}` : 'Seu Endereço, Sua Cidade';
   
+  const headerTextX = logoDataUri ? margin + 40 : margin;
+  const headerTextWidth = logoDataUri ? pageWidth - margin * 2 - 40 : pageWidth - margin * 2;
+
   doc.setFontSize(18);
   doc.setFont('helvetica', 'bold');
-  doc.text(title, pageWidth / 2, currentY, { align: 'center' });
-  currentY += 10;
+  doc.text(title, pageWidth / 2, currentY + (logoDataUri ? 5 : 0), { align: 'center' });
+  
+  currentY += (logoDataUri ? 15 : 10);
   
   doc.setFontSize(12);
   doc.setFont('helvetica', 'bold');
-  doc.text(nomeEmpresa, margin, currentY);
+  doc.text(nomeEmpresa, headerTextX, currentY);
   currentY += 6;
 
   doc.setFontSize(9);
   doc.setFont('helvetica', 'normal');
-   doc.text(enderecoOficina, margin, currentY);
+   doc.text(enderecoOficina, headerTextX, currentY);
    currentY += 4;
    const contactInfo = [cnpj, telefone, email].filter(Boolean).join(' | ');
-   doc.text(contactInfo, margin, currentY);
+   doc.text(contactInfo, headerTextX, currentY);
 
-  currentY += 8;
+  currentY += 10;
   
   doc.setLineWidth(0.5);
   doc.line(margin, currentY, pageWidth - margin, currentY);
@@ -67,7 +95,7 @@ const drawFooter = (doc: jsPDF, documentType: string, creationDate: Date) => {
 }
 
 
-export const generateOrcamentoPDF = (
+export const generateOrcamentoPDF = async (
   orcamento: Orcamento,
   cliente: Cliente,
   veiculo: Veiculo,
@@ -78,7 +106,7 @@ export const generateOrcamentoPDF = (
   const pageWidth = doc.internal.pageSize.getWidth();
   const margin = 15;
   
-  let currentY = drawHeader(doc, oficina, 'Orçamento de Peças e Serviços');
+  let currentY = await drawHeader(doc, oficina, 'Orçamento de Peças e Serviços');
   currentY += 8;
 
   // Orçamento Info
@@ -178,7 +206,7 @@ export const generateOrcamentoPDF = (
 };
 
 
-export const generateOrdemServicoPDF = (
+export const generateOrdemServicoPDF = async (
   ordem: OrdemServico,
   cliente: Cliente,
   veiculo: Veiculo,
@@ -189,7 +217,7 @@ export const generateOrdemServicoPDF = (
   const pageWidth = doc.internal.pageSize.getWidth();
   const margin = 15;
   
-  let currentY = drawHeader(doc, oficina, 'Ordem de Serviço');
+  let currentY = await drawHeader(doc, oficina, 'Ordem de Serviço');
   currentY += 8;
 
   // OS Info
