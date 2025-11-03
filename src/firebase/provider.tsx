@@ -153,11 +153,11 @@ export const FirebaseProvider: React.FC<FirebaseProviderProps> = ({
     let allVehicles: Veiculo[] = [];
 
     clients.forEach(cliente => {
-        // Correctly query the subcollection with a 'where' clause matching the security rule
-        const vehiclesQuery = query(
-            collection(firestore, 'clientes', cliente.id, 'veiculos'),
-            where('userId', '==', user.uid)
-        );
+        // This simplified query relies on security rules to enforce data access.
+        // The rule `allow read: if isOwner(resource.data.userId)` will correctly
+        // filter documents on the backend, document by document. This avoids
+        // the need for a composite index on the subcollection.
+        const vehiclesQuery = collection(firestore, 'clientes', cliente.id, 'veiculos');
 
         const unsubscribe = onSnapshot(vehiclesQuery, (snapshot) => {
             // This logic is tricky with multiple listeners. A better approach is to manage updates per client.
@@ -184,10 +184,7 @@ export const FirebaseProvider: React.FC<FirebaseProviderProps> = ({
 
     // A simple way to handle loading state across multiple async listeners
     Promise.all(clients.map(c => new Promise(res => {
-      const q = query(
-        collection(firestore, 'clientes', c.id, 'veiculos'),
-        where('userId', '==', user.uid)
-      );
+      const q = collection(firestore, 'clientes', c.id, 'veiculos');
       const unsub = onSnapshot(q, () => {
         // We only care about the initial load signal.
         unsub(); 
