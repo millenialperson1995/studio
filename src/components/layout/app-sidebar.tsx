@@ -90,14 +90,6 @@ import {
           </SidebarMenu>
         </SidebarContent>
         <SidebarFooter className="mt-auto">
-            <SidebarMenu>
-                 <SidebarMenuItem>
-                    <SidebarMenuButton href="/configuracoes" tooltip="Configurações">
-                        <Settings />
-                        {!isCollapsed && 'Configurações'}
-                    </SidebarMenuButton>
-                </SidebarMenuItem>
-            </SidebarMenu>
         </SidebarFooter>
       </>
     );
