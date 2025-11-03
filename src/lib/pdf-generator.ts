@@ -12,31 +12,32 @@ declare module 'jspdf' {
   }
 }
 
-// Function to fetch the logo and convert it to a data URI
-const getLogoDataUri = async (): Promise<string | null> => {
-    try {
-        const response = await fetch('/logo.svg');
-        if (!response.ok) {
-            console.error('Logo not found or could not be fetched.');
-            return null;
-        }
-        const svgText = await response.text();
-        const base64 = btoa(svgText);
-        return `data:image/svg+xml;base64,${base64}`;
-    } catch (error) {
-        console.error("Error fetching logo for PDF:", error);
-        return null;
-    }
+// Function to get the logo and convert it to a data URI
+const getLogoDataUri = (): string => {
+    // Directly embed the SVG content and Base64 encode it.
+    const svgContent = `<svg width="512" height="512" viewBox="0 0 512 512" fill="none" xmlns="http://www.w3.org/2000/svg">
+<g clip-path="url(#clip0_405_2)">
+<path d="M426.88 200.64L311.36 85.12L354.56 42.24L469.76 157.44L426.88 200.64ZM268.8 128L153.6 243.2L268.8 358.4L384 243.2L268.8 128ZM110.72 200.64L153.6 157.76L42.24 42.24L-1.97323e-05 85.12L110.72 200.64ZM0 427.52H512V469.76H0V427.52ZM153.6 311.36L42.24 426.88L85.12 469.76L200.64 354.56L153.6 311.36ZM354.56 354.56L469.76 469.76L426.88 426.88L311.36 311.36L354.56 354.56Z" fill="black"/>
+</g>
+<defs>
+<clipPath id="clip0_405_2">
+<rect width="512" height="512" fill="white"/>
+</clipPath>
+</defs>
+</svg>
+`;
+    const base64 = btoa(svgContent);
+    return `data:image/svg+xml;base64,${base64}`;
 };
 
 
-const drawHeader = async (doc: jsPDF, oficina: Oficina | null, title: string) => {
+const drawHeader = (doc: jsPDF, oficina: Oficina | null, title: string) => {
   const pageHeight = doc.internal.pageSize.getHeight();
   const pageWidth = doc.internal.pageSize.getWidth();
   const margin = 15;
   let currentY = 20;
 
-  const logoDataUri = await getLogoDataUri();
+  const logoDataUri = getLogoDataUri();
   
   if (logoDataUri) {
       doc.addImage(logoDataUri, 'SVG', margin, currentY, 30, 30);
@@ -106,7 +107,7 @@ export const generateOrcamentoPDF = async (
   const pageWidth = doc.internal.pageSize.getWidth();
   const margin = 15;
   
-  let currentY = await drawHeader(doc, oficina, 'Orçamento de Peças e Serviços');
+  let currentY = drawHeader(doc, oficina, 'Orçamento de Peças e Serviços');
   currentY += 8;
 
   // Orçamento Info
@@ -217,7 +218,7 @@ export const generateOrdemServicoPDF = async (
   const pageWidth = doc.internal.pageSize.getWidth();
   const margin = 15;
   
-  let currentY = await drawHeader(doc, oficina, 'Ordem de Serviço');
+  let currentY = drawHeader(doc, oficina, 'Ordem de Serviço');
   currentY += 8;
 
   // OS Info
@@ -322,3 +323,5 @@ export const generateOrdemServicoPDF = async (
   // Save the PDF
   doc.save(`OS-${cliente.nome.split(' ')[0]}-${ordem.id.substring(0, 4)}.pdf`);
 };
+
+    
