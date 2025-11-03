@@ -34,9 +34,9 @@ service cloud.firestore {
     }
     
     // --- Rules for Top-level User-Owned Collections ---
-    // This applies to: clientes, orcamentos, ordensServico, pecas, servicos
+    // This applies to: clientes, orcamentos, pecas, servicos
     match /{collection}/{docId} 
-        where collection in ['clientes', 'orcamentos', 'ordensServico', 'pecas', 'servicos'] {
+        where collection in ['clientes', 'orcamentos', 'pecas', 'servicos'] {
       
       // Allow reading a document if the user is the owner.
       allow read: if isSignedIn() && isOwner(resource.data.userId);
@@ -48,8 +48,21 @@ service cloud.firestore {
       allow update: if isSignedIn() && isOwner(resource.data.userId);
       
       // Allow deleting if the user owns the document.
-      // Use get() to check ownership on the existing document before deletion.
       allow delete: if isSignedIn() && isOwner(get(/databases/$(database)/documents/$(collection)/$(docId)).data.userId);
+    }
+
+    // --- Specific Rule for OrdemServico ---
+    match /ordensServico/{ordemServicoId} {
+        allow read: if isSignedIn() && isOwner(resource.data.userId);
+        allow create: if isSignedIn() && isCreatingOwnedResource();
+        allow update: if isSignedIn() && isOwner(resource.data.userId);
+
+        // Allow delete IF:
+        // 1. The user owns the service order.
+        // 2. AND, IF an orcamentoId exists, the user must also own the linked orcamento.
+        allow delete: if isSignedIn() && isOwner(get(/databases/$(database)/documents/ordensServico/$(ordemServicoId)).data.userId)
+                      && (!('orcamentoId' in get(/databases/$(database)/documents/ordensServico/$(ordemServicoId)).data)
+                          || get(/databases/$(database)/documents/orcamentos/$(get(/databases/$(database)/documents/ordensServico/$(ordemServicoId)).data.orcamentoId)).data.userId == request.auth.uid);
     }
     
     // --- Subcollections ---

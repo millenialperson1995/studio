@@ -160,25 +160,14 @@ export default function OrdemServicoTable({
     if (!selectedOrdem || !firestore) return;
 
     try {
-      // Fetch the related orcamento document *outside* the transaction
-      // This validates read permissions before the transaction starts
-      let orcamentoDoc;
-      if (selectedOrdem.orcamentoId) {
-        const orcamentoRef = doc(firestore, 'orcamentos', selectedOrdem.orcamentoId);
-        orcamentoDoc = await getDoc(orcamentoRef);
-        // The security rule already prevents non-owners from getting here.
-        // If orcamentoDoc doesn't exist, we can proceed anyway.
-      }
-
       await runTransaction(firestore, async (transaction: Transaction) => {
         const ordemDocRef = doc(firestore, 'ordensServico', selectedOrdem.id);
-        const ordemDoc = await transaction.get(ordemDocRef);
-
-        if (!ordemDoc.exists()) {
+        const osDoc = await transaction.get(ordemDocRef);
+        if (!osDoc.exists()) {
           throw new Error('Ordem de serviço não encontrada.');
         }
 
-        const osData = ordemDoc.data() as OrdemServico;
+        const osData = osDoc.data() as OrdemServico;
 
         // 1. Un-reserve parts if the OS is not 'concluida'
         if (osData.status !== 'concluida') {
@@ -197,11 +186,15 @@ export default function OrdemServicoTable({
         }
 
         // 2. Reset the original quote status if it exists
-        if (osData.orcamentoId && orcamentoDoc?.exists()) {
-          transaction.update(orcamentoDoc.ref, {
-             status: 'pendente',
-             ordemServicoId: null,
-          });
+        if (osData.orcamentoId) {
+          const orcamentoRef = doc(firestore, 'orcamentos', osData.orcamentoId);
+          const orcamentoDoc = await transaction.get(orcamentoRef);
+          if (orcamentoDoc.exists()) {
+              transaction.update(orcamentoRef, {
+                  status: 'pendente',
+                  ordemServicoId: null,
+              });
+          }
         }
 
         // 3. Delete the service order
