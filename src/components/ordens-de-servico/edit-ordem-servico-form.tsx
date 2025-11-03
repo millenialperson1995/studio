@@ -170,6 +170,17 @@ export function EditOrdemServicoForm({
 
   async function onSubmit(values: z.infer<typeof formSchema>) {
     if (!firestore || !user) return;
+    
+    // Security check to prevent editing concluded or cancelled orders
+    if (ordemServico.status === 'concluida' || ordemServico.status === 'cancelada') {
+        toast({
+            variant: 'destructive',
+            title: 'Ação Bloqueada',
+            description: `Ordens de serviço com status "${ordemServico.status}" não podem ser editadas.`,
+            duration: 6000,
+        });
+        return; // Stop execution
+    }
 
     try {
         await runTransaction(firestore, async (transaction: Transaction) => {
