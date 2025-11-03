@@ -48,6 +48,7 @@ service cloud.firestore {
       allow update: if isSignedIn() && isOwner(resource.data.userId);
       
       // Allow deleting if the user owns the existing document.
+      // Use get() to check the existing document's data before it's deleted.
       allow delete: if isSignedIn() && isOwner(get(/databases/$(database)/documents/$(collection)/$(docId)).data.userId);
     }
     
