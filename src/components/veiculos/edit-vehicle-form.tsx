@@ -23,7 +23,7 @@ const formSchema = z.object({
   placa: z.string().min(1, 'A placa é obrigatória.'),
   fabricante: z.string().min(1, 'O fabricante é obrigatório.'),
   modelo: z.string().min(1, 'O modelo é obrigatório.'),
-  ano: z.coerce.number().optional(),
+  ano: z.coerce.number().optional().nullable(),
   motor: z.string().optional(),
   cilindros: z.string().optional(),
   numeroMotor: z.string().optional(),
@@ -44,7 +44,7 @@ export function EditVehicleForm({ vehicle, setDialogOpen }: EditVehicleFormProps
       placa: vehicle.placa,
       fabricante: vehicle.fabricante,
       modelo: vehicle.modelo,
-      ano: vehicle.ano || undefined,
+      ano: vehicle.ano || null,
       motor: vehicle.motor || '',
       cilindros: vehicle.cilindros || '',
       numeroMotor: vehicle.numeroMotor || '',
@@ -131,7 +131,7 @@ export function EditVehicleForm({ vehicle, setDialogOpen }: EditVehicleFormProps
             <FormItem>
               <FormLabel>Ano (Opcional)</FormLabel>
               <FormControl>
-                <Input type="number" placeholder="Ex: 2023" {...field} />
+                 <Input type="number" placeholder="Ex: 2023" {...field} value={field.value ?? ''} />
               </FormControl>
               <FormMessage />
             </FormItem>

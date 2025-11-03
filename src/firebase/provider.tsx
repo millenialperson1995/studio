@@ -120,6 +120,7 @@ export const FirebaseProvider: React.FC<FirebaseProviderProps> = ({
           setIsLoadingClients(!user);
           return;
       }
+      setIsLoadingClients(true);
       const clientsQuery = query(collection(firestore, 'clientes'), where('userId', '==', user.uid));
       const unsubscribe = onSnapshot(clientsQuery, (snapshot) => {
           const clientsData = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Cliente));
@@ -136,8 +137,13 @@ export const FirebaseProvider: React.FC<FirebaseProviderProps> = ({
 
   // Effect to fetch all vehicles for the authenticated user based on their clients
   useEffect(() => {
-    if (isLoadingClients || clients.length === 0) {
-      // If there are no clients, there are no vehicles to fetch
+    const { user, isUserLoading } = userAuthState;
+    
+    if (isUserLoading || isLoadingClients || !user) {
+        return; // Wait until user and clients are loaded
+    }
+
+    if (clients.length === 0) {
       setVehiclesState({ vehicles: [], isLoading: false, error: null });
       return;
     }
@@ -145,32 +151,54 @@ export const FirebaseProvider: React.FC<FirebaseProviderProps> = ({
     setVehiclesState(prevState => ({ ...prevState, isLoading: true }));
     const unsubscribers: (() => void)[] = [];
     let allVehicles: Veiculo[] = [];
+    let clientQueriesFinished = 0;
 
     clients.forEach(cliente => {
         const vehiclesQuery = collection(firestore, 'clientes', cliente.id, 'veiculos');
         const unsubscribe = onSnapshot(vehiclesQuery, (snapshot) => {
-            // Remove old vehicles for this client
-            allVehicles = allVehicles.filter(v => v.clienteId !== cliente.id);
+            // This logic is tricky with multiple listeners. A better approach is to manage updates per client.
+            // For now, let's rebuild the list on each snapshot for simplicity.
             
+            // Filter out old vehicles for this client
+            allVehicles = allVehicles.filter(v => v.clienteId !== cliente.id);
+
             // Add new/updated vehicles for this client
             snapshot.forEach((doc) => {
                 allVehicles.push(doc.data() as Veiculo);
             });
             
-            // Update the state with the aggregated list
-            setVehiclesState({ vehicles: [...allVehicles], isLoading: false, error: null });
+            // This might cause multiple re-renders but is safer.
+            setVehiclesState(prevState => ({ ...prevState, vehicles: [...allVehicles] }));
 
         }, (error) => {
             console.error(`FirebaseProvider: Error fetching vehicles for client ${cliente.id}:`, error);
-             setVehiclesState({ vehicles: [], isLoading: false, error: error as Error });
+            // Don't stop all vehicle loading if one client fails, but log the error
+            setVehiclesState(prevState => ({...prevState, error: error as Error }));
         });
         unsubscribers.push(unsubscribe);
     });
 
+    // A simple way to handle loading state across multiple async listeners
+    Promise.all(clients.map(c => new Promise(res => {
+      const q = collection(firestore, 'clientes', c.id, 'veiculos');
+      const unsub = onSnapshot(q, () => {
+        // We only care about the initial load signal.
+        unsub(); 
+        res(true);
+      }, () => {
+        // Also resolve on error to not block loading forever
+        unsub();
+        res(true);
+      });
+    }))).then(() => {
+       setVehiclesState(prevState => ({ ...prevState, isLoading: false }));
+    });
+
+
     return () => {
       unsubscribers.forEach(unsub => unsub());
     };
-  }, [clients, isLoadingClients, firestore]);
+  }, [clients, isLoadingClients, userAuthState.user, userAuthState.isUserLoading, firestore]);
 
   // Memoize the context value
   const contextValue = useMemo((): FirebaseContextState => {

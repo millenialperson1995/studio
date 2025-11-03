@@ -108,7 +108,7 @@ export default function VehicleTable({ vehicles = [], clients = [] }: VehicleTab
               enrichedVehicles.map((vehicle) => (
                 <TableRow key={vehicle.id}>
                   <TableCell className="font-medium">{vehicle.placa}</TableCell>
-                  <TableCell>{vehicle.fabricante} {vehicle.modelo} ({vehicle.ano})</TableCell>
+                  <TableCell>{vehicle.fabricante} {vehicle.modelo} {vehicle.ano ? `(${vehicle.ano})` : ''}</TableCell>
                   <TableCell className="hidden md:table-cell text-muted-foreground">
                     {vehicle.cliente.nome}
                   </TableCell>
