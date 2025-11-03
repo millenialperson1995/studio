@@ -229,7 +229,7 @@ export default function ServicoTable({ servicos = [] }: ServicoTableProps) {
           <DialogHeader>
             <DialogTitle>Editar Serviço</DialogTitle>
             <DialogDescription>
-              Altere os dados do serviço abaixo.
+              Altere os dados do serviço abaixo. Clique em salvar quando terminar.
             </DialogDescription>
           </DialogHeader>
           {selectedServico && (

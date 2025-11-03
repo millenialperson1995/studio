@@ -175,7 +175,7 @@ export default function VehicleTable({ vehicles = [], clients = [] }: VehicleTab
           <DialogHeader>
             <DialogTitle>Editar Veículo</DialogTitle>
             <DialogDescription>
-              Altere os dados do veículo abaixo.
+              Altere os dados do veículo abaixo. Clique em salvar alterações quando terminar.
             </DialogDescription>
           </DialogHeader>
           {selectedVehicle && (
@@ -189,5 +189,3 @@ export default function VehicleTable({ vehicles = [], clients = [] }: VehicleTab
     </>
   );
 }
-
-    

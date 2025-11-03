@@ -161,11 +161,11 @@ export default function ClientTable({ clients = [] }: ClientTableProps) {
       </AlertDialog>
 
       <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
-        <DialogContent className="sm:max-w-[425px]">
+        <DialogContent className="sm:max-w-md">
           <DialogHeader>
             <DialogTitle>Editar Cliente</DialogTitle>
             <DialogDescription>
-              Altere os dados do cliente abaixo.
+              Altere os dados do cliente abaixo. Clique em salvar quando terminar.
             </DialogDescription>
           </DialogHeader>
           {selectedClient && (

@@ -232,7 +232,7 @@ export default function PecaTable({ pecas = [] }: PecaTableProps) {
           <DialogHeader>
             <DialogTitle>Editar Peça</DialogTitle>
             <DialogDescription>
-              Altere os dados da peça abaixo.
+              Altere os dados da peça abaixo. Clique em salvar alterações quando terminar.
             </DialogDescription>
           </DialogHeader>
           {selectedPeca && (
