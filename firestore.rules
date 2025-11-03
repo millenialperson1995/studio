@@ -44,15 +44,18 @@ service cloud.firestore {
       // Allow creating documents if they are setting the 'userId' to their own UID.
       allow create: if isSignedIn() && isCreatingOwnedResource();
 
-      // Allow updating/deleting if the user owns the existing document.
-      allow update, delete: if isSignedIn() && isOwner(resource.data.userId);
+      // Allow updating if the user owns the existing document.
+      allow update: if isSignedIn() && isOwner(resource.data.userId);
+
+      // For delete, we must 'get' the document to check ownership, as 'resource.data' is not available.
+      allow delete: if isSignedIn() && isOwner(get(/databases/$(database)/documents/$(collection)/$(docId)).data.userId);
     }
     
     // --- Subcollections ---
     // Rule for 'veiculos' as a subcollection.
-    // Allow read/write/create if the user owns the parent 'cliente' document.
+    // Allow read/write/create/delete if the user owns the parent 'cliente' document.
     match /clientes/{clienteId}/veiculos/{veiculoId} {
-        allow read, write, create: if isSignedIn() && get(/databases/$(database)/documents/clientes/$(clienteId)).data.userId == request.auth.uid;
+        allow read, write, create, delete: if isSignedIn() && get(/databases/$(database)/documents/clientes/$(clienteId)).data.userId == request.auth.uid;
     }
   }
 }
