@@ -99,10 +99,11 @@ export function AddOrcamentoForm({
 
   const totalValue = watchedItens.reduce((sum, item) => {
     const itemTotal = item.tipo === 'peca'
-        ? (item.quantidade || 0) * (item.valorUnitario || 0)
-        : (item.valorTotal || 0); // For services, use the manual total
+        ? (Number(item.quantidade) || 0) * (Number(item.valorUnitario) || 0)
+        : (Number(item.valorTotal) || 0); // For services, use the manual total
       return sum + itemTotal;
   }, 0);
+
 
   useEffect(() => {
     form.setValue('valorTotal', totalValue, { shouldValidate: true });
@@ -122,8 +123,8 @@ export function AddOrcamentoForm({
 
       const finalItens = values.itens.map(item => {
         const valorTotal = item.tipo === 'peca' 
-            ? (item.quantidade || 0) * (item.valorUnitario || 0) 
-            : item.valorTotal;
+            ? (Number(item.quantidade) || 0) * (Number(item.valorUnitario) || 0) 
+            : (Number(item.valorTotal) || 0);
         return {
           ...item,
           valorTotal,
@@ -262,11 +263,12 @@ export function AddOrcamentoForm({
           {fields.map((field, index) => {
             const item = watchedItens[index];
             const isPeca = item.tipo === 'peca';
-            const subtotal = isPeca ? (item.quantidade || 0) * (item.valorUnitario || 0) : item.valorTotal;
+             const subtotal = isPeca 
+                ? (Number(item.quantidade) || 0) * (Number(item.valorUnitario) || 0) 
+                : (Number(item.valorTotal) || 0);
 
             if (isPeca) {
-                 // Update total for peca automatically
-                 const newTotal = (item.quantidade || 0) * (item.valorUnitario || 0);
+                 const newTotal = (Number(item.quantidade) || 0) * (Number(item.valorUnitario) || 0);
                  if (item.valorTotal !== newTotal) {
                      form.setValue(`itens.${index}.valorTotal`, newTotal, { shouldValidate: true });
                  }
