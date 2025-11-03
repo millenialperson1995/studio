@@ -85,11 +85,11 @@ export function AddOrdemServicoForm({
           if (item.itemId) {
             const peca = pecasMap.get(item.itemId);
             if (peca) {
-              const estoqueDisponivel = peca.quantidadeEstoque - (peca.quantidadeReservada || 0);
-              if (item.quantidade > estoqueDisponivel) {
+              // Use physical stock for validation, not available stock
+              if (item.quantidade > peca.quantidadeEstoque) {
                 ctx.addIssue({
                   code: z.ZodIssueCode.custom,
-                  message: `Estoque insuficiente. Disponível: ${estoqueDisponivel}`,
+                  message: `Estoque insuficiente. Em estoque: ${peca.quantidadeEstoque}`,
                   path: [index, 'quantidade'],
                 });
               }
