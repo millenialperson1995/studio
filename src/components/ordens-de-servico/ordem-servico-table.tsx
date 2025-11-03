@@ -38,7 +38,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { MoreHorizontal, Pencil, Trash2, DollarSign, FileDown } from 'lucide-react';
 import type { OrdemServico, Cliente, Veiculo, Peca, Servico, Oficina } from '@/lib/types';
-import { deleteDocumentNonBlocking, updateDocumentNonBlocking } from '@/firebase/non-blocking-updates';
+import { updateDocumentNonBlocking } from '@/firebase/non-blocking-updates';
 import { doc, getDoc, serverTimestamp, runTransaction, Transaction, DocumentSnapshot, DocumentData } from 'firebase/firestore';
 import { useFirestore, useUser } from '@/firebase';
 import { useToast } from '@/hooks/use-toast';
@@ -190,13 +190,13 @@ export default function OrdemServicoTable({
         if (osData.orcamentoId) {
           const orcamentoRef = doc(firestore, 'orcamentos', osData.orcamentoId);
           const orcamentoDoc = await transaction.get(orcamentoRef); // Read inside transaction
+          // Only update the orcamento if it exists
           if (orcamentoDoc.exists()) {
             transaction.update(orcamentoRef, {
               status: 'pendente',
               ordemServicoId: null,
             });
           }
-          // If orcamentoDoc does not exist, do nothing and proceed.
         }
   
         // Finally, delete the service order itself.

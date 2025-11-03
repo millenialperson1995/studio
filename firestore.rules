@@ -45,7 +45,7 @@ service cloud.firestore {
       allow create: if isSignedIn() && isCreatingOwnedResource();
 
       // Allow updating if the user owns the existing document.
-      allow update: if isSignedIn() && isOwner(resource.data.userId);
+      allow update: if isSignedIn() && isOwner(get(/databases/$(database)/documents/$(collection)/$(docId)).data.userId);
       
       // Allow deleting if the user owns the document.
       allow delete: if isSignedIn() && isOwner(get(/databases/$(database)/documents/$(collection)/$(docId)).data.userId);
@@ -53,8 +53,11 @@ service cloud.firestore {
 
     // --- Specific Rule for OrdemServico ---
     match /ordensServico/{ordemServicoId} {
-        allow read, update: if isSignedIn() && isOwner(resource.data.userId);
+        allow read: if isSignedIn() && isOwner(resource.data.userId);
         allow create: if isSignedIn() && isCreatingOwnedResource();
+
+        // Allow update only if the user owns the existing document
+        allow update: if isSignedIn() && isOwner(get(/databases/$(database)/documents/ordensServico/$(ordemServicoId)).data.userId);
         
         // Allow deletion only by the owner of the Service Order itself.
         // The transaction on the client-side handles reverting associated data.
