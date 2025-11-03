@@ -38,7 +38,7 @@ service cloud.firestore {
     match /{collection}/{docId} 
         where collection in ['clientes', 'orcamentos', 'ordensServico', 'pecas', 'servicos'] {
       
-      // Allow reading a document if the user is the owner. This works for both get and list queries.
+      // Allow reading a document if the user is the owner.
       allow read: if isSignedIn() && isOwner(resource.data.userId);
 
       // Allow creating documents if they are setting the 'userId' to their own UID.
@@ -46,16 +46,16 @@ service cloud.firestore {
 
       // Allow updating if the user owns the existing document.
       allow update: if isSignedIn() && isOwner(resource.data.userId);
-
-      // For delete, we must 'get' the document to check ownership, as 'resource.data' is not available.
+      
+      // Allow deleting if the user owns the existing document.
       allow delete: if isSignedIn() && isOwner(get(/databases/$(database)/documents/$(collection)/$(docId)).data.userId);
     }
     
     // --- Subcollections ---
     // Rule for 'veiculos' as a subcollection.
-    // Allow read/write/create/delete if the user owns the parent 'cliente' document.
+    // Allow read/write if the user owns the vehicle document.
     match /clientes/{clienteId}/veiculos/{veiculoId} {
-        allow read, write, create, delete: if isSignedIn() && get(/databases/$(database)/documents/clientes/$(clienteId)).data.userId == request.auth.uid;
+        allow read, write: if isSignedIn() && isOwner(resource.data.userId);
     }
   }
 }
