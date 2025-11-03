@@ -16,6 +16,12 @@ service cloud.firestore {
       // Ensure the 'userId' field in the new document matches the authenticated user's UID.
       return request.resource.data.userId == request.auth.uid;
     }
+    
+    function isQueryingOwnData() {
+      // Enforce that list queries MUST include a 'userId' filter for the current user.
+      // This is more secure and efficient for collection-level queries.
+      return request.query.get('userId') == request.auth.uid;
+    }
 
     // --- User Profiles ---
     match /users/{userId} {
@@ -33,16 +39,23 @@ service cloud.firestore {
         allow read, write: if isSignedIn() && isOwner(userId);
     }
     
-    // --- Generic Rules for Top-level User-Owned Collections ---
+    // --- Rules for Top-level User-Owned Collections ---
     // This applies to: clientes, orcamentos, ordensServico, pecas, servicos
     match /{collection}/{docId} 
         where collection in ['clientes', 'orcamentos', 'ordensServico', 'pecas', 'servicos'] {
-      // Users can read/write documents if the document's 'userId' field matches their auth UID.
-      // This is secure for list queries as long as the client query includes `where('userId', '==', auth.currentUser.uid)`.
-      allow read, write: if isSignedIn() && isOwner(resource.data.userId);
       
-      // Users can create documents if they are setting the 'userId' field to their own auth UID.
+      // Allow reading a single document if the user is the owner.
+      allow get: if isSignedIn() && isOwner(resource.data.userId);
+
+      // Allow listing documents ONLY IF the query is filtered by the user's own ID.
+      // This is crucial for security and for Firestore to allow composite indexes with queries.
+      allow list: if isSignedIn() && isQueryingOwnData();
+
+      // Allow creating documents if they are setting the 'userId' to their own UID.
       allow create: if isSignedIn() && isCreatingOwnedResource();
+
+      // Allow updating/deleting if the user owns the existing document.
+      allow update, delete: if isSignedIn() && isOwner(resource.data.userId);
     }
     
     // --- Subcollections ---
