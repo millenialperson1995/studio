@@ -37,41 +37,35 @@ const drawHeader = (doc: jsPDF, oficina: Oficina | null, title: string) => {
   
   const headerInitialY = currentY;
 
-  // Logo
-  doc.addImage(`${process.env.PUBLIC_URL || ''}${getLogoDataUri()}`, 'PNG', margin, headerInitialY, 30, 30);
+  // Logo - Move it up to align better
+  doc.addImage(`${process.env.PUBLIC_URL || ''}${getLogoDataUri()}`, 'PNG', margin, headerInitialY, 25, 25);
 
   // Workshop Info
   const nomeEmpresa = oficina?.nomeEmpresa || 'Retífica Figueirêdo';
-  const cnpj = oficina?.cnpj ? `CNPJ: ${oficina.cnpj}` : 'CNPJ não informado';
-  const endereco = oficina?.endereco || 'Endereço não informado';
-  const cidadeUf = oficina ? `${oficina.cidade} - ${oficina.uf}`: 'Cidade/UF não informada';
-  const cep = oficina?.cep ? `CEP: ${oficina.cep}` : 'CEP não informado';
-  const telefone = oficina?.telefone ? `Telefone: ${oficina.telefone}` : 'Telefone não informado';
-  const email = oficina?.email ? `Email: ${oficina.email}` : '';
   
+  const workshopInfoLines = [
+      oficina?.cnpj ? `CNPJ: ${oficina.cnpj}` : null,
+      oficina?.endereco ? `Endereço: ${oficina.endereco}` : null,
+      (oficina?.cep || oficina?.telefone) ? `${oficina.cep ? `CEP: ${oficina.cep}` : ''}${oficina.cep && oficina.telefone ? '   |   ' : ''}${oficina.telefone ? `Telefone: ${oficina.telefone}` : ''}` : null,
+      (oficina?.cidade || oficina?.uf) ? `Cidade: ${oficina.cidade || ''} - ${oficina.uf || ''}` : null,
+      oficina?.email ? `Email: ${oficina.email}` : null
+  ].filter(Boolean) as string[]; // Filter out null/undefined lines
+
   const workshopInfoX = pageWidth - margin;
 
   doc.setFont('helvetica', 'bold');
   doc.setFontSize(14);
-  doc.text(nomeEmpresa, workshopInfoX, headerInitialY, { align: 'right' });
-  currentY = headerInitialY + 7;
+  doc.text(nomeEmpresa, workshopInfoX, headerInitialY + 5, { align: 'right' });
+  currentY = headerInitialY + 12;
   
   doc.setFont('helvetica', 'normal');
   doc.setFontSize(10);
-  doc.text(cnpj, workshopInfoX, currentY, { align: 'right' });
-  currentY += 5;
-  doc.text(endereco, workshopInfoX, currentY, { align: 'right' });
-  currentY += 5;
-  doc.text(`${cep}   |   ${telefone}`, workshopInfoX, currentY, { align: 'right' });
-  currentY += 5;
-  doc.text(cidadeUf, workshopInfoX, currentY, { align: 'right' });
-  currentY += 5;
-  if(email) {
-    doc.text(email, workshopInfoX, currentY, { align: 'right' });
-  }
+  doc.text(workshopInfoLines, workshopInfoX, currentY, { align: 'right' });
+  
+  const workshopInfoHeight = doc.getTextDimensions(workshopInfoLines.join('\n')).h;
 
   // Return Y position after the tallest element in the header section
-  return Math.max(currentY, headerInitialY + 30 + 8); 
+  return Math.max(headerInitialY + 25 + 8, headerInitialY + workshopInfoHeight + 12); 
 }
 
 const drawFooter = (doc: jsPDF, documentType: string, creationDate: Date) => {
@@ -129,23 +123,23 @@ export const generateOrcamentoPDF = async (
   
   const clientLines = [
     `Cliente: ${cliente.nome}`,
-    `Telefone: ${cliente.telefone}`,
-    `Endereço: ${cliente.endereco}, ${cliente.numero} - ${cliente.bairro}`,
-    `${cliente.cidade} - ${cliente.uf}, CEP: ${cliente.cep}`
-  ];
-  if (cliente.pontoReferencia) {
-    clientLines.push(`Ref: ${cliente.pontoReferencia}`);
-  }
+    cliente.telefone ? `Telefone: ${cliente.telefone}` : null,
+    cliente.endereco ? `Endereço: ${cliente.endereco}, ${cliente.numero || 'S/N'} - ${cliente.bairro || ''}` : null,
+    (cliente.cidade || cliente.uf || cliente.cep) ? `${cliente.cidade || ''} - ${cliente.uf || ''}, CEP: ${cliente.cep || ''}` : null,
+    cliente.pontoReferencia ? `Ref: ${cliente.pontoReferencia}` : null,
+  ].filter(Boolean) as string[];
 
   const vehicleLines = [
       `Veículo: ${veiculo.fabricante} ${veiculo.modelo}`,
       `Placa: ${veiculo.placa}`,
-      `Ano: ${veiculo.ano}`,
-      `Motor: ${veiculo.motor || 'N/A'}, Cilindros: ${veiculo.cilindros || 'N/A'}`
-  ];
+      veiculo.ano ? `Ano: ${veiculo.ano}` : null,
+      (veiculo.motor || veiculo.cilindros) ? `Motor: ${veiculo.motor || 'N/A'}, Cilindros: ${veiculo.cilindros || 'N/A'}` : null,
+      veiculo.numeroMotor ? `Nº Motor: ${veiculo.numeroMotor}` : null,
+  ].filter(Boolean) as string[];
 
+  // Position vehicle info to the right
   doc.text(clientLines, margin, currentY, { maxWidth: halfWidth });
-  doc.text(vehicleLines, pageWidth - margin, currentY, { align: 'right', maxWidth: halfWidth });
+  doc.text(vehicleLines, margin + halfWidth + 10, currentY, { maxWidth: halfWidth });
 
   const clientBlockHeight = doc.getTextDimensions(clientLines.join('\n'), { maxWidth: halfWidth }).h;
   const vehicleBlockHeight = doc.getTextDimensions(vehicleLines.join('\n'), { maxWidth: halfWidth }).h;
@@ -234,21 +228,23 @@ export const generateOrdemServicoPDF = async (
   doc.setFontSize(10);
   doc.setFont('helvetica', 'normal');
   
-   const contentWidth = pageWidth - margin * 2;
+  const contentWidth = pageWidth - margin * 2;
   const halfWidth = contentWidth / 2 - 5;
   
   const clientLines = [
     `Cliente: ${cliente.nome}`,
-    `Telefone: ${cliente.telefone}`,
-  ];
+    cliente.telefone ? `Telefone: ${cliente.telefone}` : null,
+  ].filter(Boolean) as string[];
+
   const vehicleLines = [
       `Veículo: ${veiculo.fabricante} ${veiculo.modelo}`,
       `Placa: ${veiculo.placa}`,
-      `Ano: ${veiculo.ano}`,
-  ];
+      veiculo.ano ? `Ano: ${veiculo.ano}` : null,
+  ].filter(Boolean) as string[];
 
+  // Position vehicle info to the right
   doc.text(clientLines, margin, currentY, { maxWidth: halfWidth });
-  doc.text(vehicleLines, pageWidth - margin, currentY, { align: 'right', maxWidth: halfWidth });
+  doc.text(vehicleLines, margin + halfWidth + 10, currentY, { maxWidth: halfWidth });
   
   const clientBlockHeight = doc.getTextDimensions(clientLines.join('\n'), { maxWidth: halfWidth }).h;
   const vehicleBlockHeight = doc.getTextDimensions(vehicleLines.join('\n'), { maxWidth: halfWidth }).h;
