@@ -23,44 +23,51 @@ const drawHeader = (doc: jsPDF, oficina: Oficina | null, title: string) => {
   const pageHeight = doc.internal.pageSize.getHeight();
   const pageWidth = doc.internal.pageSize.getWidth();
   const margin = 15;
-  let currentY = 20;
-
-  // Logo
-  doc.addImage(`${process.env.PUBLIC_URL || ''}${getLogoDataUri()}`, 'PNG', margin, currentY, 30, 30);
-
-  // Workshop Info (stacked and larger)
-  const nomeEmpresa = oficina?.nomeEmpresa || 'Retífica Figueirêdo';
-  const enderecoOficina = oficina ? `${oficina.endereco}, ${oficina.cidade}-${oficina.uf}` : 'Endereço da Oficina';
-  const cep = oficina?.cep ? `CEP: ${oficina.cep}` : '';
-  const cnpj = oficina?.cnpj ? `CNPJ: ${oficina.cnpj}` : '';
-  const telefone = oficina?.telefone ? `Telefone: ${oficina.telefone}` : '';
-  const email = oficina?.email ? `Email: ${oficina.email}` : '';
-
-  const workshopInfoX = margin + 40;
-  
-  doc.setFont('helvetica', 'bold');
-  doc.setFontSize(14);
-  doc.text(nomeEmpresa, workshopInfoX, currentY + 5);
-  
-  doc.setFont('helvetica', 'normal');
-  doc.setFontSize(10);
-  doc.text(enderecoOficina, workshopInfoX, currentY + 12);
-  doc.text(cep, workshopInfoX, currentY + 17);
-  doc.text(`${cnpj} | ${telefone}`, workshopInfoX, currentY + 22);
-  doc.text(email, workshopInfoX, currentY + 27);
-
+  let currentY = 15;
 
   // Document Title
   doc.setFont('helvetica', 'bold');
   doc.setFontSize(18);
-  doc.text(title, pageWidth - margin, currentY + 5, { align: 'right' });
-  
-  currentY += 40; // Increase Y to move past the header content
+  doc.text(title, pageWidth / 2, currentY, { align: 'center' });
+  currentY += 8;
   
   doc.setLineWidth(0.5);
   doc.line(margin, currentY, pageWidth - margin, currentY);
+  currentY += 8;
+
+  // Logo
+  doc.addImage(`${process.env.PUBLIC_URL || ''}${getLogoDataUri()}`, 'PNG', margin, currentY, 30, 30);
+
+  // Workshop Info
+  const nomeEmpresa = oficina?.nomeEmpresa || 'Retífica Figueirêdo';
+  const cnpj = oficina?.cnpj ? `CNPJ: ${oficina.cnpj}` : 'CNPJ não informado';
+  const endereco = oficina?.endereco || 'Endereço não informado';
+  const cidadeUf = oficina ? `${oficina.cidade} - ${oficina.uf}`: 'Cidade/UF não informada';
+  const cep = oficina?.cep ? `CEP: ${oficina.cep}` : 'CEP não informado';
+  const telefone = oficina?.telefone ? `Telefone: ${oficina.telefone}` : '';
+  const email = oficina?.email ? `Email: ${oficina.email}` : '';
   
-  return currentY;
+  const workshopInfoX = pageWidth - margin;
+
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(14);
+  doc.text(nomeEmpresa, workshopInfoX, currentY, { align: 'right' });
+  currentY += 7;
+  
+  doc.setFont('helvetica', 'normal');
+  doc.setFontSize(10);
+  doc.text(cnpj, workshopInfoX, currentY, { align: 'right' });
+  currentY += 5;
+  doc.text(endereco, workshopInfoX, currentY, { align: 'right' });
+  currentY += 5;
+  doc.text(`${cep} | ${telefone}`, workshopInfoX, currentY, { align: 'right' });
+  currentY += 5;
+  doc.text(cidadeUf, workshopInfoX, currentY, { align: 'right' });
+  currentY += 5;
+  doc.text(email, workshopInfoX, currentY, { align: 'right' });
+
+  // Return Y position after the tallest element in the header section
+  return Math.max(currentY, 15 + 8 + 30 + 8); 
 }
 
 const drawFooter = (doc: jsPDF, documentType: string, creationDate: Date) => {
@@ -93,7 +100,7 @@ export const generateOrcamentoPDF = async (
   const margin = 15;
   
   let currentY = drawHeader(doc, oficina, 'Orçamento');
-  currentY += 8;
+  currentY += 5;
 
   // Orçamento Info
   doc.setFontSize(10);
@@ -204,7 +211,7 @@ export const generateOrdemServicoPDF = async (
   const margin = 15;
   
   let currentY = drawHeader(doc, oficina, 'Ordem de Serviço');
-  currentY += 8;
+  currentY += 5;
 
   // OS Info
   doc.setFontSize(10);
