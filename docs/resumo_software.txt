@@ -1,6 +1,6 @@
-Resumo do Sistema "Retífica Ágil"
+Resumo do Sistema "Retífica Figueiredo"
 
-Este documento descreve as principais funcionalidades do sistema de gestão para oficinas "Retífica Ágil". O objetivo do software é centralizar e simplificar a administração de clientes, veículos, serviços, estoque e finanças da sua oficina.
+Este documento descreve as principais funcionalidades do sistema de gestão para oficinas "Retífica Figueiredo". O objetivo do software é centralizar e simplificar a administração de clientes, veículos, serviços, estoque e finanças da sua oficina.
 
 O sistema é dividido nos seguintes módulos principais:
 
