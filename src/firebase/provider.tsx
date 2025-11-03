@@ -151,10 +151,14 @@ export const FirebaseProvider: React.FC<FirebaseProviderProps> = ({
     setVehiclesState(prevState => ({ ...prevState, isLoading: true }));
     const unsubscribers: (() => void)[] = [];
     let allVehicles: Veiculo[] = [];
-    let clientQueriesFinished = 0;
 
     clients.forEach(cliente => {
-        const vehiclesQuery = collection(firestore, 'clientes', cliente.id, 'veiculos');
+        // Correctly query the subcollection with a 'where' clause matching the security rule
+        const vehiclesQuery = query(
+            collection(firestore, 'clientes', cliente.id, 'veiculos'),
+            where('userId', '==', user.uid)
+        );
+
         const unsubscribe = onSnapshot(vehiclesQuery, (snapshot) => {
             // This logic is tricky with multiple listeners. A better approach is to manage updates per client.
             // For now, let's rebuild the list on each snapshot for simplicity.
@@ -180,7 +184,10 @@ export const FirebaseProvider: React.FC<FirebaseProviderProps> = ({
 
     // A simple way to handle loading state across multiple async listeners
     Promise.all(clients.map(c => new Promise(res => {
-      const q = collection(firestore, 'clientes', c.id, 'veiculos');
+      const q = query(
+        collection(firestore, 'clientes', c.id, 'veiculos'),
+        where('userId', '==', user.uid)
+      );
       const unsub = onSnapshot(q, () => {
         // We only care about the initial load signal.
         unsub(); 
