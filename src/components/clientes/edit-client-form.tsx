@@ -22,7 +22,7 @@ import { useEffect } from 'react';
 
 const formSchema = z.object({
   nome: z.string().min(2, 'O nome deve ter pelo menos 2 caracteres.'),
-  email: z.string().email('Formato de e-mail inválido.'),
+  email: z.string().email('Formato de e-mail inválido.').optional().or(z.literal('')),
   telefone: z
     .string()
     .min(10, 'O telefone deve ter pelo menos 10 caracteres.'),
@@ -50,7 +50,7 @@ export function EditClientForm({ client, setDialogOpen }: EditClientFormProps) {
     resolver: zodResolver(formSchema),
     defaultValues: {
       nome: client.nome,
-      email: client.email,
+      email: client.email || '',
       telefone: client.telefone,
       cep: client.cep || '',
       endereco: client.endereco,
@@ -142,7 +142,7 @@ export function EditClientForm({ client, setDialogOpen }: EditClientFormProps) {
             name="email"
             render={({ field }) => (
               <FormItem>
-                <FormLabel>Email</FormLabel>
+                <FormLabel>Email (Opcional)</FormLabel>
                 <FormControl>
                   <Input placeholder="email@exemplo.com" {...field} />
                 </FormControl>
