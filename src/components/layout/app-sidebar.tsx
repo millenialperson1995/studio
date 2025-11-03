@@ -19,7 +19,7 @@ import {
     useSidebar,
   } from '../ui/sidebar';
   import { cn } from '@/lib/utils';
-  import Image from 'next/image';
+  import LogoImage from '../ui/logo-image';
 
 
   const AppSidebar = () => {
@@ -29,7 +29,7 @@ import {
       <>
         <SidebarHeader>
           <div className={cn("flex items-center gap-2 p-2", isCollapsed ? 'justify-center' : '')}>
-            <Image src="/logo.png" alt="Logo da Retífica Figueirêdo" width={32} height={32} />
+            <LogoImage width={32} height={32} />
             <h1
               className={`text-lg font-semibold text-foreground transition-opacity duration-200 ${isCollapsed ? 'opacity-0 w-0' : 'opacity-100'}`}
             >
@@ -105,4 +105,3 @@ import {
   
   export default AppSidebar;
   
-    
