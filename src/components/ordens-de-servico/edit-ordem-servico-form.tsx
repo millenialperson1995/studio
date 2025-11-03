@@ -26,7 +26,7 @@ import { useFirestore, useUser, useVehicles } from '@/firebase';
 import { useToast } from '@/hooks/use-toast';
 import type { OrdemServico, Cliente, Peca, Servico } from '@/lib/types';
 import { Trash2, PlusCircle, CalendarIcon } from 'lucide-react';
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { Popover, PopoverContent, PopoverTrigger } from '../ui/popover';
 import { Calendar } from '../ui/calendar';
 import { cn } from '@/lib/utils';
@@ -93,7 +93,6 @@ export function EditOrdemServicoForm({
           if (item.itemId) {
             const peca = pecasMap.get(item.itemId);
             if (peca) {
-              // Use physical stock for validation, not available stock
               if (item.quantidade > peca.quantidadeEstoque) {
                 ctx.addIssue({
                   code: z.ZodIssueCode.custom,
@@ -126,6 +125,12 @@ export function EditOrdemServicoForm({
   const watchedPecas = form.watch('pecas');
   const statusValue = form.watch('status');
   const paymentStatus = form.watch('statusPagamento');
+
+  const selectedItemIds = useMemo(() => {
+    const servicosIds = watchedServicos.map(s => s.descricao); // Assuming description is unique enough for the selector
+    const pecasIds = watchedPecas.map(p => p.itemId).filter(Boolean) as string[];
+    return [...servicosIds, ...pecasIds];
+  }, [watchedServicos, watchedPecas]);
 
    useEffect(() => {
     if (statusValue === 'concluida' && !form.getValues('dataConclusao')) {
@@ -425,6 +430,7 @@ export function EditOrdemServicoForm({
                                 pecas={[]}
                                 servicos={servicos}
                                 onSelect={(item, type) => handleItemSelect(index, item, type, 'servicos')}
+                                selectedItemIds={selectedItemIds}
                                 trigger={
                                     <FormControl>
                                         <Input placeholder="Selecione ou digite um serviço" {...field} />
@@ -474,6 +480,7 @@ export function EditOrdemServicoForm({
                                 pecas={pecas}
                                 servicos={[]}
                                 onSelect={(item, type) => handleItemSelect(index, item, type, 'pecas')}
+                                selectedItemIds={selectedItemIds}
                                 trigger={
                                     <FormControl>
                                         <Input placeholder="Selecione ou digite uma peça" {...field} />
