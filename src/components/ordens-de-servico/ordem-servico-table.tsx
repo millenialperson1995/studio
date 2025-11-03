@@ -189,10 +189,15 @@ export default function OrdemServicoTable({
         // 2. Reset the original quote status if it exists
         if (osData.orcamentoId) {
           const orcamentoRef = doc(firestore, 'orcamentos', osData.orcamentoId);
-          transaction.update(orcamentoRef, {
-            status: 'pendente',
-            ordemServicoId: null, // Using null to remove the field
-          });
+          // By reading the document within the transaction, we ensure we have the necessary permissions
+          // and up-to-date data before attempting the update.
+          const orcamentoDoc = await transaction.get(orcamentoRef);
+          if(orcamentoDoc.exists()){
+             transaction.update(orcamentoRef, {
+                status: 'pendente',
+                ordemServicoId: null,
+             });
+          }
         }
   
         // 3. Delete the service order
