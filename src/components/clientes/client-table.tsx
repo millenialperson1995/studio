@@ -36,11 +36,13 @@ import {
 import { Button } from '@/components/ui/button';
 import { MoreHorizontal, Pencil, Trash2, Loader2 } from 'lucide-react';
 import type { Cliente } from '@/lib/types';
-import { deleteDocumentNonBlocking } from '@/firebase/non-blocking-updates';
 import { doc, getDocs, collection, query, where, limit, writeBatch } from 'firebase/firestore';
 import { useFirestore } from '@/firebase';
 import { useToast } from '@/hooks/use-toast';
 import { EditClientForm } from './edit-client-form';
+import { errorEmitter } from '@/firebase/error-emitter';
+import { FirestorePermissionError } from '@/firebase/errors';
+
 
 interface ClientTableProps {
   clients: Cliente[];
@@ -87,59 +89,62 @@ export default function ClientTable({ clients = [] }: ClientTableProps) {
 };
 
 
-  const handleDeleteConfirm = async () => {
+const handleDeleteConfirm = async () => {
     if (!selectedClient || !firestore) return;
-    
+
     setIsDeleting(true);
 
-    try {
-        const dependencies = await checkForDependencies(selectedClient.id);
-      
-        if (dependencies.length > 0) {
-            toast({
-            variant: 'destructive',
-            title: 'Exclusão Bloqueada',
-            description: `Não é possível excluir este cliente. Ele possui ${dependencies.join(', ')} associados.`,
-            duration: 7000,
-            });
-            setIsDeleting(false);
-            setIsDeleteDialogOpen(false);
-            return;
-        }
-
-        // Batch delete all vehicles in the subcollection first
-        const vehiclesQuery = collection(firestore, `clientes/${selectedClient.id}/veiculos`);
-        const vehiclesSnapshot = await getDocs(vehiclesQuery);
-        
-        const batch = writeBatch(firestore);
-
-        vehiclesSnapshot.forEach(vehicleDoc => {
-            batch.delete(vehicleDoc.ref);
+    const dependencies = await checkForDependencies(selectedClient.id);
+  
+    if (dependencies.length > 0) {
+        toast({
+        variant: 'destructive',
+        title: 'Exclusão Bloqueada',
+        description: `Não é possível excluir este cliente. Ele possui ${dependencies.join(', ')} associados.`,
+        duration: 7000,
         });
+        setIsDeleting(false);
+        setIsDeleteDialogOpen(false);
+        return;
+    }
 
-        // Delete the client document itself
-        const clientDocRef = doc(firestore, 'clientes', selectedClient.id);
-        batch.delete(clientDocRef);
-        
-        await batch.commit();
+    // Batch delete all vehicles in the subcollection first
+    const vehiclesQuery = collection(firestore, `clientes/${selectedClient.id}/veiculos`);
+    const vehiclesSnapshot = await getDocs(vehiclesQuery);
+    
+    const batch = writeBatch(firestore);
 
+    vehiclesSnapshot.forEach(vehicleDoc => {
+        batch.delete(vehicleDoc.ref);
+    });
+
+    // Delete the client document itself
+    const clientDocRef = doc(firestore, 'clientes', selectedClient.id);
+    batch.delete(clientDocRef);
+    
+    batch.commit().then(() => {
         toast({
             title: 'Cliente excluído',
             description: `${selectedClient.nome} e todos os seus veículos foram removidos.`,
         });
-
-    } catch (error: any) {
-        console.error("Error deleting client and their vehicles: ", error);
-        toast({
-            variant: 'destructive',
-            title: 'Erro ao Excluir',
-            description: `Ocorreu um erro: ${error.message}`,
-        });
-    } finally {
+    }).catch(error => {
+        if (error.code === 'permission-denied') {
+            errorEmitter.emit('permission-error', new FirestorePermissionError({
+                path: `/clientes/${selectedClient.id}`,
+                operation: 'delete',
+            }));
+        } else {
+             toast({
+                variant: 'destructive',
+                title: 'Erro ao Excluir',
+                description: `Ocorreu um erro: ${error.message}`,
+            });
+        }
+    }).finally(() => {
         setIsDeleting(false);
         setIsDeleteDialogOpen(false);
         setSelectedClient(null);
-    }
+    });
   };
 
   return (
