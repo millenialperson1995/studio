@@ -446,6 +446,14 @@ export function EditOrdemServicoForm({
 
         <div className="space-y-4 rounded-md border p-4">
           <h3 className="font-medium">Peças</h3>
+          {pecasFields.length > 0 && (
+            <div className="hidden md:grid grid-cols-12 gap-x-2 text-sm font-medium text-muted-foreground px-1">
+                <div className="col-span-5">Item/Descrição</div>
+                <div className="col-span-2">Qtd.</div>
+                <div className="col-span-2">Vlr. Unitário</div>
+                <div className="col-span-2">Subtotal</div>
+            </div>
+          )}
           {pecasFields.map((field, index) => (
               <div key={field.id} className="grid grid-cols-12 gap-x-2 gap-y-2 items-start border-b pb-4 mb-4 md:border-none md:pb-0 md:mb-2">
                 <div className="col-span-12 md:col-span-5">

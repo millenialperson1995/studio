@@ -103,7 +103,7 @@ export function AddOrcamentoForm({
       dataValidade: new Date(new Date().setDate(new Date().getDate() + 15)), // Default 15 days
       status: 'pendente',
       observacoes: '',
-      itens: [{ descricao: '', quantidade: 1, valorUnitario: 0, valorTotal: 0 }],
+      itens: [],
       valorTotal: 0,
     },
   });
@@ -268,12 +268,14 @@ export function AddOrcamentoForm({
 
         <div className="space-y-4 rounded-md border p-4">
           <h3 className="font-medium">Itens do Orçamento</h3>
-          <div className="hidden md:grid grid-cols-12 gap-x-2 text-sm font-medium text-muted-foreground px-1">
-             <div className="col-span-5">Item/Descrição</div>
-             <div className="col-span-2">Qtd.</div>
-             <div className="col-span-2">Vlr. Unitário</div>
-             <div className="col-span-2">Subtotal</div>
-          </div>
+          {fields.length > 0 && (
+             <div className="hidden md:grid grid-cols-12 gap-x-2 text-sm font-medium text-muted-foreground px-1">
+                <div className="col-span-5">Item/Descrição</div>
+                <div className="col-span-2">Qtd.</div>
+                <div className="col-span-2">Vlr. Unitário</div>
+                <div className="col-span-2">Subtotal</div>
+             </div>
+          )}
           {fields.map((field, index) => {
             const qty = watchedItens[index]?.quantidade || 0;
             const price = watchedItens[index]?.valorUnitario || 0;
@@ -351,7 +353,6 @@ export function AddOrcamentoForm({
                         variant="destructive"
                         size="icon"
                         onClick={() => remove(index)}
-                        disabled={fields.length <= 1}
                         className="h-10 w-full"
                     >
                         <Trash2 className="h-4 w-4" />

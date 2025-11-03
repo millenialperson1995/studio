@@ -137,6 +137,17 @@ export default function OrcamentoTable({
 
   const handleDeleteConfirm = () => {
     if (selectedOrcamento && firestore) {
+      if (selectedOrcamento.status === 'aprovado' && !selectedOrcamento.ordemServicoId) {
+          toast({
+              variant: 'destructive',
+              title: 'Ação Bloqueada',
+              description: 'Não é possível excluir um orçamento aprovado que está aguardando a geração da OS. Cancele-o primeiro.',
+              duration: 7000,
+          });
+          setIsDeleteDialogOpen(false);
+          return;
+      }
+      
       const orcamentoDocRef = doc(firestore, 'orcamentos', selectedOrcamento.id);
       deleteDocumentNonBlocking(orcamentoDocRef);
       toast({
