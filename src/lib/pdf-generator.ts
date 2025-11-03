@@ -34,9 +34,11 @@ const drawHeader = (doc: jsPDF, oficina: Oficina | null, title: string) => {
   doc.setLineWidth(0.5);
   doc.line(margin, currentY, pageWidth - margin, currentY);
   currentY += 8;
+  
+  const headerInitialY = currentY;
 
   // Logo
-  doc.addImage(`${process.env.PUBLIC_URL || ''}${getLogoDataUri()}`, 'PNG', margin, currentY, 30, 30);
+  doc.addImage(`${process.env.PUBLIC_URL || ''}${getLogoDataUri()}`, 'PNG', margin, headerInitialY, 30, 30);
 
   // Workshop Info
   const nomeEmpresa = oficina?.nomeEmpresa || 'Retífica Figueirêdo';
@@ -44,15 +46,15 @@ const drawHeader = (doc: jsPDF, oficina: Oficina | null, title: string) => {
   const endereco = oficina?.endereco || 'Endereço não informado';
   const cidadeUf = oficina ? `${oficina.cidade} - ${oficina.uf}`: 'Cidade/UF não informada';
   const cep = oficina?.cep ? `CEP: ${oficina.cep}` : 'CEP não informado';
-  const telefone = oficina?.telefone ? `Telefone: ${oficina.telefone}` : '';
+  const telefone = oficina?.telefone ? `Telefone: ${oficina.telefone}` : 'Telefone não informado';
   const email = oficina?.email ? `Email: ${oficina.email}` : '';
   
   const workshopInfoX = pageWidth - margin;
 
   doc.setFont('helvetica', 'bold');
   doc.setFontSize(14);
-  doc.text(nomeEmpresa, workshopInfoX, currentY, { align: 'right' });
-  currentY += 7;
+  doc.text(nomeEmpresa, workshopInfoX, headerInitialY, { align: 'right' });
+  currentY = headerInitialY + 7;
   
   doc.setFont('helvetica', 'normal');
   doc.setFontSize(10);
@@ -60,14 +62,16 @@ const drawHeader = (doc: jsPDF, oficina: Oficina | null, title: string) => {
   currentY += 5;
   doc.text(endereco, workshopInfoX, currentY, { align: 'right' });
   currentY += 5;
-  doc.text(`${cep} | ${telefone}`, workshopInfoX, currentY, { align: 'right' });
+  doc.text(`${cep}   |   ${telefone}`, workshopInfoX, currentY, { align: 'right' });
   currentY += 5;
   doc.text(cidadeUf, workshopInfoX, currentY, { align: 'right' });
   currentY += 5;
-  doc.text(email, workshopInfoX, currentY, { align: 'right' });
+  if(email) {
+    doc.text(email, workshopInfoX, currentY, { align: 'right' });
+  }
 
   // Return Y position after the tallest element in the header section
-  return Math.max(currentY, 15 + 8 + 30 + 8); 
+  return Math.max(currentY, headerInitialY + 30 + 8); 
 }
 
 const drawFooter = (doc: jsPDF, documentType: string, creationDate: Date) => {
@@ -141,7 +145,7 @@ export const generateOrcamentoPDF = async (
   ];
 
   doc.text(clientLines, margin, currentY, { maxWidth: halfWidth });
-  doc.text(vehicleLines, margin + halfWidth + 10, currentY, { maxWidth: halfWidth });
+  doc.text(vehicleLines, pageWidth - margin, currentY, { align: 'right', maxWidth: halfWidth });
 
   const clientBlockHeight = doc.getTextDimensions(clientLines.join('\n'), { maxWidth: halfWidth }).h;
   const vehicleBlockHeight = doc.getTextDimensions(vehicleLines.join('\n'), { maxWidth: halfWidth }).h;
@@ -230,6 +234,9 @@ export const generateOrdemServicoPDF = async (
   doc.setFontSize(10);
   doc.setFont('helvetica', 'normal');
   
+   const contentWidth = pageWidth - margin * 2;
+  const halfWidth = contentWidth / 2 - 5;
+  
   const clientLines = [
     `Cliente: ${cliente.nome}`,
     `Telefone: ${cliente.telefone}`,
@@ -240,9 +247,13 @@ export const generateOrdemServicoPDF = async (
       `Ano: ${veiculo.ano}`,
   ];
 
-  doc.text(clientLines, margin, currentY);
-  doc.text(vehicleLines, pageWidth / 2, currentY);
-  currentY += 20;
+  doc.text(clientLines, margin, currentY, { maxWidth: halfWidth });
+  doc.text(vehicleLines, pageWidth - margin, currentY, { align: 'right', maxWidth: halfWidth });
+  
+  const clientBlockHeight = doc.getTextDimensions(clientLines.join('\n'), { maxWidth: halfWidth }).h;
+  const vehicleBlockHeight = doc.getTextDimensions(vehicleLines.join('\n'), { maxWidth: halfWidth }).h;
+  currentY += Math.max(clientBlockHeight, vehicleBlockHeight) + 10;
+
 
   doc.line(margin, currentY, pageWidth - margin, currentY);
   currentY += 5;
