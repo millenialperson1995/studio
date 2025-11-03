@@ -180,9 +180,9 @@ export default function OrcamentoTable({
           }
 
           const pecaData = pecaDoc.data() as Peca;
-          // CORRECTED LOGIC: Check against the physical stock, not the available stock after reservation.
+          // Check physical stock, not available stock after reservation.
           if (pecaData.quantidadeEstoque < itemPeca.quantidade) {
-            throw new Error(`Estoque insuficiente para a peça: ${itemPeca.descricao}. Disponível: ${pecaData.quantidadeEstoque}, Solicitado: ${itemPeca.quantidade}`);
+            throw new Error(`Estoque insuficiente para a peça: ${itemPeca.descricao}. Em estoque: ${pecaData.quantidadeEstoque}, Solicitado: ${itemPeca.quantidade}`);
           }
         }
         
