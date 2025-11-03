@@ -22,7 +22,7 @@ import { Switch } from '../ui/switch';
 const formSchema = z.object({
   codigo: z.string().min(1, 'O código é obrigatório.'),
   descricao: z.string().min(2, 'A descrição deve ter pelo menos 2 caracteres.'),
-  quantidade: z.coerce.number().min(0, 'A quantidade não pode ser negativa.'),
+  quantidade: z.coerce.number().min(0, 'A quantidade não pode ser negativa.').optional(),
   valorPadrao: z.coerce.number().min(0, 'O valor deve ser positivo.'),
   tempoMedio: z.coerce.number().min(0, 'O tempo deve ser positivo.'),
   categoria: z.string().min(2, 'A categoria deve ter pelo menos 2 caracteres.'),
@@ -117,7 +117,7 @@ export function AddServicoForm({ setDialogOpen }: AddServicoFormProps) {
           name="quantidade"
           render={({ field }) => (
             <FormItem>
-              <FormLabel>Quantidade</FormLabel>
+              <FormLabel>Quantidade (Opcional)</FormLabel>
               <FormControl>
                 <Input type="number" placeholder="1" {...field} />
               </FormControl>
@@ -190,5 +190,3 @@ export function AddServicoForm({ setDialogOpen }: AddServicoFormProps) {
     </Form>
   );
 }
-
-    

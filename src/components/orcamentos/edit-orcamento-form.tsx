@@ -97,7 +97,9 @@ export function EditOrcamentoForm({
 
 
   const totalValue = watchedItens.reduce((sum, item) => {
-      const itemTotal = (item.quantidade || 0) * (item.valorUnitario || 0);
+      const itemTotal = item.tipo === 'peca'
+        ? (item.quantidade || 0) * (item.valorUnitario || 0)
+        : (item.valorTotal || 0); // For services, use the manual total
       return sum + itemTotal;
   }, 0);
 
@@ -116,10 +118,15 @@ export function EditOrcamentoForm({
     try {
       const orcamentoDocRef = doc(firestore, 'orcamentos', orcamento.id);
       
-      const finalItens = values.itens.map(item => ({
+      const finalItens = values.itens.map(item => {
+        const valorTotal = item.tipo === 'peca'
+          ? (item.quantidade || 0) * (item.valorUnitario || 0)
+          : item.valorTotal;
+        return {
           ...item,
-          valorTotal: (item.quantidade || 0) * (item.valorUnitario || 0)
-      }));
+          valorTotal,
+        };
+      });
       
       const orcamentoData = {
         ...values,
@@ -151,7 +158,7 @@ export function EditOrcamentoForm({
         itemId: item.id,
         tipo: type,
         descricao: item.descricao,
-        valorUnitario: type === 'peca' ? (item as Peca).valorVenda : (item as Servico).valorPadrao,
+        valorUnitario: type === 'peca' ? (item as Peca).valorVenda : 0,
         quantidade: 1,
         valorTotal: type === 'peca' ? (item as Peca).valorVenda : (item as Servico).valorPadrao,
     })
@@ -247,9 +254,17 @@ export function EditOrcamentoForm({
             </div>
           )}
           {fields.map((field, index) => {
-            const qty = watchedItens[index]?.quantidade || 0;
-            const price = watchedItens[index]?.valorUnitario || 0;
-            const total = qty * price;
+            const item = watchedItens[index];
+            const isPeca = item.tipo === 'peca';
+            const subtotal = isPeca ? (item.quantidade || 0) * (item.valorUnitario || 0) : item.valorTotal;
+
+            if (isPeca) {
+                 // Update total for peca automatically
+                 const newTotal = (item.quantidade || 0) * (item.valorUnitario || 0);
+                 if (item.valorTotal !== newTotal) {
+                     form.setValue(`itens.${index}.valorTotal`, newTotal, { shouldValidate: true });
+                 }
+            }
             
             return (
               <div
@@ -298,7 +313,7 @@ export function EditOrcamentoForm({
                       render={({ field }) => (
                         <FormItem>
                           <FormControl>
-                            <Input type="number" placeholder="100.00" {...field} />
+                            <Input type="number" placeholder="100.00" {...field} disabled={!isPeca} readOnly={!isPeca} />
                           </FormControl>
                           <FormMessage />
                         </FormItem>
@@ -307,7 +322,24 @@ export function EditOrcamentoForm({
                 </div>
                 <div className="col-span-10 md:col-span-2 w-full">
                     <FormLabel className="text-xs md:hidden">Subtotal</FormLabel>
-                    <Input readOnly disabled value={total.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })} />
+                     <FormField
+                      control={form.control}
+                      name={`itens.${index}.valorTotal`}
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormControl>
+                             <Input 
+                                type="number"
+                                {...field} 
+                                readOnly={isPeca}
+                                disabled={isPeca}
+                                value={isPeca ? subtotal.toFixed(2) : field.value}
+                             />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
                 </div>
                 <div className="col-span-2 md:col-span-1 flex items-end h-full w-full">
                     <Button
