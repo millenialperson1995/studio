@@ -1,0 +1,64 @@
+Resumo do Sistema "Retífica Ágil"
+
+Este documento descreve as principais funcionalidades do sistema de gestão para oficinas "Retífica Ágil". O objetivo do software é centralizar e simplificar a administração de clientes, veículos, serviços, estoque e finanças da sua oficina.
+
+O sistema é dividido nos seguintes módulos principais:
+
+1. Dashboard (Tela Inicial)
+----------------------------
+- Visão Geral: Apresenta um painel com os indicadores mais importantes do negócio em tempo real.
+- Métricas Rápidas: Cartões que mostram a receita do mês, ordens de serviço em andamento, ordens concluídas no mês, orçamentos pendentes e o número total de clientes.
+- Gráfico de Receita: Um gráfico de barras que ilustra o faturamento dos últimos meses, facilitando a visualização do crescimento.
+- Atividades Recentes: Listas atualizadas com os últimos orçamentos pendentes e as ordens de serviço mais recentes, permitindo acesso rápido.
+
+2. Clientes
+-----------
+- Cadastro Centralizado: Permite registrar e gerenciar todos os clientes da oficina, incluindo nome, contato (telefone, e-mail) e endereço completo.
+- Busca e Edição: Facilita encontrar um cliente específico e atualizar suas informações a qualquer momento.
+- Histórico: A base para vincular veículos, orçamentos e ordens de serviço a um cliente específico.
+
+3. Veículos
+-----------
+- Gerenciamento de Frota: Cadastre todos os veículos que passam pela oficina, vinculando cada um ao seu respectivo proprietário (cliente).
+- Detalhes Técnicos: Registre informações cruciais como placa, fabricante, modelo, ano e detalhes do motor.
+- Base para Serviços: O cadastro de veículos é essencial para a criação de orçamentos e ordens de serviço.
+
+4. Orçamentos
+-------------
+- Criação Simplificada: Crie orçamentos detalhados, adicionando peças do estoque e serviços pré-cadastrados.
+- Cálculo Automático: O sistema calcula o valor total do orçamento automaticamente com base nos itens adicionados.
+- Geração de PDF: Com um clique, gere um arquivo PDF profissional do orçamento para enviar ao cliente.
+- Gestão de Status: Acompanhe o status de cada orçamento (Pendente, Aprovado, Rejeitado).
+- Conversão para OS: Um orçamento aprovado pode ser convertido diretamente em uma Ordem de Serviço, agilizando o processo e reservando as peças no estoque.
+
+5. Ordens de Serviço (OS)
+--------------------------
+- Controle Total do Serviço: Gerencie todo o ciclo de vida de um serviço, desde a entrada do veículo até a conclusão.
+- Status do Serviço: Acompanhe facilmente se uma OS está "Pendente", "Em Andamento", "Concluída" ou "Cancelada".
+- Detalhes da OS: Registre o mecânico responsável, datas, serviços executados e peças utilizadas.
+- Controle de Pagamento: Marque uma OS como "Paga" para manter o controle financeiro em dia.
+- Geração de PDF: Emita uma Ordem de Serviço em PDF para documentação interna ou para o cliente.
+
+6. Estoque
+----------
+- Inventário de Peças: Mantenha um registro de todas as peças em estoque, com código, descrição, fornecedor e valores de compra e venda.
+- Controle de Quantidade: O sistema gerencia a quantidade física e a quantidade reservada (para orçamentos aprovados).
+- Alerta de Estoque Baixo: Defina uma quantidade mínima para cada peça e seja alertado visualmente quando o estoque estiver baixo, ajudando a planejar as compras.
+
+7. Serviços
+-----------
+- Catálogo de Serviços: Cadastre todos os serviços que a oficina oferece, definindo um código, descrição, categoria, valor padrão e tempo médio de execução.
+- Agilidade no Orçamento: Use os serviços pré-cadastrados para adicionar itens rapidamente a orçamentos e ordens de serviço.
+
+8. Relatórios
+-------------
+- Inteligência de Negócio: Tenha acesso a gráficos e listas que ajudam a entender a saúde financeira e operacional da oficina.
+- Faturamento Anual: Visualize a receita mensal ao longo do último ano.
+- Serviços Mais Rentáveis: Descubra quais serviços geraram mais receita no mês atual.
+- Clientes Mais Valiosos: Identifique seus principais clientes com base na receita total.
+- Histórico do Veículo: Consulte todas as ordens de serviço já realizadas para um veículo específico.
+
+9. Configurações
+----------------
+- Dados da Empresa: Configure as informações da sua oficina (nome, CNPJ, endereço, contato).
+- Padronização de Documentos: Essas informações são usadas automaticamente para preencher o cabeçalho dos PDFs de orçamentos e ordens de serviço, garantindo profissionalismo e consistência.
