@@ -39,7 +39,7 @@ import { Badge } from '@/components/ui/badge';
 import { MoreHorizontal, Pencil, Trash2, DollarSign, FileDown } from 'lucide-react';
 import type { OrdemServico, Cliente, Veiculo, Peca, Servico, Oficina } from '@/lib/types';
 import { updateDocumentNonBlocking } from '@/firebase/non-blocking-updates';
-import { doc, getDoc, serverTimestamp, runTransaction, Transaction, DocumentSnapshot, DocumentData } from 'firebase/firestore';
+import { doc, getDoc, serverTimestamp, runTransaction, Transaction, DocumentSnapshot, DocumentData, writeBatch } from 'firebase/firestore';
 import { useFirestore, useUser } from '@/firebase';
 import { useToast } from '@/hooks/use-toast';
 import { EditOrdemServicoForm } from './edit-ordem-servico-form';
@@ -157,25 +157,32 @@ export default function OrdemServicoTable({
   };
 
   const handleDeleteConfirm = async () => {
-    if (!selectedOrdem || !firestore) return;
-
+    if (!selectedOrdem || !firestore) {
+      setIsDeleteDialogOpen(false);
+      return;
+    }
+  
     try {
       await runTransaction(firestore, async (transaction) => {
-        const ordemDocRef = doc(firestore, 'ordensServico', selectedOrdem!.id);
+        const ordemDocRef = doc(firestore, 'ordensServico', selectedOrdem.id);
         const osDoc = await transaction.get(ordemDocRef);
   
         if (!osDoc.exists()) {
-          throw new Error('Ordem de serviço não encontrada.');
+          // If the OS doesn't exist, there's nothing to do.
+          return;
         }
   
         const osData = osDoc.data() as OrdemServico;
   
-        // Un-reserve parts only if the OS was not yet completed.
-        if (osData.status !== 'concluida') {
+        // Un-reserve parts only if the OS was not already completed or cancelled.
+        // If it was 'concluida', the stock was already debited.
+        // If it was 'cancelada', the stock was likely already returned.
+        if (osData.status === 'pendente' || osData.status === 'andamento') {
           for (const itemPeca of osData.pecas) {
             if (itemPeca.itemId) {
               const pecaRef = doc(firestore, 'pecas', itemPeca.itemId);
-              const pecaDoc = await transaction.get(pecaRef); // Read inside transaction
+              // We must read the part inside the transaction to get a consistent view.
+              const pecaDoc = await transaction.get(pecaRef);
               if (pecaDoc.exists()) {
                 const pecaData = pecaDoc.data() as Peca;
                 transaction.update(pecaRef, {
@@ -186,33 +193,20 @@ export default function OrdemServicoTable({
           }
         }
   
-        // Try to revert the quote status, but don't fail if it's gone
-        if (osData.orcamentoId) {
-          const orcamentoRef = doc(firestore, 'orcamentos', osData.orcamentoId);
-          const orcamentoDoc = await transaction.get(orcamentoRef); // Read inside transaction
-          // Only update the orcamento if it exists
-          if (orcamentoDoc.exists()) {
-            transaction.update(orcamentoRef, {
-              status: 'pendente',
-              ordemServicoId: null,
-            });
-          }
-        }
-  
-        // Finally, delete the service order itself.
+        // We no longer try to update the orcamento, just delete the OS.
         transaction.delete(ordemDocRef);
       });
   
       toast({
         title: 'Ordem de Serviço excluída',
-        description: 'A OS foi removida e os dados relacionados foram atualizados.',
+        description: 'A OS foi removida com sucesso.',
       });
     } catch (error: any) {
       console.error("Firestore Transaction Error:", error);
       toast({
         variant: 'destructive',
         title: 'Erro ao excluir OS',
-        description: error.message || 'Não foi possível excluir a Ordem de Serviço.',
+        description: error.message || 'Não foi possível excluir a Ordem de Serviço. Verifique as permissões e tente novamente.',
         duration: 7000,
       });
     } finally {
