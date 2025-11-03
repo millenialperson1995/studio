@@ -34,18 +34,8 @@ export function ItemSelector({ pecas, servicos, onSelect, trigger }: ItemSelecto
   const { toast } = useToast();
 
   const handleSelect = (item: Peca | Servico, type: 'peca' | 'servico') => {
-    if (type === 'peca') {
-        const peca = item as Peca;
-        const estoqueDisponivel = peca.quantidadeEstoque - (peca.quantidadeReservada || 0);
-        if (estoqueDisponivel <= 0) {
-            toast({
-                variant: 'destructive',
-                title: 'Estoque Indisponível',
-                description: `A peça "${peca.descricao}" não tem estoque disponível.`,
-            });
-            return;
-        }
-    }
+    // A validação de estoque real será feita na geração da OS.
+    // O orçamento pode ser criado mesmo que o estoque esteja baixo/negativo.
     onSelect(item, type);
     setOpen(false)
   }
@@ -75,21 +65,22 @@ export function ItemSelector({ pecas, servicos, onSelect, trigger }: ItemSelecto
             <CommandSeparator />
             <CommandGroup heading="Peças">
               {pecas.map((peca) => {
-                const estoqueDisponivel = peca.quantidadeEstoque - (peca.quantidadeReservada || 0);
-                const isAvailable = estoqueDisponivel > 0;
+                const estoqueFisico = peca.quantidadeEstoque;
+                const isAvailable = estoqueFisico > 0;
                 return (
                     <CommandItem
                     key={`peca-${peca.id}`}
                     value={peca.descricao}
                     onSelect={() => handleSelect(peca, 'peca')}
-                    disabled={!isAvailable}
+                    // O item pode ser selecionado mesmo sem estoque para o orçamento.
+                    // Apenas o feedback visual é alterado.
                     className={cn(!isAvailable && "text-muted-foreground")}
                     >
                     <Package className="mr-2 h-4 w-4" />
                     <div className="flex justify-between w-full">
                         <span>{peca.descricao}</span>
                         <span className={cn("text-xs", isAvailable ? 'text-green-600' : 'text-red-600')}>
-                            {estoqueDisponivel} disp.
+                            {estoqueFisico} em estoque
                         </span>
                     </div>
                     </CommandItem>

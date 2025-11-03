@@ -165,45 +165,55 @@ export function EditOrdemServicoForm({
             const originalOrdem = originalOrdemDoc.data() as OrdemServico;
 
             // Logic for status change
-            if (originalOrdem.status !== values.status) {
-                // From any status to "CONCLUÍDA"
-                if (values.status === 'concluida' && originalOrdem.status !== 'concluida') {
-                    for (const itemPeca of originalOrdem.pecas) {
-                        if (!itemPeca.itemId) continue; // Skip if no ID
-                        const pecaRef = doc(firestore, 'pecas', itemPeca.itemId);
-                        const pecaDoc = await transaction.get(pecaRef);
-                        if(pecaDoc.exists()){
-                            const pecaData = pecaDoc.data() as Peca;
-                            transaction.update(pecaRef, {
-                                quantidadeEstoque: pecaData.quantidadeEstoque - itemPeca.quantidade,
-                                quantidadeReservada: (pecaData.quantidadeReservada || 0) > 0 
-                                    ? (pecaData.quantidadeReservada || 0) - itemPeca.quantidade 
-                                    : 0
-                            });
-                        }
+            const isChangingToConcluida = values.status === 'concluida' && originalOrdem.status !== 'concluida';
+            const isChangingFromConcluida = values.status !== 'concluida' && originalOrdem.status === 'concluida';
+            const isChangingToCancelada = values.status === 'cancelada' && originalOrdem.status !== 'cancelada';
+
+            // From any status to "CONCLUÍDA"
+            if (isChangingToConcluida) {
+                for (const itemPeca of originalOrdem.pecas) {
+                    if (!itemPeca.itemId) continue;
+                    const pecaRef = doc(firestore, 'pecas', itemPeca.itemId);
+                    const pecaDoc = await transaction.get(pecaRef);
+                    if(pecaDoc.exists()){
+                        const pecaData = pecaDoc.data() as Peca;
+                        transaction.update(pecaRef, {
+                            quantidadeEstoque: pecaData.quantidadeEstoque - itemPeca.quantidade,
+                            quantidadeReservada: (pecaData.quantidadeReservada || 0) > 0 
+                                ? Math.max(0, (pecaData.quantidadeReservada || 0) - itemPeca.quantidade)
+                                : 0
+                        });
                     }
                 }
-                // From "CONCLUÍDA" or "ANDAMENTO" back to "CANCELADA"
-                else if (values.status === 'cancelada' && (originalOrdem.status === 'concluida' || originalOrdem.status === 'andamento')) {
-                    for (const itemPeca of originalOrdem.pecas) {
-                       if (!itemPeca.itemId) continue; // Skip if no ID
-                       const pecaRef = doc(firestore, 'pecas', itemPeca.itemId);
-                       const pecaDoc = await transaction.get(pecaRef);
-                        if (pecaDoc.exists()) {
-                            const pecaData = pecaDoc.data() as Peca;
-                             // if original status was concluida, we need to add back to stock
-                            if(originalOrdem.status === 'concluida'){
-                                transaction.update(pecaRef, {
-                                    quantidadeEstoque: pecaData.quantidadeEstoque + itemPeca.quantidade
-                                });
-                            } else { // if it was andamento (and came from a quote), just un-reserve
-                                 transaction.update(pecaRef, {
-                                    quantidadeReservada: (pecaData.quantidadeReservada || 0) > 0 
-                                        ? (pecaData.quantidadeReservada || 0) - itemPeca.quantidade 
-                                        : 0
-                                });
-                            }
-                        }
+            }
+            // From "CONCLUÍDA" back to something else (e.g., "em andamento")
+            else if (isChangingFromConcluida) {
+                 for (const itemPeca of originalOrdem.pecas) {
+                    if (!itemPeca.itemId) continue;
+                    const pecaRef = doc(firestore, 'pecas', itemPeca.itemId);
+                    const pecaDoc = await transaction.get(pecaRef);
+                    if(pecaDoc.exists()){
+                        const pecaData = pecaDoc.data() as Peca;
+                        transaction.update(pecaRef, {
+                            quantidadeEstoque: pecaData.quantidadeEstoque + itemPeca.quantidade,
+                            quantidadeReservada: (pecaData.quantidadeReservada || 0) + itemPeca.quantidade
+                        });
+                    }
+                }
+            }
+            // From "PENDENTE" or "ANDAMENTO" to "CANCELADA"
+            else if (isChangingToCancelada && originalOrdem.orcamentoId) { // Only un-reserve if it came from a quote
+                 for (const itemPeca of originalOrdem.pecas) {
+                    if (!itemPeca.itemId) continue;
+                    const pecaRef = doc(firestore, 'pecas', itemPeca.itemId);
+                    const pecaDoc = await transaction.get(pecaRef);
+                    if(pecaDoc.exists()){
+                        const pecaData = pecaDoc.data() as Peca;
+                         transaction.update(pecaRef, {
+                            quantidadeReservada: (pecaData.quantidadeReservada || 0) > 0 
+                                ? Math.max(0, (pecaData.quantidadeReservada || 0) - itemPeca.quantidade)
+                                : 0
+                        });
                     }
                 }
             }

@@ -182,14 +182,20 @@ export default function OrcamentoTable({
           const pecaData = pecaDoc.data() as Peca;
           // Check physical stock, not available stock after reservation.
           if (pecaData.quantidadeEstoque < itemPeca.quantidade) {
-            throw new Error(`Estoque insuficiente para a peça: ${itemPeca.descricao}. Em estoque: ${pecaData.quantidadeEstoque}, Solicitado: ${itemPeca.quantidade}`);
+            throw new Error(`Estoque insuficiente para a peça: ${pecaData.descricao}. Em estoque: ${pecaData.quantidadeEstoque}, Solicitado: ${itemPeca.quantidade}`);
           }
         }
         
         // 2. Reserve all parts
         for (const itemPeca of pecasDoOrcamento) {
             const pecaRef = doc(firestore, 'pecas', itemPeca.itemId!);
-            const pecaDoc = await transaction.get(pecaRef); // Re-get inside transaction for safety
+            // It's safe to re-read without `transaction.get()` here as we are in a transaction,
+            // but for absolute certainty it can be included.
+            // const pecaDoc = await transaction.get(pecaRef); 
+            // const pecaData = pecaDoc.data() as Peca;
+            
+            // This update needs to read the current state from the DB before incrementing
+            const pecaDoc = await transaction.get(pecaRef);
             const pecaData = pecaDoc.data() as Peca;
             
             transaction.update(pecaRef, {
