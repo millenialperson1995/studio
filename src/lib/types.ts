@@ -42,6 +42,7 @@ export interface Servico {
   userId: string;
   codigo: string;
   descricao: string;
+  quantidade: number;
   valorPadrao: number;
   tempoMedio: number; // in hours
   categoria: string;
@@ -68,14 +69,14 @@ export interface Cliente {
   id: string;
   userId: string;
   nome: string;
-  telefone: string;
+  telefone?: string;
   email?: string;
-  cep: string;
-  endereco: string;
-  numero: string;
-  bairro: string;
-  cidade: string;
-  uf: string;
+  cep?: string;
+  endereco?: string;
+  numero?: string;
+  bairro?: string;
+  cidade?: string;
+  uf?: string;
   pontoReferencia?: string;
   createdAt?: any;
 }
@@ -157,3 +158,5 @@ export interface Peca {
   alertaEstoqueBaixo: boolean;
   createdAt?: any;
 }
+
+    
