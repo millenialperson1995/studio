@@ -19,7 +19,7 @@ import {
 } from '@/components/ui/card';
 import { useCollection, useFirestore, useUser, useVehicles } from '@/firebase';
 import { useMemoFirebase } from '@/firebase/provider';
-import { collection, query, where } from 'firebase/firestore';
+import { collection, query, where, orderBy } from 'firebase/firestore';
 import type { OrdemServico, Cliente, Peca, Servico } from '@/lib/types';
 import {
   Dialog,
@@ -41,7 +41,7 @@ function OrdensDeServicoContent() {
 
   // Queries for current user
   const ordensServicoQuery = useMemoFirebase(
-    () => (firestore && user?.uid ? query(collection(firestore, 'ordensServico'), where('userId', '==', user.uid)) : null),
+    () => (firestore && user?.uid ? query(collection(firestore, 'ordensServico'), where('userId', '==', user.uid), orderBy('createdAt', 'desc')) : null),
     [firestore, user?.uid]
   );
   const clientesCollectionRef = useMemoFirebase(
