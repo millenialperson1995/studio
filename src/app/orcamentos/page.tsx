@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import AppHeader from '@/components/layout/app-header';
 import AppSidebar from '@/components/layout/app-sidebar';
 import {
@@ -19,7 +19,7 @@ import {
 } from '@/components/ui/card';
 import { useCollection, useFirestore, useUser, useVehicles } from '@/firebase';
 import { useMemoFirebase } from '@/firebase/provider';
-import { collection, query, where, orderBy } from 'firebase/firestore';
+import { collection, query, where } from 'firebase/firestore';
 import type { Orcamento, Cliente, Servico, Peca } from '@/lib/types';
 import {
   Dialog,
@@ -32,6 +32,7 @@ import {
 import OrcamentoTable from '@/components/orcamentos/orcamento-table';
 import { AddOrcamentoForm } from '@/components/orcamentos/add-orcamento-form';
 import AuthenticatedPage from '@/components/layout/authenticated-page';
+import { toDate } from '@/lib/utils';
 
 function OrcamentosContent() {
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
@@ -40,7 +41,7 @@ function OrcamentosContent() {
   const { vehicles, isLoading: isLoadingVehicles } = useVehicles();
 
   const orcamentosCollectionRef = useMemoFirebase(
-    () => (firestore && user?.uid ? query(collection(firestore, 'orcamentos'), where('userId', '==', user.uid), orderBy('createdAt', 'desc')) : null),
+    () => (firestore && user?.uid ? query(collection(firestore, 'orcamentos'), where('userId', '==', user.uid)) : null),
     [firestore, user?.uid]
   );
   const clientesCollectionRef = useMemoFirebase(
@@ -64,6 +65,12 @@ function OrcamentosContent() {
     useCollection<Servico>(servicosCollectionRef);
   const { data: pecas, isLoading: isLoadingPecas } =
     useCollection<Peca>(pecasCollectionRef);
+
+  const sortedOrcamentos = useMemo(() => {
+    if (!orcamentos) return [];
+    return [...orcamentos].sort((a, b) => toDate(b.createdAt).getTime() - toDate(a.createdAt).getTime());
+  }, [orcamentos]);
+
 
   const isLoading = isLoadingOrcamentos || isLoadingClients || isLoadingVehicles || isLoadingServicos || isLoadingPecas;
 
@@ -109,7 +116,7 @@ function OrcamentosContent() {
         </CardHeader>
         <CardContent>
           <OrcamentoTable
-            orcamentos={orcamentos || []}
+            orcamentos={sortedOrcamentos || []}
             clients={clients || []}
             servicos={servicos || []}
             pecas={pecas || []}

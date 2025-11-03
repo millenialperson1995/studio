@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import AppHeader from '@/components/layout/app-header';
 import AppSidebar from '@/components/layout/app-sidebar';
 import {
@@ -19,7 +19,7 @@ import {
 } from '@/components/ui/card';
 import { useCollection, useFirestore, useUser, useVehicles } from '@/firebase';
 import { useMemoFirebase } from '@/firebase/provider';
-import { collection, query, where, orderBy } from 'firebase/firestore';
+import { collection, query, where } from 'firebase/firestore';
 import type { OrdemServico, Cliente, Peca, Servico } from '@/lib/types';
 import {
   Dialog,
@@ -32,6 +32,7 @@ import {
 import OrdemServicoTable from '@/components/ordens-de-servico/ordem-servico-table';
 import { AddOrdemServicoForm } from '@/components/ordens-de-servico/add-ordem-servico-form';
 import AuthenticatedPage from '@/components/layout/authenticated-page';
+import { toDate } from '@/lib/utils';
 
 function OrdensDeServicoContent() {
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
@@ -41,7 +42,7 @@ function OrdensDeServicoContent() {
 
   // Queries for current user
   const ordensServicoQuery = useMemoFirebase(
-    () => (firestore && user?.uid ? query(collection(firestore, 'ordensServico'), where('userId', '==', user.uid), orderBy('createdAt', 'desc')) : null),
+    () => (firestore && user?.uid ? query(collection(firestore, 'ordensServico'), where('userId', '==', user.uid)) : null),
     [firestore, user?.uid]
   );
   const clientesCollectionRef = useMemoFirebase(
@@ -66,6 +67,11 @@ function OrdensDeServicoContent() {
     useCollection<Servico>(servicosCollectionRef);
   const { data: pecas, isLoading: isLoadingPecas } =
     useCollection<Peca>(pecasCollectionRef);
+    
+  const sortedOrdensServico = useMemo(() => {
+    if (!ordensServico) return [];
+    return [...ordensServico].sort((a, b) => toDate(b.createdAt).getTime() - toDate(a.createdAt).getTime());
+  }, [ordensServico]);
 
   const isLoading = isLoadingOrdens || isLoadingClients || isLoadingVehicles || isLoadingServicos || isLoadingPecas;
 
@@ -111,7 +117,7 @@ function OrdensDeServicoContent() {
         </CardHeader>
         <CardContent>
           <OrdemServicoTable
-            ordensServico={ordensServico || []}
+            ordensServico={sortedOrdensServico || []}
             clients={clients || []}
             pecas={pecas || []}
             servicos={servicos || []}
