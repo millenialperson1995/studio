@@ -23,15 +23,13 @@ import { useEffect } from 'react';
 const formSchema = z.object({
   nome: z.string().min(2, 'O nome deve ter pelo menos 2 caracteres.'),
   email: z.string().email('Formato de e-mail inválido.').optional().or(z.literal('')),
-  telefone: z
-    .string()
-    .min(10, 'O telefone deve ter pelo menos 10 caracteres.'),
-  cep: z.string().min(8, 'O CEP deve ter 8 caracteres.').max(9, 'O CEP deve ter no máximo 9 caracteres (com hífen).'),
-  endereco: z.string().min(3, 'O endereço deve ter pelo menos 3 caracteres.'),
-  numero: z.string().min(1, 'O número é obrigatório.'),
-  bairro: z.string().min(2, 'O bairro é obrigatório.'),
-  cidade: z.string().min(2, 'A cidade é obrigatória.'),
-  uf: z.string().length(2, 'A UF deve ter 2 caracteres.'),
+  telefone: z.string().optional(),
+  cep: z.string().optional(),
+  endereco: z.string().optional(),
+  numero: z.string().optional(),
+  bairro: z.string().optional(),
+  cidade: z.string().optional(),
+  uf: z.string().optional(),
   pontoReferencia: z.string().optional(),
 });
 
@@ -64,22 +62,20 @@ export function AddClientForm({ setDialogOpen }: AddClientFormProps) {
 
   useEffect(() => {
     const fetchAddress = async () => {
-      const cep = cepValue.replace(/\D/g, '');
-      if (cep.length !== 8) {
-        return;
-      }
-
-      try {
-        const response = await fetch(`https://viacep.com.br/ws/${cep}/json/`);
-        const data = await response.json();
-        if (!data.erro) {
-          form.setValue('endereco', data.logradouro, { shouldValidate: true });
-          form.setValue('bairro', data.bairro, { shouldValidate: true });
-          form.setValue('cidade', data.localidade, { shouldValidate: true });
-          form.setValue('uf', data.uf, { shouldValidate: true });
+      const cep = cepValue?.replace(/\D/g, '');
+      if (cep && cep.length === 8) {
+        try {
+          const response = await fetch(`https://viacep.com.br/ws/${cep}/json/`);
+          const data = await response.json();
+          if (!data.erro) {
+            form.setValue('endereco', data.logradouro, { shouldValidate: true });
+            form.setValue('bairro', data.bairro, { shouldValidate: true });
+            form.setValue('cidade', data.localidade, { shouldValidate: true });
+            form.setValue('uf', data.uf, { shouldValidate: true });
+          }
+        } catch (error) {
+          console.error("Failed to fetch CEP", error);
         }
-      } catch (error) {
-        console.error("Failed to fetch CEP", error);
       }
     };
 
@@ -162,7 +158,7 @@ export function AddClientForm({ setDialogOpen }: AddClientFormProps) {
             name="telefone"
             render={({ field }) => (
               <FormItem>
-                <FormLabel>Telefone</FormLabel>
+                <FormLabel>Telefone (Opcional)</FormLabel>
                 <FormControl>
                   <Input placeholder="(11) 99999-9999" {...field} />
                 </FormControl>
@@ -176,7 +172,7 @@ export function AddClientForm({ setDialogOpen }: AddClientFormProps) {
             name="cep"
             render={({ field }) => (
               <FormItem>
-                <FormLabel>CEP</FormLabel>
+                <FormLabel>CEP (Opcional)</FormLabel>
                 <FormControl>
                   <Input placeholder="00000-000" {...field} />
                 </FormControl>
@@ -190,7 +186,7 @@ export function AddClientForm({ setDialogOpen }: AddClientFormProps) {
                 name="endereco"
                 render={({ field }) => (
                 <FormItem className='sm:col-span-2'>
-                    <FormLabel>Endereço</FormLabel>
+                    <FormLabel>Endereço (Opcional)</FormLabel>
                     <FormControl>
                     <Input placeholder="Rua, Avenida, etc." {...field} />
                     </FormControl>
@@ -203,7 +199,7 @@ export function AddClientForm({ setDialogOpen }: AddClientFormProps) {
                 name="numero"
                 render={({ field }) => (
                 <FormItem>
-                    <FormLabel>Número</FormLabel>
+                    <FormLabel>Número (Opcional)</FormLabel>
                     <FormControl>
                     <Input placeholder="123" {...field} />
                     </FormControl>
@@ -218,7 +214,7 @@ export function AddClientForm({ setDialogOpen }: AddClientFormProps) {
                 name="bairro"
                 render={({ field }) => (
                 <FormItem>
-                    <FormLabel>Bairro</FormLabel>
+                    <FormLabel>Bairro (Opcional)</FormLabel>
                     <FormControl>
                     <Input placeholder="Centro" {...field} />
                     </FormControl>
@@ -231,7 +227,7 @@ export function AddClientForm({ setDialogOpen }: AddClientFormProps) {
                 name="cidade"
                 render={({ field }) => (
                 <FormItem>
-                    <FormLabel>Cidade</FormLabel>
+                    <FormLabel>Cidade (Opcional)</FormLabel>
                     <FormControl>
                     <Input placeholder="São Paulo" {...field} />
                     </FormControl>
@@ -244,7 +240,7 @@ export function AddClientForm({ setDialogOpen }: AddClientFormProps) {
                 name="uf"
                 render={({ field }) => (
                 <FormItem>
-                    <FormLabel>UF</FormLabel>
+                    <FormLabel>UF (Opcional)</FormLabel>
                     <FormControl>
                     <Input placeholder="SP" {...field} />
                     </FormControl>

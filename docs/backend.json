@@ -47,7 +47,7 @@
         "uf": { "type": "string", "description": "State (Unidade Federativa)." },
         "pontoReferencia": { "type": "string", "description": "Reference point for the address." }
       },
-      "required": ["id", "userId", "nome", "telefone", "cep", "endereco", "numero", "bairro", "cidade", "uf"]
+      "required": ["id", "userId", "nome"]
     },
     "Veiculo": {
       "title": "Veiculo",
@@ -65,7 +65,7 @@
         "cilindros": { "type": "string", "description": "Number of cylinders, e.g., '4'." },
         "numeroMotor": { "type": "string", "description": "Vehicle's engine number." }
       },
-      "required": ["id", "userId", "clienteId", "placa", "fabricante", "modelo", "ano"]
+      "required": ["id", "userId", "clienteId", "placa", "fabricante", "modelo"]
     },
     "Orcamento": {
       "title": "Orcamento",

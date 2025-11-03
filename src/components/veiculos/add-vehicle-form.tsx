@@ -28,10 +28,10 @@ import type { Cliente } from '@/lib/types';
 
 const formSchema = z.object({
   clienteId: z.string().min(1, 'Selecione um cliente.'),
-  placa: z.string().min(7, 'A placa deve ter pelo menos 7 caracteres.'),
-  fabricante: z.string().min(2, 'O fabricante deve ter pelo menos 2 caracteres.'),
-  modelo: z.string().min(2, 'O modelo deve ter pelo menos 2 caracteres.'),
-  ano: z.coerce.number().min(1900, 'Ano inválido.').max(new Date().getFullYear() + 1, 'Ano inválido.'),
+  placa: z.string().min(1, 'A placa é obrigatória.'),
+  fabricante: z.string().min(1, 'O fabricante é obrigatório.'),
+  modelo: z.string().min(1, 'O modelo é obrigatório.'),
+  ano: z.coerce.number().optional(),
   motor: z.string().optional(),
   cilindros: z.string().optional(),
   numeroMotor: z.string().optional(),
@@ -57,7 +57,7 @@ export function AddVehicleForm({
       placa: '',
       fabricante: '',
       modelo: '',
-      ano: new Date().getFullYear(),
+      ano: undefined,
       motor: '',
       cilindros: '',
       numeroMotor: '',
@@ -73,6 +73,7 @@ export function AddVehicleForm({
 
       const vehicleData = {
         ...values,
+        ano: values.ano || null,
         id: newVehicleRef.id,
         userId: user.uid,
         createdAt: serverTimestamp(),
@@ -169,7 +170,7 @@ export function AddVehicleForm({
           name="ano"
           render={({ field }) => (
             <FormItem>
-              <FormLabel>Ano</FormLabel>
+              <FormLabel>Ano (Opcional)</FormLabel>
               <FormControl>
                 <Input type="number" placeholder="Ex: 2023" {...field} />
               </FormControl>
@@ -183,7 +184,7 @@ export function AddVehicleForm({
             name="motor"
             render={({ field }) => (
                 <FormItem>
-                <FormLabel>Motor</FormLabel>
+                <FormLabel>Motor (Opcional)</FormLabel>
                 <FormControl>
                     <Input placeholder="Ex: 1.6 MSI" {...field} />
                 </FormControl>
@@ -196,7 +197,7 @@ export function AddVehicleForm({
             name="cilindros"
             render={({ field }) => (
                 <FormItem>
-                <FormLabel>Cilindros</FormLabel>
+                <FormLabel>Cilindros (Opcional)</FormLabel>
                 <FormControl>
                     <Input placeholder="Ex: 4" {...field} />
                 </FormControl>
