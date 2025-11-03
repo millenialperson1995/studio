@@ -93,10 +93,13 @@ export function EditOrdemServicoForm({
           if (item.itemId) {
             const peca = pecasMap.get(item.itemId);
             if (peca) {
-              if (item.quantidade > peca.quantidadeEstoque) {
+              const pecaOriginal = ordemServico.pecas.find(p => p.itemId === item.itemId);
+              const quantidadeOriginal = pecaOriginal?.quantidade || 0;
+              // Check against physical stock, allowing for the quantity already in the OS
+              if (item.quantidade > peca.quantidadeEstoque + quantidadeOriginal) {
                 ctx.addIssue({
                   code: z.ZodIssueCode.custom,
-                  message: `Estoque insuficiente. Em estoque: ${peca.quantidadeEstoque}`,
+                  message: `Estoque físico insuficiente. Total: ${peca.quantidadeEstoque}`,
                   path: [index, 'quantidade'],
                 });
               }
@@ -127,7 +130,7 @@ export function EditOrdemServicoForm({
   const paymentStatus = form.watch('statusPagamento');
 
   const selectedItemIds = useMemo(() => {
-    const servicosIds = watchedServicos.map(s => s.descricao); // Assuming description is unique enough for the selector
+    const servicosIds = watchedServicos.map(s => s.descricao);
     const pecasIds = watchedPecas.map(p => p.itemId).filter(Boolean) as string[];
     return [...servicosIds, ...pecasIds];
   }, [watchedServicos, watchedPecas]);
@@ -184,9 +187,7 @@ export function EditOrdemServicoForm({
                         const pecaData = pecaDoc.data() as Peca;
                         transaction.update(pecaRef, {
                             quantidadeEstoque: pecaData.quantidadeEstoque - itemPeca.quantidade,
-                            quantidadeReservada: (pecaData.quantidadeReservada || 0) > 0 
-                                ? Math.max(0, (pecaData.quantidadeReservada || 0) - itemPeca.quantidade)
-                                : 0
+                            quantidadeReservada: Math.max(0, (pecaData.quantidadeReservada || 0) - itemPeca.quantidade)
                         });
                     }
                 }
@@ -207,7 +208,7 @@ export function EditOrdemServicoForm({
                 }
             }
             // From "PENDENTE" or "ANDAMENTO" to "CANCELADA"
-            else if (isChangingToCancelada && originalOrdem.orcamentoId) { // Only un-reserve if it came from a quote
+            else if (isChangingToCancelada && originalOrdem.orcamentoId) { 
                  for (const itemPeca of originalOrdem.pecas) {
                     if (!itemPeca.itemId) continue;
                     const pecaRef = doc(firestore, 'pecas', itemPeca.itemId);
@@ -215,9 +216,8 @@ export function EditOrdemServicoForm({
                     if(pecaDoc.exists()){
                         const pecaData = pecaDoc.data() as Peca;
                          transaction.update(pecaRef, {
-                            quantidadeReservada: (pecaData.quantidadeReservada || 0) > 0 
-                                ? Math.max(0, (pecaData.quantidadeReservada || 0) - itemPeca.quantidade)
-                                : 0
+                            // On cancel, just un-reserve, don't touch physical stock
+                            quantidadeReservada: Math.max(0, (pecaData.quantidadeReservada || 0) - itemPeca.quantidade)
                         });
                     }
                 }

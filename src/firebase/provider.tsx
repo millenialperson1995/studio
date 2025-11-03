@@ -2,12 +2,12 @@
 
 import React, { DependencyList, createContext, useContext, ReactNode, useMemo, useState, useEffect } from 'react';
 import { FirebaseApp } from 'firebase/app';
-import { Firestore, collection, getDocs, query, where } from 'firebase/firestore';
+import { Firestore, collection, onSnapshot, query, where } from 'firebase/firestore';
 import { Auth, User, onAuthStateChanged } from 'firebase/auth';
 import { FirebaseErrorListener } from '@/components/FirebaseErrorListener';
 import { errorEmitter } from './error-emitter';
 import { FirestorePermissionError } from './errors';
-import type { Veiculo } from '@/lib/types';
+import type { Veiculo, Cliente } from '@/lib/types';
 
 
 interface FirebaseProviderProps {
@@ -57,7 +57,7 @@ export interface FirebaseServicesAndUser {
 }
 
 // Return type for useUser() - specific to user auth state
-export interface UserHookResult { // Renamed from UserAuthHookResult for consistency if desired, or keep as UserAuthHookResult
+export interface UserHookResult { 
   user: User | null;
   isUserLoading: boolean;
   userError: Error | null;
@@ -87,62 +87,90 @@ export const FirebaseProvider: React.FC<FirebaseProviderProps> = ({
     error: null,
   });
 
+  const [clients, setClients] = useState<Cliente[]>([]);
+  const [isLoadingClients, setIsLoadingClients] = useState(true);
+
   // Effect to subscribe to Firebase auth state changes
   useEffect(() => {
-    if (!auth) { // If no Auth service instance, cannot determine user state
+    if (!auth) { 
       setUserAuthState({ user: null, isUserLoading: false, userError: new Error("Auth service not provided.") });
       return;
     }
 
-    setUserAuthState({ user: null, isUserLoading: true, userError: null }); // Reset on auth instance change
+    setUserAuthState({ user: null, isUserLoading: true, userError: null }); 
 
     const unsubscribe = onAuthStateChanged(
       auth,
-      (firebaseUser) => { // Auth state determined
+      (firebaseUser) => { 
         setUserAuthState({ user: firebaseUser, isUserLoading: false, userError: null });
       },
-      (error) => { // Auth listener error
+      (error) => { 
         console.error("FirebaseProvider: onAuthStateChanged error:", error);
         setUserAuthState({ user: null, isUserLoading: false, userError: error });
       }
     );
-    return () => unsubscribe(); // Cleanup
-  }, [auth]); // Depends on the auth instance
+    return () => unsubscribe(); 
+  }, [auth]); 
 
-  // Effect to fetch all vehicles for the authenticated user
+  // Effect to fetch clients for the authenticated user
   useEffect(() => {
-    const { user, isUserLoading } = userAuthState;
-    if (isUserLoading || !user || !firestore) {
-      // Don't fetch if user is not logged in or services are not ready
-      setVehiclesState({ vehicles: [], isLoading: !user, error: null });
+      const { user, isUserLoading } = userAuthState;
+      if (isUserLoading || !user || !firestore) {
+          setClients([]);
+          setIsLoadingClients(!user);
+          return;
+      }
+      const clientsQuery = query(collection(firestore, 'clientes'), where('userId', '==', user.uid));
+      const unsubscribe = onSnapshot(clientsQuery, (snapshot) => {
+          const clientsData = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Cliente));
+          setClients(clientsData);
+          setIsLoadingClients(false);
+      }, (error) => {
+          console.error("FirebaseProvider: Error fetching clients:", error);
+          setClients([]);
+          setIsLoadingClients(false);
+      });
+
+      return () => unsubscribe();
+  }, [userAuthState.user, userAuthState.isUserLoading, firestore]);
+
+  // Effect to fetch all vehicles for the authenticated user based on their clients
+  useEffect(() => {
+    if (isLoadingClients || clients.length === 0) {
+      // If there are no clients, there are no vehicles to fetch
+      setVehiclesState({ vehicles: [], isLoading: false, error: null });
       return;
     }
 
-    const fetchVehicles = async () => {
-      setVehiclesState({ vehicles: [], isLoading: true, error: null });
-      try {
-        const clientesSnapshot = await getDocs(query(collection(firestore, 'clientes'), where('userId', '==', user.uid)));
-        const allVehicles: Veiculo[] = [];
-        for (const clienteDoc of clientesSnapshot.docs) {
-          const veiculosSnapshot = await getDocs(collection(firestore, 'clientes', clienteDoc.id, 'veiculos'));
-          veiculosSnapshot.forEach((doc) => {
-            allVehicles.push(doc.data() as Veiculo);
-          });
-        }
-        setVehiclesState({ vehicles: allVehicles, isLoading: false, error: null });
-      } catch (error: any) {
-        console.error("FirebaseProvider: Error fetching vehicles for user: ", error);
-        const contextualError = new FirestorePermissionError({
-          operation: 'list',
-          path: 'veiculos (subcollection)',
-        });
-        errorEmitter.emit('permission-error', contextualError);
-        setVehiclesState({ vehicles: [], isLoading: false, error: contextualError });
-      }
-    };
+    setVehiclesState(prevState => ({ ...prevState, isLoading: true }));
+    const unsubscribers: (() => void)[] = [];
+    let allVehicles: Veiculo[] = [];
 
-    fetchVehicles();
-  }, [userAuthState.user, userAuthState.isUserLoading, firestore]);
+    clients.forEach(cliente => {
+        const vehiclesQuery = collection(firestore, 'clientes', cliente.id, 'veiculos');
+        const unsubscribe = onSnapshot(vehiclesQuery, (snapshot) => {
+            // Remove old vehicles for this client
+            allVehicles = allVehicles.filter(v => v.clienteId !== cliente.id);
+            
+            // Add new/updated vehicles for this client
+            snapshot.forEach((doc) => {
+                allVehicles.push(doc.data() as Veiculo);
+            });
+            
+            // Update the state with the aggregated list
+            setVehiclesState({ vehicles: [...allVehicles], isLoading: false, error: null });
+
+        }, (error) => {
+            console.error(`FirebaseProvider: Error fetching vehicles for client ${cliente.id}:`, error);
+             setVehiclesState({ vehicles: [], isLoading: false, error: error as Error });
+        });
+        unsubscribers.push(unsubscribe);
+    });
+
+    return () => {
+      unsubscribers.forEach(unsub => unsub());
+    };
+  }, [clients, isLoadingClients, firestore]);
 
   // Memoize the context value
   const contextValue = useMemo((): FirebaseContextState => {
@@ -228,8 +256,8 @@ export function useMemoFirebase<T>(factory: () => T, deps: DependencyList): T | 
  * This provides the User object, loading status, and any auth errors.
  * @returns {UserHookResult} Object with user, isUserLoading, userError.
  */
-export const useUser = (): UserHookResult => { // Renamed from useAuthUser
-  const { user, isUserLoading, userError } = useFirebase(); // Leverages the main hook
+export const useUser = (): UserHookResult => { 
+  const { user, isUserLoading, userError } = useFirebase(); 
   return { user, isUserLoading, userError };
 };
 

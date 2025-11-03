@@ -20,10 +20,6 @@ import { useRouter } from 'next/navigation';
 import { useState } from 'react';
 import { doc, setDoc } from 'firebase/firestore';
 
-const passwordValidation = new RegExp(
-  /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$/
-);
-
 const formSchema = z
   .object({
     nome: z.string().min(2, 'O nome deve ter pelo menos 2 caracteres.'),
@@ -31,10 +27,7 @@ const formSchema = z
     email: z.string().email('Formato de e-mail inválido.'),
     password: z
       .string()
-      .min(8, 'A senha deve ter no mínimo 8 caracteres.')
-      .regex(passwordValidation, {
-        message: 'A senha precisa conter letra maiúscula, minúscula, número e símbolo.',
-      }),
+      .min(8, 'A senha deve ter no mínimo 8 caracteres.'),
     confirmPassword: z.string(),
   })
   .refine((data) => data.password === data.confirmPassword, {
@@ -160,7 +153,7 @@ export function CadastroForm() {
                 <Input type="password" placeholder="Crie uma senha forte" {...field} />
               </FormControl>
                <p className="text-[0.8rem] text-muted-foreground">
-                Mínimo 8 caracteres, com maiúscula, minúscula, número e símbolo.
+                Mínimo 8 caracteres.
               </p>
               <FormMessage />
             </FormItem>
