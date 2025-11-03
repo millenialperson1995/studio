@@ -57,14 +57,14 @@ service cloud.firestore {
     match /clientes/{clienteId}/veiculos/{veiculoId} {
         // Allow create if the new document belongs to the user.
         allow create: if isSignedIn() && isCreatingOwnedResource();
-        // Allow read, update, delete by checking the stored userId.
-        allow read, update, delete: if isSignedIn() && isOwner(get(/databases/$(database)/documents/clientes/$(clienteId)/veiculos/$(veiculoId)).data.userId);
+        // Allow read, update, delete by checking the parent client document's userId.
+        allow read, update, delete: if isSignedIn() && isOwner(get(/databases/$(database)/documents/clientes/$(clienteId)).data.userId);
     }
 
     // --- Collection Group Rules ---
     // This rule allows the useVehicles hook to query all vehicles belonging to the current user.
     match /{path=**}/veiculos/{veiculoId} {
-      allow read: if isSignedIn() && resource.data.userId == request.auth.uid;
+      allow list, read: if request.auth.uid != null && request.auth.uid == request.query.filters[0][2];
     }
   }
 }
