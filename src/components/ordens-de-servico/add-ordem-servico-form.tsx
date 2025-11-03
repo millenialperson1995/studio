@@ -130,16 +130,14 @@ export function AddOrdemServicoForm({
   }, [watchedServicos, watchedPecas]);
 
 
-  const totalValue = form.watch('valorTotal');
+  // Calcular o valor total em tempo real
+  const totalValue = watchedServicos.reduce((sum, servico) => sum + (Number(servico.valor) || 0), 0) + 
+    watchedPecas.reduce((sum, peca) => sum + ((Number(peca.quantidade) || 0) * (Number(peca.valorUnitario) || 0)), 0);
 
+  // Atualizar o campo valorTotal no formulário sempre que o total mudar
   useEffect(() => {
-    const totalServicos = watchedServicos.reduce((sum, servico) => sum + (Number(servico.valor) || 0), 0);
-    const totalPecas = watchedPecas.reduce((sum, peca) => sum + ((Number(peca.quantidade) || 0) * (Number(peca.valorUnitario) || 0)), 0);
-    const newTotal = totalServicos + totalPecas;
-    if (form.getValues('valorTotal') !== newTotal) {
-      form.setValue('valorTotal', newTotal);
-    }
-  }, [watchedServicos, watchedPecas, form]);
+    form.setValue('valorTotal', totalValue);
+  }, [totalValue, form]);
 
 
   const filteredVehicles = vehicles.filter(
