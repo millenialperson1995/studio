@@ -97,10 +97,8 @@ export function EditOrcamentoForm({
 
 
   const totalValue = watchedItens.reduce((sum, item) => {
-      const itemTotal = item.tipo === 'peca'
-        ? (Number(item.quantidade) || 0) * (Number(item.valorUnitario) || 0)
-        : (Number(item.valorTotal) || 0); // For services, use the manual total
-      return sum + itemTotal;
+    const itemTotal = Number(item.valorTotal) || 0;
+    return sum + itemTotal;
   }, 0);
 
   useEffect(() => {
@@ -118,19 +116,8 @@ export function EditOrcamentoForm({
     try {
       const orcamentoDocRef = doc(firestore, 'orcamentos', orcamento.id);
       
-      const finalItens = values.itens.map(item => {
-        const valorTotal = item.tipo === 'peca'
-          ? (Number(item.quantidade) || 0) * (Number(item.valorUnitario) || 0)
-          : (Number(item.valorTotal) || 0);
-        return {
-          ...item,
-          valorTotal,
-        };
-      });
-      
       const orcamentoData = {
         ...values,
-        itens: finalItens,
         valorTotal: totalValue,
       };
       

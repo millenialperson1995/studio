@@ -98,10 +98,8 @@ export function AddOrcamentoForm({
   const selectedItemIds = useMemo(() => watchedItens.map(item => item.itemId), [watchedItens]);
 
   const totalValue = watchedItens.reduce((sum, item) => {
-    const itemTotal = item.tipo === 'peca'
-        ? (Number(item.quantidade) || 0) * (Number(item.valorUnitario) || 0)
-        : (Number(item.valorTotal) || 0); // For services, use the manual total
-      return sum + itemTotal;
+    const itemTotal = Number(item.valorTotal) || 0;
+    return sum + itemTotal;
   }, 0);
 
 
@@ -121,19 +119,8 @@ export function AddOrcamentoForm({
       const orcamentosCollectionRef = collection(firestore, 'orcamentos');
       const newOrcamentoRef = doc(orcamentosCollectionRef);
 
-      const finalItens = values.itens.map(item => {
-        const valorTotal = item.tipo === 'peca' 
-            ? (Number(item.quantidade) || 0) * (Number(item.valorUnitario) || 0) 
-            : (Number(item.valorTotal) || 0);
-        return {
-          ...item,
-          valorTotal,
-        }
-      });
-
       const orcamentoData = {
         ...values,
-        itens: finalItens,
         valorTotal: totalValue,
         id: newOrcamentoRef.id,
         userId: user.uid, // Associate data with the logged-in user
