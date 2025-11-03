@@ -55,8 +55,9 @@ service cloud.firestore {
     // --- Subcollections ---
     // Rule for 'veiculos' as a subcollection.
     match /clientes/{clienteId}/veiculos/{veiculoId} {
-        // Allow list/read/write if the user owns the vehicle document itself.
-        allow write: if isSignedIn() && isCreatingOwnedResource();
+        // Allow create if the new document belongs to the user.
+        allow create: if isSignedIn() && isCreatingOwnedResource();
+        // Allow read, update, delete by checking the stored userId.
         allow read, update, delete: if isSignedIn() && isOwner(get(/databases/$(database)/documents/clientes/$(clienteId)/veiculos/$(veiculoId)).data.userId);
     }
 
