@@ -153,44 +153,31 @@ export const FirebaseProvider: React.FC<FirebaseProviderProps> = ({
     let allVehicles: Veiculo[] = [];
 
     clients.forEach(cliente => {
-        // This simplified query relies on security rules to enforce data access.
-        // The rule `allow read: if isOwner(resource.data.userId)` will correctly
-        // filter documents on the backend, document by document. This avoids
-        // the need for a composite index on the subcollection.
-        const vehiclesQuery = collection(firestore, 'clientes', cliente.id, 'veiculos');
+        const vehiclesQuery = query(collection(firestore, 'clientes', cliente.id, 'veiculos'), where('userId', '==', user.uid));
 
         const unsubscribe = onSnapshot(vehiclesQuery, (snapshot) => {
-            // This logic is tricky with multiple listeners. A better approach is to manage updates per client.
-            // For now, let's rebuild the list on each snapshot for simplicity.
             
-            // Filter out old vehicles for this client
             allVehicles = allVehicles.filter(v => v.clienteId !== cliente.id);
 
-            // Add new/updated vehicles for this client
             snapshot.forEach((doc) => {
                 allVehicles.push(doc.data() as Veiculo);
             });
             
-            // This might cause multiple re-renders but is safer.
             setVehiclesState(prevState => ({ ...prevState, vehicles: [...allVehicles] }));
 
         }, (error) => {
             console.error(`FirebaseProvider: Error fetching vehicles for client ${cliente.id}:`, error);
-            // Don't stop all vehicle loading if one client fails, but log the error
             setVehiclesState(prevState => ({...prevState, error: error as Error }));
         });
         unsubscribers.push(unsubscribe);
     });
 
-    // A simple way to handle loading state across multiple async listeners
     Promise.all(clients.map(c => new Promise(res => {
-      const q = collection(firestore, 'clientes', c.id, 'veiculos');
+      const q = query(collection(firestore, 'clientes', c.id, 'veiculos'), where('userId', '==', user.uid));
       const unsub = onSnapshot(q, () => {
-        // We only care about the initial load signal.
         unsub(); 
         res(true);
       }, () => {
-        // Also resolve on error to not block loading forever
         unsub();
         res(true);
       });
