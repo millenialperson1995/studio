@@ -60,11 +60,5 @@ service cloud.firestore {
         // Allow read, update, delete by checking the parent client document's userId.
         allow read, update, delete: if isSignedIn() && isOwner(get(/databases/$(database)/documents/clientes/$(clienteId)).data.userId);
     }
-
-    // --- Collection Group Rules ---
-    // This rule allows the useVehicles hook to query all vehicles belonging to the current user.
-    match /{path=**}/veiculos/{veiculoId} {
-      allow list, read: if request.auth.uid != null && request.query.filters[0][2] == request.auth.uid;
-    }
   }
 }

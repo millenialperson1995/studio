@@ -180,20 +180,66 @@ export const useUser = (): UserHookResult => {
 };
 
 export const useVehicles = () => {
-    const { user, firestore } = useFirebase();
-    const vehiclesQuery = useMemoFirebase(
-      () =>
-        user && firestore
-          ? query(collectionGroup(firestore, 'veiculos'), where('userId', '==', user.uid))
-          : null,
-      [user, firestore]
-    );
+  const { user } = useUser();
+  const firestore = useFirestore();
 
-    const { data: vehicles, isLoading, error } = useCollection<Veiculo>(vehiclesQuery);
+  const clientesCollectionRef = useMemoFirebase(
+    () => (firestore && user?.uid ? query(collection(firestore, 'clientes'), where('userId', '==', user.uid)) : null),
+    [firestore, user?.uid]
+  );
+  const { data: clients, isLoading: isLoadingClients } = useCollection<Cliente>(clientesCollectionRef);
+
+  const [vehicles, setVehicles] = useState<Veiculo[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<any>(null);
+
+  useEffect(() => {
+    if (isLoadingClients || !clients || !firestore || !user) {
+      setIsLoading(isLoadingClients);
+      return;
+    }
+
+    setIsLoading(true);
+    const unsubscribers: (() => void)[] = [];
+    let allVehicles: Veiculo[] = [];
+    let processedClients = 0;
     
-    return {
-        vehicles: vehicles || [],
-        isLoading,
-        error,
+    if(clients.length === 0) {
+        setIsLoading(false);
+        setVehicles([]);
+        return;
+    }
+
+    clients.forEach((cliente) => {
+      const vehiclesQuery = query(collection(firestore, 'clientes', cliente.id, 'veiculos'));
+      const unsubscribe = onSnapshot(
+        vehiclesQuery,
+        (snapshot) => {
+          const clientVehicles = snapshot.docs.map((doc) => ({ id: doc.id, ...doc.data() } as Veiculo));
+          
+          // Replace this client's vehicles with the new snapshot
+          allVehicles = allVehicles.filter(v => v.clienteId !== cliente.id).concat(clientVehicles);
+
+          processedClients++;
+          if (processedClients >= clients.length) {
+              setVehicles(allVehicles);
+              setIsLoading(false);
+              setError(null);
+          }
+        },
+        (err) => {
+          console.error(`FirebaseProvider: Error fetching vehicles for client ${cliente.id}:`, err);
+          setError(err);
+          setIsLoading(false);
+        }
+      );
+      unsubscribers.push(unsubscribe);
+    });
+
+    return () => {
+      unsubscribers.forEach((unsub) => unsub());
     };
+  }, [clients, isLoadingClients, firestore, user]);
+
+  return { vehicles, isLoading, error };
 };

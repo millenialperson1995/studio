@@ -34,6 +34,7 @@ import OrcamentoTable from '@/components/orcamentos/orcamento-table';
 import AuthenticatedPage from '@/components/layout/authenticated-page';
 import { toDate } from '@/lib/utils';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
+import { AddOrcamentoForm } from '@/components/orcamentos/add-orcamento-form';
 
 const ITEMS_PER_PAGE = 5;
 
