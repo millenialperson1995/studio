@@ -180,10 +180,9 @@ export default function OrcamentoTable({
           }
 
           const pecaData = pecaDoc.data() as Peca;
-          const estoqueDisponivel = pecaData.quantidadeEstoque - (pecaData.quantidadeReservada || 0);
-
-          if (estoqueDisponivel < itemPeca.quantidade) {
-            throw new Error(`Estoque insuficiente para a peça: ${itemPeca.descricao}. Disponível: ${estoqueDisponivel}, Solicitado: ${itemPeca.quantidade}`);
+          // CORRECTED LOGIC: Check against the physical stock, not the available stock after reservation.
+          if (pecaData.quantidadeEstoque < itemPeca.quantidade) {
+            throw new Error(`Estoque insuficiente para a peça: ${itemPeca.descricao}. Disponível: ${pecaData.quantidadeEstoque}, Solicitado: ${itemPeca.quantidade}`);
           }
         }
         
