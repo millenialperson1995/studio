@@ -130,15 +130,15 @@ export function AddOrdemServicoForm({
   }, [watchedServicos, watchedPecas]);
 
 
-  const totalValue = React.useMemo(() => {
-    const totalServicos = watchedServicos.reduce((sum, servico) => sum + (servico.valor || 0), 0);
-    const totalPecas = watchedPecas.reduce((sum, peca) => sum + ((peca.quantidade || 0) * (peca.valorUnitario || 0)), 0);
-    const newTotal = totalServicos + totalPecas;
-    if (form.getValues('valorTotal') !== newTotal) {
-        form.setValue('valorTotal', newTotal);
-    }
-    return newTotal;
-  }, [watchedServicos, watchedPecas, form]);
+  const totalValue = useMemo(() => {
+    const totalServicos = watchedServicos.reduce((sum, servico) => sum + (Number(servico.valor) || 0), 0);
+    const totalPecas = watchedPecas.reduce((sum, peca) => sum + ((Number(peca.quantidade) || 0) * (Number(peca.valorUnitario) || 0)), 0);
+    return totalServicos + totalPecas;
+  }, [watchedServicos, watchedPecas]);
+
+  useEffect(() => {
+    form.setValue('valorTotal', totalValue);
+  }, [totalValue, form]);
 
 
   const filteredVehicles = vehicles.filter(
@@ -179,6 +179,7 @@ export function AddOrdemServicoForm({
                 ...values,
                 id: newOSRef.id,
                 userId: user.uid,
+                valorTotal: totalValue, // Make sure to use the calculated total
                 createdAt: serverTimestamp()
             };
             
