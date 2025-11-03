@@ -2,8 +2,8 @@
 
 import { CadastroForm } from '@/components/auth/cadastro-form';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
+import { Logo } from '@/components/ui/logo';
 import { useUser } from '@/firebase';
-import Image from 'next/image';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useEffect } from 'react';
@@ -29,7 +29,7 @@ export default function CadastroPage() {
   return (
     <main className="flex h-screen w-screen items-center justify-center bg-gray-100 dark:bg-gray-900 p-4">
       <div className="w-full max-w-md mx-auto flex flex-col items-center text-center">
-        <Image src="/logo.svg" alt="Retífica Figueirêdo Logo" width={64} height={64} className="mb-4" />
+        <Logo className="mb-4 h-16 w-16" />
         <h1 className="text-3xl font-bold text-gray-900 dark:text-gray-50">
           Bem-vindo à Retífica Figueirêdo
         </h1>

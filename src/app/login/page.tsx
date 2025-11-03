@@ -26,8 +26,8 @@ import { useAuth, useUser } from '@/firebase';
 import { signInWithEmailAndPassword } from 'firebase/auth';
 import { useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
-import Image from 'next/image';
 import Link from 'next/link';
+import { Logo } from '@/components/ui/logo';
 
 const formSchema = z.object({
   email: z.string().email('Formato de e-mail inválido.'),
@@ -103,7 +103,7 @@ export default function LoginPage() {
   return (
     <main className="flex h-screen w-screen items-center justify-center bg-gray-100 dark:bg-gray-900 p-4">
       <div className="w-full max-w-sm mx-auto flex flex-col items-center text-center">
-        <Image src="/logo.svg" alt="Retífica Figueirêdo Logo" width={64} height={64} className="mb-4" />
+        <Logo className="mb-4 h-16 w-16" />
         <h1 className="text-3xl font-bold text-gray-900 dark:text-gray-50">
           Retífica Figueirêdo
         </h1>
