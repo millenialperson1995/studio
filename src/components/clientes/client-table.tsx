@@ -37,8 +37,8 @@ import { Button } from '@/components/ui/button';
 import { MoreHorizontal, Pencil, Trash2 } from 'lucide-react';
 import type { Cliente } from '@/lib/types';
 import { deleteDocumentNonBlocking } from '@/firebase/non-blocking-updates';
-import { doc } from 'firebase/firestore';
-import { useFirestore } from '@/firebase';
+import { doc, getDocs, collection, query, where, limit } from 'firebase/firestore';
+import { useFirestore, useUser } from '@/firebase';
 import { useToast } from '@/hooks/use-toast';
 import { EditClientForm } from './edit-client-form';
 
@@ -48,6 +48,7 @@ interface ClientTableProps {
 
 export default function ClientTable({ clients = [] }: ClientTableProps) {
   const firestore = useFirestore();
+  const { user } = useUser();
   const { toast } = useToast();
   
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
@@ -64,18 +65,72 @@ export default function ClientTable({ clients = [] }: ClientTableProps) {
     setIsDeleteDialogOpen(true);
   };
 
-  const handleDeleteConfirm = () => {
-    if (selectedClient && firestore) {
-      // Simple deletion without dependency checks
+  const handleDeleteConfirm = async () => {
+    if (!selectedClient || !firestore || !user) {
+      setIsDeleteDialogOpen(false);
+      return;
+    }
+  
+    try {
+      // Check for dependencies in orcamentos
+      const orcamentosQuery = query(
+        collection(firestore, 'orcamentos'),
+        where('userId', '==', user.uid),
+        where('clienteId', '==', selectedClient.id),
+        limit(1)
+      );
+      const orcamentosSnap = await getDocs(orcamentosQuery);
+  
+      if (!orcamentosSnap.empty) {
+        toast({
+          variant: 'destructive',
+          title: 'Exclusão Bloqueada',
+          description: `O cliente "${selectedClient.nome}" não pode ser excluído pois possui orçamentos associados.`,
+          duration: 7000,
+        });
+        setIsDeleteDialogOpen(false);
+        return;
+      }
+  
+      // Check for dependencies in ordensServico
+      const ordensQuery = query(
+        collection(firestore, 'ordensServico'),
+        where('userId', '==', user.uid),
+        where('clienteId', '==', selectedClient.id),
+        limit(1)
+      );
+      const ordensSnap = await getDocs(ordensQuery);
+  
+      if (!ordensSnap.empty) {
+        toast({
+          variant: 'destructive',
+          title: 'Exclusão Bloqueada',
+          description: `O cliente "${selectedClient.nome}" não pode ser excluído pois possui ordens de serviço associadas.`,
+          duration: 7000,
+        });
+        setIsDeleteDialogOpen(false);
+        return;
+      }
+
+      // If no dependencies, proceed with deletion
       const clientDocRef = doc(firestore, 'clientes', selectedClient.id);
       deleteDocumentNonBlocking(clientDocRef);
       toast({
         title: 'Cliente excluído',
         description: `O cliente "${selectedClient.nome}" foi removido.`,
       });
+
+    } catch (error) {
+        console.error("Error checking dependencies or deleting client: ", error);
+        toast({
+            variant: "destructive",
+            title: "Erro ao excluir",
+            description: "Ocorreu um erro ao verificar as dependências ou excluir o cliente. Tente novamente."
+        });
+    } finally {
+        setIsDeleteDialogOpen(false);
+        setSelectedClient(null);
     }
-    setIsDeleteDialogOpen(false);
-    setSelectedClient(null);
   };
 
   return (
@@ -146,7 +201,7 @@ export default function ClientTable({ clients = [] }: ClientTableProps) {
             <AlertDialogTitle>Você tem certeza?</AlertDialogTitle>
             <AlertDialogDescription>
               Esta ação não pode ser desfeita. Isso excluirá permanentemente o
-              cliente &quot;{selectedClient?.nome}&quot;. Veículos associados não serão excluídos.
+              cliente &quot;{selectedClient?.nome}&quot;.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
