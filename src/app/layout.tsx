@@ -9,9 +9,9 @@ export const metadata: Metadata = {
   title: 'Retífica Figueirêdo',
   description: 'Sistema de Gestão para Retíficas',
   manifest: '/manifest.json',
-  icons: [
-    { rel: 'icon', url: '/icons/logo.png' }
-  ]
+  icons: {
+    icon: '/favicon.ico',
+  },
 };
 
 export const viewport: Viewport = {
