@@ -37,7 +37,7 @@ import { Button } from '@/components/ui/button';
 import { MoreHorizontal, Pencil, Trash2 } from 'lucide-react';
 import type { Cliente } from '@/lib/types';
 import { deleteDocumentNonBlocking } from '@/firebase/non-blocking-updates';
-import { doc } from 'firebase/firestore';
+import { doc, getDocs, collection, query, where, limit } from 'firebase/firestore';
 import { useFirestore } from '@/firebase';
 import { useToast } from '@/hooks/use-toast';
 import { EditClientForm } from './edit-client-form';
@@ -64,8 +64,52 @@ export default function ClientTable({ clients = [] }: ClientTableProps) {
     setIsDeleteDialogOpen(true);
   };
 
-  const handleDeleteConfirm = () => {
+  const checkForDependencies = async (clientId: string): Promise<string[]> => {
+    if (!firestore) return ['Erro de conexão com o banco de dados.'];
+
+    const dependencies: string[] = [];
+
+    // Check for vehicles
+    const vehiclesQuery = query(collection(firestore, `clientes/${clientId}/veiculos`), limit(1));
+    const vehiclesSnapshot = await getDocs(vehiclesQuery);
+    if (!vehiclesSnapshot.empty) {
+      dependencies.push('veículos');
+    }
+
+    // Check for orcamentos
+    const orcamentosQuery = query(collection(firestore, 'orcamentos'), where('clienteId', '==', clientId), limit(1));
+    const orcamentosSnapshot = await getDocs(orcamentosQuery);
+    if (!orcamentosSnapshot.empty) {
+      dependencies.push('orçamentos');
+    }
+
+    // Check for ordens de serviço
+    const ordensQuery = query(collection(firestore, 'ordensServico'), where('clienteId', '==', clientId), limit(1));
+    const ordensSnapshot = await getDocs(ordensQuery);
+    if (!ordensSnapshot.empty) {
+      dependencies.push('ordens de serviço');
+    }
+    
+    return dependencies;
+};
+
+
+  const handleDeleteConfirm = async () => {
     if (selectedClient && firestore) {
+      
+      const dependencies = await checkForDependencies(selectedClient.id);
+      
+      if (dependencies.length > 0) {
+        toast({
+          variant: 'destructive',
+          title: 'Exclusão Bloqueada',
+          description: `Não é possível excluir este cliente. Ele possui ${dependencies.join(', ')} associados.`,
+          duration: 7000,
+        });
+        setIsDeleteDialogOpen(false);
+        return;
+      }
+      
       const clientDocRef = doc(firestore, 'clientes', selectedClient.id);
       deleteDocumentNonBlocking(clientDocRef);
       toast({

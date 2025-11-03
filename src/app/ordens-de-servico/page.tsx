@@ -20,7 +20,7 @@ import {
 } from '@/components/ui/card';
 import { useCollection, useFirestore, useUser, useVehicles } from '@/firebase';
 import { useMemoFirebase } from '@/firebase/provider';
-import { collection, query, where, orderBy } from 'firebase/firestore';
+import { collection, query, where } from 'firebase/firestore';
 import type { OrdemServico, Cliente, Peca, Servico } from '@/lib/types';
 import {
   Dialog,
@@ -34,6 +34,7 @@ import OrdemServicoTable from '@/components/ordens-de-servico/ordem-servico-tabl
 import { AddOrdemServicoForm } from '@/components/ordens-de-servico/add-ordem-servico-form';
 import AuthenticatedPage from '@/components/layout/authenticated-page';
 import { toDate } from '@/lib/utils';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 
 const ITEMS_PER_PAGE = 5;
 
@@ -74,7 +75,7 @@ function OrdensDeServicoContent() {
     
   const sortedOrdensServico = useMemo(() => {
     if (!ordensServico) return [];
-    return [...ordensServico].sort((a, b) => toDate(b.createdAt).getTime() - toDate(a.createdAt).getTime());
+    return [...ordensServico].sort((a, b) => toDate(b.dataEntrada).getTime() - toDate(a.dataEntrada).getTime());
   }, [ordensServico]);
 
   const totalPages = Math.ceil((sortedOrdensServico?.length || 0) / ITEMS_PER_PAGE);
@@ -85,6 +86,14 @@ function OrdensDeServicoContent() {
 
   const isLoading = isLoadingOrdens || isLoadingClients || isLoadingVehicles || isLoadingServicos || isLoadingPecas;
 
+  const canCreate = !isLoading && clients && clients.length > 0 && vehicles && vehicles.length > 0;
+  const buttonTooltip = (!clients || clients.length === 0) 
+    ? 'Cadastre um cliente primeiro.' 
+    : (!vehicles || vehicles.length === 0) 
+    ? 'Cadastre um veículo primeiro.' 
+    : 'Criar nova ordem de serviço';
+
+
   if (isLoading) {
     return null; // Skeleton handled by AuthenticatedPage
   }
@@ -94,12 +103,20 @@ function OrdensDeServicoContent() {
       <div className="flex items-center justify-between">
         <h1 className="text-2xl font-semibold">Ordens de Serviço</h1>
         <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
-          <DialogTrigger asChild>
-            <Button disabled={isLoading}>
-              <PlusCircle className="mr-2 h-4 w-4" />
-              Nova Ordem de Serviço
-            </Button>
-          </DialogTrigger>
+          <TooltipProvider>
+              <Tooltip>
+                  <TooltipTrigger asChild>
+                      <span tabIndex={canCreate ? -1 : 0}>
+                          <Button disabled={!canCreate} onClick={() => canCreate && setIsAddDialogOpen(true)}>
+                              <PlusCircle className="mr-2 h-4 w-4" />
+                              Nova Ordem de Serviço
+                          </Button>
+                      </span>
+                  </TooltipTrigger>
+                  {!canCreate && <TooltipContent>{buttonTooltip}</TooltipContent>}
+              </Tooltip>
+          </TooltipProvider>
+
           <DialogContent className="sm:max-w-4xl">
             <DialogHeader>
               <DialogTitle>Criar Nova Ordem de Serviço</DialogTitle>

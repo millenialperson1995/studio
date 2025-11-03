@@ -38,7 +38,7 @@ import { Badge } from '@/components/ui/badge';
 import { MoreHorizontal, Pencil, Trash2 } from 'lucide-react';
 import type { Peca } from '@/lib/types';
 import { deleteDocumentNonBlocking } from '@/firebase/non-blocking-updates';
-import { doc } from 'firebase/firestore';
+import { doc, getDocs, collection, query, where, limit } from 'firebase/firestore';
 import { useFirestore } from '@/firebase';
 import { useToast } from '@/hooks/use-toast';
 import { EditPecaForm } from './edit-peca-form';
@@ -66,8 +66,57 @@ export default function PecaTable({ pecas = [] }: PecaTableProps) {
     setIsDeleteDialogOpen(true);
   };
 
-  const handleDeleteConfirm = () => {
+  const checkForDependencies = async (pecaId: string): Promise<string[]> => {
+    if (!firestore) return ['Erro de conexão com o banco de dados.'];
+
+    const dependencies: string[] = [];
+
+    // Check for orcamentos
+    const orcamentosQuery = query(
+      collection(firestore, 'orcamentos'),
+      where('itens', 'array-contains', { itemId: pecaId }), // This is not a valid query. Firestore can't query inside array of objects this way.
+      limit(1)
+    );
+     // We need to fetch all and filter client-side, which is inefficient.
+     // For this app's scale, it's okay, but for larger apps, a different data model would be needed (e.g., a subcollection of item IDs).
+     const allOrcamentosSnap = await getDocs(collection(firestore, 'orcamentos'));
+     const foundInOrcamento = allOrcamentosSnap.docs.some(doc => 
+         doc.data().itens.some((item: any) => item.itemId === pecaId)
+     );
+    if (foundInOrcamento) {
+      dependencies.push('orçamentos');
+    }
+
+    // Check for ordens de serviço
+     const allOrdensSnap = await getDocs(collection(firestore, 'ordensServico'));
+     const foundInOrdem = allOrdensSnap.docs.some(doc =>
+        doc.data().pecas.some((peca: any) => peca.itemId === pecaId)
+     );
+    if (foundInOrdem) {
+      dependencies.push('ordens de serviço');
+    }
+    
+    return dependencies;
+  };
+
+
+  const handleDeleteConfirm = async () => {
     if (selectedPeca && firestore) {
+
+        const dependencies = await checkForDependencies(selectedPeca.id);
+      
+        if (dependencies.length > 0) {
+          toast({
+            variant: 'destructive',
+            title: 'Exclusão Bloqueada',
+            description: `Não é possível excluir esta peça. Ela está sendo usada em ${dependencies.join(' e ')}.`,
+            duration: 7000,
+          });
+          setIsDeleteDialogOpen(false);
+          return;
+        }
+
+
       const pecaDocRef = doc(firestore, 'pecas', selectedPeca.id);
       deleteDocumentNonBlocking(pecaDocRef);
       toast({

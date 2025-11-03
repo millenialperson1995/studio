@@ -20,7 +20,7 @@ import {
 } from '@/components/ui/card';
 import { useCollection, useFirestore, useUser, useVehicles } from '@/firebase';
 import { useMemoFirebase } from '@/firebase/provider';
-import { collection, query, where, orderBy } from 'firebase/firestore';
+import { collection, query, where } from 'firebase/firestore';
 import type { Orcamento, Cliente, Servico, Peca } from '@/lib/types';
 import {
   Dialog,
@@ -34,6 +34,7 @@ import OrcamentoTable from '@/components/orcamentos/orcamento-table';
 import { AddOrcamentoForm } from '@/components/orcamentos/add-orcamento-form';
 import AuthenticatedPage from '@/components/layout/authenticated-page';
 import { toDate } from '@/lib/utils';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 
 const ITEMS_PER_PAGE = 5;
 
@@ -72,7 +73,7 @@ function OrcamentosContent() {
 
   const sortedOrcamentos = useMemo(() => {
     if (!orcamentos) return [];
-    return [...orcamentos].sort((a, b) => toDate(b.createdAt).getTime() - toDate(a.createdAt).getTime());
+    return [...orcamentos].sort((a, b) => toDate(b.dataCriacao).getTime() - toDate(a.dataCriacao).getTime());
   }, [orcamentos]);
   
   const totalPages = Math.ceil((sortedOrcamentos?.length || 0) / ITEMS_PER_PAGE);
@@ -83,6 +84,14 @@ function OrcamentosContent() {
 
   const isLoading = isLoadingOrcamentos || isLoadingClients || isLoadingVehicles || isLoadingServicos || isLoadingPecas;
 
+  const canCreate = !isLoading && clients && clients.length > 0 && vehicles && vehicles.length > 0;
+  const buttonTooltip = (!clients || clients.length === 0) 
+    ? 'Cadastre um cliente primeiro.' 
+    : (!vehicles || vehicles.length === 0) 
+    ? 'Cadastre um veículo primeiro.' 
+    : 'Criar novo orçamento';
+
+
   if (isLoading) {
     return null; // Skeleton handled by AuthenticatedPage
   }
@@ -92,12 +101,21 @@ function OrcamentosContent() {
       <div className="flex items-center justify-between">
         <h1 className="text-2xl font-semibold">Orçamentos</h1>
         <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
-          <DialogTrigger asChild>
-            <Button disabled={isLoading}>
-              <PlusCircle className="mr-2 h-4 w-4" />
-              Novo Orçamento
-            </Button>
-          </DialogTrigger>
+          <TooltipProvider>
+            <Tooltip>
+                <TooltipTrigger asChild>
+                    {/* The button is wrapped in a span to allow tooltip to show even when disabled */}
+                    <span tabIndex={canCreate ? -1 : 0}> 
+                         <Button disabled={!canCreate} onClick={() => canCreate && setIsAddDialogOpen(true)}>
+                           <PlusCircle className="mr-2 h-4 w-4" />
+                           Novo Orçamento
+                        </Button>
+                    </span>
+                </TooltipTrigger>
+                {!canCreate && <TooltipContent>{buttonTooltip}</TooltipContent>}
+            </Tooltip>
+           </TooltipProvider>
+
           <DialogContent className="sm:max-w-4xl">
             <DialogHeader>
               <DialogTitle>Criar Novo Orçamento</DialogTitle>
