@@ -25,16 +25,25 @@ export interface UseCollectionResult<T> {
   error: FirestoreError | Error | null; // Error object, or null.
 }
 
-/* Internal implementation of Query:
-  https://github.com/firebase/firebase-js-sdk/blob/c5f08a9bc5da0d2b0207802c972d53724ccef055/packages/firestore/src/lite-api/reference.ts#L143
-*/
-export interface InternalQuery extends Query<DocumentData> {
-  _query: {
-    path: {
-      canonicalString(): string;
-      toString(): string;
+/**
+ * A simplified representation of a Firestore path from a query.
+ * This avoids relying on internal `_query` properties.
+ */
+function getPathFromQuery(q: Query | CollectionReference): string {
+    if (q.type === 'collection') {
+        return (q as CollectionReference).path;
     }
-  }
+    // For queries, we can get the parent collection reference and use its path.
+    // This is a more stable approach than accessing private properties.
+    if ('_query' in q && (q as any)._query?.path) {
+      return (q as any)._query.path.toString();
+    }
+    // As a fallback for complex queries where path isn't straightforward.
+    console.warn("Could not determine exact path for complex query. Falling back to collection ID if possible.");
+    if ('_query' in q && (q as any)._query?.collectionGroup) {
+      return `Collection Group: ${(q as any)._query.collectionGroup}`;
+    }
+    return 'unknown path';
 }
 
 /**
@@ -85,11 +94,7 @@ export function useCollection<T = any>(
         setIsLoading(false);
       },
       (error: FirestoreError) => {
-        // This logic extracts the path from either a ref or a query
-        const path: string =
-          memoizedTargetRefOrQuery.type === 'collection'
-            ? (memoizedTargetRefOrQuery as CollectionReference).path
-            : (memoizedTargetRefOrQuery as unknown as InternalQuery)._query.path.canonicalString()
+        const path = getPathFromQuery(memoizedTargetRefOrQuery);
 
         const contextualError = new FirestorePermissionError({
           operation: 'list',

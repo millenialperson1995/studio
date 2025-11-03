@@ -27,18 +27,20 @@ interface ItemSelectorProps {
     servicos: Servico[];
     onSelect: (item: Peca | Servico, type: 'peca' | 'servico') => void;
     trigger: React.ReactNode;
+    selectedItemIds: string[];
 }
 
-export function ItemSelector({ pecas, servicos, onSelect, trigger }: ItemSelectorProps) {
+export function ItemSelector({ pecas, servicos, onSelect, trigger, selectedItemIds }: ItemSelectorProps) {
   const [open, setOpen] = React.useState(false);
   const { toast } = useToast();
 
   const handleSelect = (item: Peca | Servico, type: 'peca' | 'servico') => {
-    // A validação de estoque real será feita na geração da OS.
-    // O orçamento pode ser criado mesmo que o estoque esteja baixo/negativo.
     onSelect(item, type);
     setOpen(false)
   }
+  
+  const filteredServicos = servicos.filter(s => !selectedItemIds.includes(s.id));
+  const filteredPecas = pecas.filter(p => !selectedItemIds.includes(p.id));
 
   return (
     <Popover open={open} onOpenChange={setOpen}>
@@ -50,43 +52,46 @@ export function ItemSelector({ pecas, servicos, onSelect, trigger }: ItemSelecto
           <CommandInput placeholder="Buscar peça ou serviço..." />
           <CommandList>
             <CommandEmpty>Nenhum item encontrado.</CommandEmpty>
-            <CommandGroup heading="Serviços">
-              {servicos.map((servico) => (
-                <CommandItem
-                  key={`servico-${servico.id}`}
-                  value={servico.descricao}
-                  onSelect={() => handleSelect(servico, 'servico')}
-                >
-                  <Wrench className="mr-2 h-4 w-4" />
-                  {servico.descricao}
-                </CommandItem>
-              ))}
-            </CommandGroup>
-            <CommandSeparator />
-            <CommandGroup heading="Peças">
-              {pecas.map((peca) => {
-                const estoqueFisico = peca.quantidadeEstoque;
-                const isAvailable = estoqueFisico > 0;
-                return (
-                    <CommandItem
-                    key={`peca-${peca.id}`}
-                    value={peca.descricao}
-                    onSelect={() => handleSelect(peca, 'peca')}
-                    // O item pode ser selecionado mesmo sem estoque para o orçamento.
-                    // Apenas o feedback visual é alterado.
-                    className={cn(!isAvailable && "text-muted-foreground")}
-                    >
-                    <Package className="mr-2 h-4 w-4" />
-                    <div className="flex justify-between w-full">
-                        <span>{peca.descricao}</span>
-                        <span className={cn("text-xs", isAvailable ? 'text-green-600' : 'text-red-600')}>
-                            {estoqueFisico} em estoque
-                        </span>
-                    </div>
-                    </CommandItem>
-                )
-              })}
-            </CommandGroup>
+            {filteredServicos.length > 0 && (
+              <CommandGroup heading="Serviços">
+                {filteredServicos.map((servico) => (
+                  <CommandItem
+                    key={`servico-${servico.id}`}
+                    value={`${servico.descricao} ${servico.codigo}`}
+                    onSelect={() => handleSelect(servico, 'servico')}
+                  >
+                    <Wrench className="mr-2 h-4 w-4" />
+                    {servico.descricao}
+                  </CommandItem>
+                ))}
+              </CommandGroup>
+            )}
+            
+            {filteredPecas.length > 0 && filteredServicos.length > 0 && <CommandSeparator />}
+
+            {filteredPecas.length > 0 && (
+              <CommandGroup heading="Peças">
+                {filteredPecas.map((peca) => {
+                  const estoqueFisico = peca.quantidadeEstoque;
+                  const isAvailable = estoqueFisico > 0;
+                  return (
+                      <CommandItem
+                      key={`peca-${peca.id}`}
+                      value={`${peca.descricao} ${peca.codigo}`}
+                      onSelect={() => handleSelect(peca, 'peca')}
+                      >
+                      <Package className="mr-2 h-4 w-4" />
+                      <div className="flex justify-between w-full">
+                          <span>{peca.descricao}</span>
+                          <span className={cn("text-xs", isAvailable ? 'text-green-600' : 'text-red-600')}>
+                              {estoqueFisico} em estoque
+                          </span>
+                      </div>
+                      </CommandItem>
+                  )
+                })}
+              </CommandGroup>
+            )}
           </CommandList>
         </Command>
       </PopoverContent>

@@ -189,12 +189,6 @@ export default function OrcamentoTable({
         // 2. Reserve all parts
         for (const itemPeca of pecasDoOrcamento) {
             const pecaRef = doc(firestore, 'pecas', itemPeca.itemId!);
-            // It's safe to re-read without `transaction.get()` here as we are in a transaction,
-            // but for absolute certainty it can be included.
-            // const pecaDoc = await transaction.get(pecaRef); 
-            // const pecaData = pecaDoc.data() as Peca;
-            
-            // This update needs to read the current state from the DB before incrementing
             const pecaDoc = await transaction.get(pecaRef);
             const pecaData = pecaDoc.data() as Peca;
             

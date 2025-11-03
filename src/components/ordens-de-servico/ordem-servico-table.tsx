@@ -39,7 +39,7 @@ import { Badge } from '@/components/ui/badge';
 import { MoreHorizontal, Pencil, Trash2, DollarSign, FileDown } from 'lucide-react';
 import type { OrdemServico, Cliente, Veiculo, Peca, Servico, Oficina } from '@/lib/types';
 import { deleteDocumentNonBlocking, updateDocumentNonBlocking } from '@/firebase/non-blocking-updates';
-import { doc, getDoc, serverTimestamp } from 'firebase/firestore';
+import { doc, getDoc, serverTimestamp, runTransaction, Transaction } from 'firebase/firestore';
 import { useFirestore, useUser, useVehicles } from '@/firebase';
 import { useToast } from '@/hooks/use-toast';
 import { EditOrdemServicoForm } from './edit-ordem-servico-form';
@@ -157,18 +157,54 @@ export default function OrdemServicoTable({
     }
   };
 
-  const handleDeleteConfirm = () => {
-    if (selectedOrdem && firestore) {
-      // Ordens de Serviço are now in a top-level collection
-      const ordemDocRef = doc(firestore, 'ordensServico', selectedOrdem.id);
-      deleteDocumentNonBlocking(ordemDocRef);
+  const handleDeleteConfirm = async () => {
+    if (!selectedOrdem || !firestore) return;
+
+    try {
+      await runTransaction(firestore, async (transaction: Transaction) => {
+        const ordemDocRef = doc(firestore, 'ordensServico', selectedOrdem.id);
+        const ordemDoc = await transaction.get(ordemDocRef);
+
+        if (!ordemDoc.exists()) {
+          throw new Error('Ordem de serviço não encontrada.');
+        }
+
+        const osData = ordemDoc.data() as OrdemServico;
+
+        // Only un-reserve stock if the OS is NOT 'concluida' and came from a quote.
+        if (osData.status !== 'concluida' && osData.orcamentoId) {
+          for (const itemPeca of osData.pecas) {
+            if (itemPeca.itemId) {
+              const pecaRef = doc(firestore, 'pecas', itemPeca.itemId);
+              const pecaDoc = await transaction.get(pecaRef);
+              if (pecaDoc.exists()) {
+                const pecaData = pecaDoc.data() as Peca;
+                transaction.update(pecaRef, {
+                  quantidadeReservada: Math.max(0, (pecaData.quantidadeReservada || 0) - itemPeca.quantidade),
+                });
+              }
+            }
+          }
+        }
+        
+        transaction.delete(ordemDocRef);
+      });
+
       toast({
         title: 'Ordem de Serviço excluída',
-        description: `A ordem de serviço foi removida com sucesso.`,
+        description: 'A OS e as reservas de peças associadas foram removidas.',
       });
+    } catch (error: any) {
+        toast({
+            variant: 'destructive',
+            title: 'Erro ao excluir OS',
+            description: error.message || 'Não foi possível excluir a Ordem de Serviço.',
+            duration: 7000,
+        });
+    } finally {
+        setIsDeleteDialogOpen(false);
+        setSelectedOrdem(null);
     }
-    setIsDeleteDialogOpen(false);
-    setSelectedOrdem(null);
   };
   
   const formatDate = (date: any) => {
@@ -286,7 +322,7 @@ export default function OrdemServicoTable({
             <AlertDialogTitle>Você tem certeza?</AlertDialogTitle>
             <AlertDialogDescription>
               Esta ação não pode ser desfeita. Isso excluirá permanentemente a
-              ordem de serviço.
+              ordem de serviço e devolverá as peças reservadas (se aplicável) ao estoque.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>

@@ -27,7 +27,7 @@ import { useFirestore, useUser } from '@/firebase';
 import { useToast } from '@/hooks/use-toast';
 import type { Orcamento, Cliente, Veiculo, Peca, Servico } from '@/lib/types';
 import { Trash2, PlusCircle, CalendarIcon } from 'lucide-react';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { Popover, PopoverContent, PopoverTrigger } from '../ui/popover';
 import { Calendar } from '../ui/calendar';
 import { cn } from '@/lib/utils';
@@ -35,8 +35,8 @@ import { format } from 'date-fns';
 import { ItemSelector } from './item-selector';
 
 const itemSchema = z.object({
-  itemId: z.string().optional(),
-  tipo: z.enum(['peca', 'servico']).optional(),
+  itemId: z.string().min(1, 'Item inválido'),
+  tipo: z.enum(['peca', 'servico']),
   descricao: z.string().min(1, 'A descrição é obrigatória.'),
   quantidade: z.coerce.number().min(0.1, 'A quantidade deve ser maior que 0.'),
   valorUnitario: z.coerce.number().min(0, 'O valor deve ser positivo.'),
@@ -93,6 +93,9 @@ export function EditOrcamentoForm({
   });
 
   const watchedItens = form.watch('itens');
+  const selectedItemIds = useMemo(() => watchedItens.map(item => item.itemId).filter(Boolean) as string[], [watchedItens]);
+
+
   const totalValue = watchedItens.reduce((sum, item) => {
       const itemTotal = (item.quantidade || 0) * (item.valorUnitario || 0);
       return sum + itemTotal;
@@ -143,13 +146,14 @@ export function EditOrcamentoForm({
     }
   }
 
-  const handleItemSelect = (index: number, item: Peca | Servico, type: 'peca' | 'servico') => {
-    update(index, {
-        ...form.getValues(`itens.${index}`),
+  const handleItemSelect = (item: Peca | Servico, type: 'peca' | 'servico') => {
+    append({
         itemId: item.id,
         tipo: type,
         descricao: item.descricao,
-        valorUnitario: type === 'peca' ? (item as Peca).valorVenda : (item as Servico).valorPadrao
+        valorUnitario: type === 'peca' ? (item as Peca).valorVenda : (item as Servico).valorPadrao,
+        quantidade: 1,
+        valorTotal: type === 'peca' ? (item as Peca).valorVenda : (item as Servico).valorPadrao,
     })
   }
 
@@ -219,7 +223,21 @@ export function EditOrcamentoForm({
         </div>
 
         <div className="space-y-4 rounded-md border p-4">
-          <h3 className="font-medium">Itens do Orçamento</h3>
+          <div className="flex justify-between items-center">
+            <h3 className="font-medium">Itens do Orçamento</h3>
+             <ItemSelector
+                pecas={pecas}
+                servicos={servicos}
+                onSelect={handleItemSelect}
+                selectedItemIds={selectedItemIds}
+                trigger={
+                    <Button type="button" variant="outline" size="sm">
+                        <PlusCircle className="mr-2 h-4 w-4" />
+                        Adicionar Item
+                    </Button>
+                }
+            />
+          </div>
           {fields.length > 0 && (
             <div className="hidden md:grid grid-cols-12 gap-x-2 text-sm font-medium text-muted-foreground px-1">
                 <div className="col-span-5">Item/Descrição</div>
@@ -245,21 +263,13 @@ export function EditOrcamentoForm({
                       name={`itens.${index}.descricao`}
                       render={({ field }) => (
                         <FormItem className="w-full">
-                          <ItemSelector
-                            pecas={pecas}
-                            servicos={servicos}
-                            onSelect={(item, type) =>
-                              handleItemSelect(index, item, type)
-                            }
-                            trigger={
-                              <FormControl>
+                           <FormControl>
                                 <Input
-                                  placeholder="Selecione ou digite um item"
-                                  {...field}
+                                    readOnly
+                                    disabled
+                                    {...field}
                                 />
-                              </FormControl>
-                            }
-                          />
+                            </FormControl>
                            <FormMessage />
                         </FormItem>
                       )}
@@ -314,15 +324,9 @@ export function EditOrcamentoForm({
               </div>
             );
           })}
-          <Button
-            type="button"
-            variant="outline"
-            size="sm"
-            onClick={() => append({ descricao: '', quantidade: 1, valorUnitario: 0, valorTotal: 0 })}
-          >
-            <PlusCircle className="mr-2 h-4 w-4" />
-            Adicionar Item
-          </Button>
+           {fields.length === 0 && (
+             <p className="text-sm text-muted-foreground text-center py-4">Nenhum item adicionado.</p>
+          )}
         </div>
         
         <div className="flex flex-col md:flex-row gap-4">
