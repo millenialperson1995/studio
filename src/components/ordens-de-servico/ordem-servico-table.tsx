@@ -158,22 +158,37 @@ export default function OrdemServicoTable({
 
   const handleDeleteConfirm = async () => {
     if (!selectedOrdem || !firestore) return;
-
+  
     try {
-      await runTransaction(firestore, async (transaction: Transaction) => {
-        const ordemDocRef = doc(firestore, 'ordensServico', selectedOrdem.id);
-        const osDoc = await transaction.get(ordemDocRef);
-        if (!osDoc.exists()) {
-          throw new Error('Ordem de serviço não encontrada.');
+      // Step 1: Pre-fetch the documents outside the transaction
+      // This validates read permissions before the transaction starts.
+      const ordemDocRef = doc(firestore, 'ordensServico', selectedOrdem.id);
+      const osDoc = await getDoc(ordemDocRef);
+  
+      if (!osDoc.exists()) {
+        throw new Error('Ordem de serviço não encontrada.');
+      }
+      const osData = osDoc.data() as OrdemServico;
+  
+      let orcamentoDoc = null;
+      if (osData.orcamentoId) {
+        const orcamentoRef = doc(firestore, 'orcamentos', osData.orcamentoId);
+        orcamentoDoc = await getDoc(orcamentoRef);
+        if (!orcamentoDoc.exists()) {
+          // If the quote doesn't exist, we can still proceed with deleting the OS,
+          // but we log a warning. The transaction will simply not update a non-existent doc.
+          console.warn(`Orçamento com ID ${osData.orcamentoId} não foi encontrado, mas a exclusão da OS continuará.`);
         }
-
-        const osData = osDoc.data() as OrdemServico;
-
-        // 1. Un-reserve parts if the OS is not 'concluida'
+      }
+  
+      // Step 2: Run the transaction with all necessary data pre-fetched
+      await runTransaction(firestore, async (transaction: Transaction) => {
+        // 2a. Un-reserve parts if the OS is not 'concluida'
         if (osData.status !== 'concluida') {
           for (const itemPeca of osData.pecas) {
             if (itemPeca.itemId) {
               const pecaRef = doc(firestore, 'pecas', itemPeca.itemId);
+              // We need to get the part inside the transaction to ensure we have the latest data
               const pecaDoc = await transaction.get(pecaRef);
               if (pecaDoc.exists()) {
                 const pecaData = pecaDoc.data() as Peca;
@@ -184,26 +199,22 @@ export default function OrdemServicoTable({
             }
           }
         }
-
-        // 2. Reset the original quote status if it exists
-        if (osData.orcamentoId) {
-          const orcamentoRef = doc(firestore, 'orcamentos', osData.orcamentoId);
-          const orcamentoDoc = await transaction.get(orcamentoRef);
-          if (orcamentoDoc.exists()) {
-              transaction.update(orcamentoRef, {
-                  status: 'pendente',
-                  ordemServicoId: null,
-              });
-          }
+  
+        // 2b. Reset the original quote status if it exists
+        if (orcamentoDoc && orcamentoDoc.exists()) {
+            transaction.update(orcamentoDoc.ref, {
+                status: 'pendente',
+                ordemServicoId: null,
+            });
         }
-
-        // 3. Delete the service order
+  
+        // 2c. Delete the service order
         transaction.delete(ordemDocRef);
       });
-
+  
       toast({
         title: 'Ordem de Serviço excluída',
-        description: 'A OS foi removida, o estoque foi ajustado e o orçamento original foi restaurado.',
+        description: 'A OS foi removida e o estoque foi ajustado.',
       });
     } catch (error: any) {
       toast({
@@ -212,6 +223,7 @@ export default function OrdemServicoTable({
         description: error.message || 'Não foi possível excluir a Ordem de Serviço.',
         duration: 7000,
       });
+      console.error("Firestore Transaction Error:", error);
     } finally {
       setIsDeleteDialogOpen(false);
       setSelectedOrdem(null);
