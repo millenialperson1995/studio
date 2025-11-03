@@ -80,12 +80,13 @@ export default function PecaTable({ pecas = [] }: PecaTableProps) {
   };
 
   const renderEstoqueBadge = (peca: Peca) => {
-    return peca.quantidadeEstoque <= peca.quantidadeMinima ? (
+    const estoqueDisponivel = peca.quantidadeEstoque - peca.quantidadeReservada;
+    return estoqueDisponivel <= peca.quantidadeMinima ? (
         <Badge variant="destructive" className="text-xs">
-            {peca.quantidadeEstoque} (Baixo)
+            {estoqueDisponivel} (Baixo)
         </Badge>
     ) : (
-        peca.quantidadeEstoque
+        estoqueDisponivel
     );
   }
 
@@ -114,7 +115,12 @@ export default function PecaTable({ pecas = [] }: PecaTableProps) {
                 <TableRow key={peca.id}>
                   <TableCell className="font-medium">{peca.codigo}</TableCell>
                   <TableCell>{peca.descricao}</TableCell>
-                  <TableCell>{renderEstoqueBadge(peca)}</TableCell>
+                  <TableCell>
+                    {renderEstoqueBadge(peca)}
+                    <span className="text-xs text-muted-foreground ml-1">
+                      (Res: {peca.quantidadeReservada || 0})
+                    </span>
+                  </TableCell>
                   <TableCell>{formatCurrency(peca.valorVenda)}</TableCell>
                   <TableCell>
                     <DropdownMenu>
@@ -189,8 +195,13 @@ export default function PecaTable({ pecas = [] }: PecaTableProps) {
                         </div>
 
                         <div className="flex justify-between items-center text-sm pt-2">
-                           <div className="text-muted-foreground">Estoque</div>
+                           <div className="text-muted-foreground">Estoque Disponível</div>
                            <div>{renderEstoqueBadge(peca)}</div>
+                        </div>
+
+                        <div className="flex justify-between items-center text-sm">
+                           <div className="text-muted-foreground">Qtd. Reservada</div>
+                           <div>{peca.quantidadeReservada || 0}</div>
                         </div>
 
                         <div className="flex justify-between items-center text-sm">

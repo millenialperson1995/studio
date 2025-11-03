@@ -130,7 +130,6 @@ export function EditOrdemServicoForm({
   const paymentStatus = form.watch('statusPagamento');
 
   const selectedItemIds = useMemo(() => {
-    // We don't have a unique ID for manually entered services, so we use their description
     const servicosIds = watchedServicos.map(s => s.descricao); 
     const pecasIds = watchedPecas.map(p => p.itemId).filter(Boolean) as string[];
     return [...servicosIds, ...pecasIds];
@@ -143,6 +142,8 @@ export function EditOrdemServicoForm({
     }
      if (paymentStatus === 'Pago' && !form.getValues('dataPagamento')) {
       form.setValue('dataPagamento', new Date());
+    } else if (paymentStatus !== 'Pago' && form.getValues('dataPagamento')) {
+        form.setValue('dataPagamento', null);
     }
   }, [statusValue, paymentStatus, form]);
 
@@ -210,7 +211,7 @@ export function EditOrdemServicoForm({
                 }
             }
             // From "PENDENTE" or "ANDAMENTO" to "CANCELADA"
-            else if (isChangingToCancelada && originalOrdem.orcamentoId) { 
+            else if (isChangingToCancelada && (originalOrdem.status === 'pendente' || originalOrdem.status === 'andamento')) { 
                  for (const itemPeca of originalOrdem.pecas) {
                     if (!itemPeca.itemId) continue;
                     const pecaRef = doc(firestore, 'pecas', itemPeca.itemId);

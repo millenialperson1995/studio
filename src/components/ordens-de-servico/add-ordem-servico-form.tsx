@@ -3,7 +3,7 @@
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useForm, useFieldArray } from 'react-hook-form';
 import { z } from 'zod';
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import {
   Form,
@@ -23,7 +23,7 @@ import {
 } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
 import { addDocumentNonBlocking } from '@/firebase/non-blocking-updates';
-import { collection, serverTimestamp, doc, getDoc } from 'firebase/firestore';
+import { collection, serverTimestamp, doc, runTransaction, Transaction } from 'firebase/firestore';
 import { useFirestore, useUser } from '@/firebase';
 import { useToast } from '@/hooks/use-toast';
 import type { Cliente, Veiculo, Peca, Servico } from '@/lib/types';
@@ -85,11 +85,11 @@ export function AddOrdemServicoForm({
           if (item.itemId) {
             const peca = pecasMap.get(item.itemId);
             if (peca) {
-              // Use physical stock for validation, not available stock
-              if (item.quantidade > peca.quantidadeEstoque) {
+              const estoqueDisponivel = peca.quantidadeEstoque - (peca.quantidadeReservada || 0);
+              if (item.quantidade > estoqueDisponivel) {
                 ctx.addIssue({
                   code: z.ZodIssueCode.custom,
-                  message: `Estoque insuficiente. Em estoque: ${peca.quantidadeEstoque}`,
+                  message: `Estoque indisponível. Disponível: ${estoqueDisponivel}`,
                   path: [index, 'quantidade'],
                 });
               }
@@ -125,7 +125,6 @@ export function AddOrdemServicoForm({
   const watchedPecas = form.watch('pecas');
   
   const selectedItemIds = useMemo(() => {
-    // We don't have a unique ID for manually entered services, so we use their description
     const servicosIds = watchedServicos.map(s => s.descricao); 
     const pecasIds = watchedPecas.map(p => p.itemId).filter(Boolean) as string[];
     return [...servicosIds, ...pecasIds];
@@ -150,54 +149,56 @@ export function AddOrdemServicoForm({
   async function onSubmit(values: z.infer<typeof formSchema>) {
     if (!firestore || !user) return;
     
-    // Final stock check before submission
-    for (const item of values.pecas) {
-        if (item.itemId) {
-            const pecaRef = doc(firestore, 'pecas', item.itemId);
-            const pecaDoc = await getDoc(pecaRef);
-            if (pecaDoc.exists()) {
+    try {
+        await runTransaction(firestore, async (transaction: Transaction) => {
+            // 1. Reserve all parts and check stock
+            for (const itemPeca of values.pecas) {
+                if (!itemPeca.itemId) continue; // Skip manually added parts without an ID
+                
+                const pecaRef = doc(firestore, 'pecas', itemPeca.itemId);
+                const pecaDoc = await transaction.get(pecaRef);
+
+                if (!pecaDoc.exists()) {
+                    throw new Error(`A peça ${itemPeca.descricao} não foi encontrada no estoque.`);
+                }
                 const pecaData = pecaDoc.data() as Peca;
                 const estoqueDisponivel = pecaData.quantidadeEstoque - (pecaData.quantidadeReservada || 0);
-                if (item.quantidade > estoqueDisponivel) {
-                    toast({
-                        variant: 'destructive',
-                        title: 'Erro de Estoque',
-                        description: `A peça "${item.descricao}" não tem estoque suficiente. Ação cancelada.`,
-                        duration: 7000,
-                    });
-                    return; // Abort submission
+                if (itemPeca.quantidade > estoqueDisponivel) {
+                    throw new Error(`Estoque insuficiente para: ${pecaData.descricao}. Disponível: ${estoqueDisponivel}`);
                 }
+                // Reserve the part
+                transaction.update(pecaRef, {
+                    quantidadeReservada: (pecaData.quantidadeReservada || 0) + itemPeca.quantidade
+                });
             }
-        }
-    }
 
+            // 2. Create the Service Order
+            const osCollectionRef = collection(firestore, 'ordensServico');
+            const newOSRef = doc(osCollectionRef);
 
-    try {
-      const osCollectionRef = collection(firestore, 'ordensServico');
-      const newOSRef = doc(osCollectionRef);
+            const osData = {
+                ...values,
+                id: newOSRef.id,
+                userId: user.uid,
+                createdAt: serverTimestamp()
+            };
+            
+            transaction.set(newOSRef, osData);
+        });
 
-      const osData = {
-          ...values,
-          id: newOSRef.id,
-          userId: user.uid,
-          createdAt: serverTimestamp()
-      }
-      
-      await addDocumentNonBlocking(newOSRef, osData);
+        toast({
+            title: 'Sucesso!',
+            description: 'Ordem de Serviço criada e estoque reservado com sucesso.',
+        });
+        form.reset();
+        setDialogOpen(false);
 
-      toast({
-        title: 'Sucesso!',
-        description: 'Ordem de Serviço criada com sucesso.',
-      });
-      form.reset();
-      setDialogOpen(false);
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error adding document: ', error);
       toast({
         variant: 'destructive',
-        title: 'Erro',
-        description:
-          'Não foi possível criar a Ordem de Serviço. Tente novamente.',
+        title: 'Erro ao Criar OS',
+        description: error.message || 'Não foi possível criar a Ordem de Serviço. Tente novamente.',
       });
     }
   }

@@ -44,7 +44,7 @@ export function AddPecaForm({ setDialogOpen }: AddPecaFormProps) {
       descricao: '',
       fornecedor: '',
       quantidadeEstoque: 0,
-      quantidadeMinima: 1,
+      quantidadeMinima: 0,
       valorCompra: 0,
       valorVenda: 0,
     },
