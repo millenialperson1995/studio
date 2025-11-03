@@ -53,16 +53,12 @@ service cloud.firestore {
 
     // --- Specific Rule for OrdemServico ---
     match /ordensServico/{ordemServicoId} {
-        allow read: if isSignedIn() && isOwner(resource.data.userId);
+        allow read, update: if isSignedIn() && isOwner(resource.data.userId);
         allow create: if isSignedIn() && isCreatingOwnedResource();
-        allow update: if isSignedIn() && isOwner(resource.data.userId);
-
-        // Allow delete IF:
-        // 1. The user owns the service order.
-        // 2. AND, IF an orcamentoId exists, the user must also own the linked orcamento.
-        allow delete: if isSignedIn() && isOwner(get(/databases/$(database)/documents/ordensServico/$(ordemServicoId)).data.userId)
-                      && (!('orcamentoId' in get(/databases/$(database)/documents/ordensServico/$(ordemServicoId)).data)
-                          || get(/databases/$(database)/documents/orcamentos/$(get(/databases/$(database)/documents/ordensServico/$(ordemServicoId)).data.orcamentoId)).data.userId == request.auth.uid);
+        
+        // Allow deletion only by the owner of the Service Order itself.
+        // The transaction on the client-side handles reverting associated data.
+        allow delete: if isSignedIn() && isOwner(get(/databases/$(database)/documents/ordensServico/$(ordemServicoId)).data.userId);
     }
     
     // --- Subcollections ---
