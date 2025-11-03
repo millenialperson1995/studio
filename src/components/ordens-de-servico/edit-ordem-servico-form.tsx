@@ -24,7 +24,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { doc, runTransaction, Transaction } from 'firebase/firestore';
 import { useFirestore, useUser, useVehicles } from '@/firebase';
 import { useToast } from '@/hooks/use-toast';
-import type { OrdemServico, Cliente, Peca, Servico } from '@/lib/types';
+import type { OrdemServico, Cliente, Peca, Servico, Veiculo } from '@/lib/types';
 import { Trash2, PlusCircle, CalendarIcon } from 'lucide-react';
 import React, { useState, useEffect, useMemo } from 'react';
 import { Popover, PopoverContent, PopoverTrigger } from '../ui/popover';
@@ -49,6 +49,7 @@ const pecaSchema = z.object({
 type EditOrdemServicoFormProps = {
   ordemServico: OrdemServico;
   clients: Cliente[];
+  vehicles: Veiculo[];
   pecas: Peca[];
   servicos: Servico[];
   setDialogOpen: (open: boolean) => void;
@@ -63,6 +64,7 @@ const toDate = (timestamp: any): Date | undefined => {
 export function EditOrdemServicoForm({
   ordemServico,
   clients,
+  vehicles,
   pecas,
   servicos,
   setDialogOpen,
@@ -70,7 +72,6 @@ export function EditOrdemServicoForm({
   const firestore = useFirestore();
   const { user } = useUser();
   const { toast } = useToast();
-  const { vehicles } = useVehicles();
   const [selectedClientId, setSelectedClientId] = useState(ordemServico.clienteId);
   
   const pecasMap = new Map(pecas.map(p => [p.id, p]));

@@ -31,7 +31,6 @@ import {
   DialogTrigger,
 } from '@/components/ui/dialog';
 import OrcamentoTable from '@/components/orcamentos/orcamento-table';
-import { AddOrcamentoForm } from '@/components/orcamentos/add-orcamento-form';
 import AuthenticatedPage from '@/components/layout/authenticated-page';
 import { toDate } from '@/lib/utils';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
@@ -145,6 +144,7 @@ function OrcamentosContent() {
           <OrcamentoTable
             orcamentos={paginatedOrcamentos || []}
             clients={clients || []}
+            vehicles={vehicles || []}
             servicos={servicos || []}
             pecas={pecas || []}
           />

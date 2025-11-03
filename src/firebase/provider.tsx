@@ -6,6 +6,7 @@ import { Firestore, collection, onSnapshot, query, where, getDocs, collectionGro
 import { Auth, User, onAuthStateChanged } from 'firebase/auth';
 import { FirebaseErrorListener } from '@/components/FirebaseErrorListener';
 import type { Veiculo, Cliente } from '@/lib/types';
+import { useCollection } from './firestore/use-collection';
 
 
 interface FirebaseProviderProps {
@@ -22,12 +23,6 @@ interface UserAuthState {
   userError: Error | null;
 }
 
-interface VehiclesState {
-  vehicles: Veiculo[];
-  isLoading: boolean;
-  error: Error | null;
-}
-
 // Combined state for the Firebase context
 export interface FirebaseContextState {
   areServicesAvailable: boolean; // True if core services (app, firestore, auth instance) are provided
@@ -38,10 +33,6 @@ export interface FirebaseContextState {
   user: User | null;
   isUserLoading: boolean; // True during initial auth check
   userError: Error | null;
-  // Global Vehicles State
-  vehicles: Veiculo[];
-  isLoadingVehicles: boolean;
-  vehiclesError: Error | null;
 }
 
 // Return type for useFirebase()
@@ -79,12 +70,6 @@ export const FirebaseProvider: React.FC<FirebaseProviderProps> = ({
     userError: null,
   });
 
-  const [vehiclesState, setVehiclesState] = useState<VehiclesState>({
-    vehicles: [],
-    isLoading: true,
-    error: null,
-  });
-
   // Effect to subscribe to Firebase auth state changes
   useEffect(() => {
     if (!auth) { 
@@ -108,30 +93,6 @@ export const FirebaseProvider: React.FC<FirebaseProviderProps> = ({
   }, [auth]); 
 
 
-  // Effect to fetch all vehicles for the authenticated user
-  useEffect(() => {
-    const { user, isUserLoading } = userAuthState;
-    
-    if (isUserLoading || !user || !firestore) {
-        setVehiclesState({ vehicles: [], isLoading: !user, error: null });
-        return;
-    }
-
-    setVehiclesState(prevState => ({ ...prevState, isLoading: true }));
-    
-    const vehiclesQuery = query(collectionGroup(firestore, 'veiculos'), where('userId', '==', user.uid));
-    
-    const unsubscribe = onSnapshot(vehiclesQuery, (snapshot) => {
-        const vehiclesData = snapshot.docs.map(doc => ({ ...doc.data(), id: doc.id } as Veiculo));
-        setVehiclesState({ vehicles: vehiclesData, isLoading: false, error: null });
-    }, (error) => {
-        console.error("FirebaseProvider: Error fetching vehicles:", error);
-        setVehiclesState({ vehicles: [], isLoading: false, error: error as Error });
-    });
-
-    return () => unsubscribe();
-  }, [userAuthState.user, userAuthState.isUserLoading, firestore]);
-
   // Memoize the context value
   const contextValue = useMemo((): FirebaseContextState => {
     const servicesAvailable = !!(firebaseApp && firestore && auth);
@@ -143,11 +104,8 @@ export const FirebaseProvider: React.FC<FirebaseProviderProps> = ({
       user: userAuthState.user,
       isUserLoading: userAuthState.isUserLoading,
       userError: userAuthState.userError,
-      vehicles: vehiclesState.vehicles,
-      isLoadingVehicles: vehiclesState.isLoading,
-      vehiclesError: vehiclesState.error,
     };
-  }, [firebaseApp, firestore, auth, userAuthState, vehiclesState]);
+  }, [firebaseApp, firestore, auth, userAuthState]);
 
   return (
     <FirebaseContext.Provider value={contextValue}>
@@ -222,13 +180,20 @@ export const useUser = (): UserHookResult => {
 };
 
 export const useVehicles = () => {
-    const context = useContext(FirebaseContext);
-    if (context === undefined) {
-        throw new Error('useVehicles must be used within a FirebaseProvider.');
-    }
+    const { user, firestore } = useFirebase();
+    const vehiclesQuery = useMemoFirebase(
+      () =>
+        user && firestore
+          ? query(collectionGroup(firestore, 'veiculos'), where('userId', '==', user.uid))
+          : null,
+      [user, firestore]
+    );
+
+    const { data: vehicles, isLoading, error } = useCollection<Veiculo>(vehiclesQuery);
+    
     return {
-        vehicles: context.vehicles,
-        isLoading: context.isLoadingVehicles,
-        error: context.vehiclesError,
+        vehicles: vehicles || [],
+        isLoading,
+        error,
     };
 };

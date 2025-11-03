@@ -146,6 +146,7 @@ function OrdensDeServicoContent() {
           <OrdemServicoTable
             ordensServico={paginatedOrdensServico || []}
             clients={clients || []}
+            vehicles={vehicles || []}
             pecas={pecas || []}
             servicos={servicos || []}
           />

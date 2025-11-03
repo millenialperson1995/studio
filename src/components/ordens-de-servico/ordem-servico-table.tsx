@@ -40,7 +40,7 @@ import { MoreHorizontal, Pencil, Trash2, DollarSign, FileDown } from 'lucide-rea
 import type { OrdemServico, Cliente, Veiculo, Peca, Servico, Oficina } from '@/lib/types';
 import { deleteDocumentNonBlocking, updateDocumentNonBlocking } from '@/firebase/non-blocking-updates';
 import { doc, getDoc, serverTimestamp, runTransaction, Transaction } from 'firebase/firestore';
-import { useFirestore, useUser, useVehicles } from '@/firebase';
+import { useFirestore, useUser } from '@/firebase';
 import { useToast } from '@/hooks/use-toast';
 import { EditOrdemServicoForm } from './edit-ordem-servico-form';
 import { format } from 'date-fns';
@@ -49,6 +49,7 @@ import { generateOrdemServicoPDF } from '@/lib/pdf-generator';
 interface OrdemServicoTableProps {
   ordensServico: OrdemServico[];
   clients: Cliente[];
+  vehicles: Veiculo[];
   pecas: Peca[];
   servicos: Servico[];
 }
@@ -83,13 +84,13 @@ const paymentStatusLabelMap: { [key: string]: string } = {
 export default function OrdemServicoTable({
   ordensServico = [],
   clients = [],
+  vehicles = [],
   pecas = [],
   servicos = [],
 }: OrdemServicoTableProps) {
   const firestore = useFirestore();
   const { user } = useUser();
   const { toast } = useToast();
-  const { vehicles } = useVehicles();
 
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);

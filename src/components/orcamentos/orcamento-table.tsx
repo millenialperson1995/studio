@@ -41,7 +41,7 @@ import { MoreHorizontal, Pencil, Trash2, FilePlus2, FileDown, Loader2 } from 'lu
 import type { Orcamento, Cliente, Veiculo, ItemServico, OrdemServico, Peca, Servico, Oficina } from '@/lib/types';
 import { deleteDocumentNonBlocking } from '@/firebase/non-blocking-updates';
 import { doc, collection, serverTimestamp, getDoc, runTransaction, Transaction } from 'firebase/firestore';
-import { useFirestore, useUser, useVehicles } from '@/firebase';
+import { useFirestore, useUser } from '@/firebase';
 import { useToast } from '@/hooks/use-toast';
 import { EditOrcamentoForm } from './edit-orcamento-form';
 import { format } from 'date-fns';
@@ -50,6 +50,7 @@ import { generateOrcamentoPDF } from '@/lib/pdf-generator';
 interface OrcamentoTableProps {
   orcamentos: Orcamento[];
   clients: Cliente[];
+  vehicles: Veiculo[];
   servicos: Servico[];
   pecas: Peca[];
 }
@@ -70,6 +71,7 @@ const statusLabelMap: { [key: string]: string } = {
 export default function OrcamentoTable({
   orcamentos = [],
   clients = [],
+  vehicles = [],
   servicos = [],
   pecas = [],
 }: OrcamentoTableProps) {
@@ -77,7 +79,6 @@ export default function OrcamentoTable({
   const { user } = useUser();
   const { toast } = useToast();
   const router = useRouter();
-  const { vehicles } = useVehicles();
 
 
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);

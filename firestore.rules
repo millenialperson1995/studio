@@ -47,7 +47,8 @@ service cloud.firestore {
       // Allow updating if the user owns the existing document.
       allow update: if isSignedIn() && isOwner(resource.data.userId);
       
-      // Allow deleting if the user owns the document being deleted.
+      // Allow deleting if the user owns the document.
+      // Use get() to check ownership on the existing document before deletion.
       allow delete: if isSignedIn() && isOwner(get(/databases/$(database)/documents/$(collection)/$(docId)).data.userId);
     }
     
@@ -55,7 +56,14 @@ service cloud.firestore {
     // Rule for 'veiculos' as a subcollection.
     match /clientes/{clienteId}/veiculos/{veiculoId} {
         // Allow list/read/write if the user owns the vehicle document itself.
-        allow read, write: if isSignedIn() && isOwner(resource.data.userId);
+        allow write: if isSignedIn() && isCreatingOwnedResource();
+        allow read, update, delete: if isSignedIn() && isOwner(get(/databases/$(database)/documents/clientes/$(clienteId)/veiculos/$(veiculoId)).data.userId);
+    }
+
+    // --- Collection Group Rules ---
+    // This rule allows the useVehicles hook to query all vehicles belonging to the current user.
+    match /{path=**}/veiculos/{veiculoId} {
+      allow read: if isSignedIn() && resource.data.userId == request.auth.uid;
     }
   }
 }
