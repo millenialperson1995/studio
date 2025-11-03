@@ -90,9 +90,11 @@ export default function AppHeader() {
           <DropdownMenuContent align="end">
             <DropdownMenuLabel>Minha Conta</DropdownMenuLabel>
             <DropdownMenuSeparator />
-            <DropdownMenuItem disabled>
-              <User className="mr-2 h-4 w-4" />
-              <span>Perfil</span>
+            <DropdownMenuItem asChild>
+              <Link href="/perfil">
+                <User className="mr-2 h-4 w-4" />
+                <span>Perfil</span>
+              </Link>
             </DropdownMenuItem>
              <DropdownMenuItem asChild>
                 <Link href="/configuracoes">

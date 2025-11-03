@@ -1,5 +1,5 @@
 import type { Metadata, Viewport } from 'next';
-import { PT_Sans } from 'next/font/google';
+import { Inter } from 'next/font/google';
 import './globals.css';
 import { Toaster } from '@/components/ui/toaster';
 import { cn } from '@/lib/utils';
@@ -15,13 +15,12 @@ export const metadata: Metadata = {
 };
 
 export const viewport: Viewport = {
-  themeColor: '#111827',
+  themeColor: '#1A237E',
 }
 
-const ptSans = PT_Sans({
+const inter = Inter({
   subsets: ['latin'],
-  weight: ['400', '700'],
-  variable: '--font-body',
+  variable: '--font-sans',
 });
 
 export default function RootLayout({
@@ -34,7 +33,7 @@ export default function RootLayout({
       <body
         className={cn(
           'min-h-screen bg-background font-sans antialiased',
-          ptSans.variable
+          inter.variable
         )}
       >
         <FirebaseClientProvider>{children}</FirebaseClientProvider>
