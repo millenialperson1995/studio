@@ -25,36 +25,37 @@ const drawHeader = (doc: jsPDF, oficina: Oficina | null, title: string) => {
   const margin = 15;
   let currentY = 20;
 
-  // Logo path is relative to the public directory
+  // Logo
   doc.addImage(`${process.env.PUBLIC_URL || ''}${getLogoDataUri()}`, 'PNG', margin, currentY, 30, 30);
 
+  // Workshop Info (stacked and larger)
   const nomeEmpresa = oficina?.nomeEmpresa || 'Retífica Figueirêdo';
+  const enderecoOficina = oficina ? `${oficina.endereco}, ${oficina.cidade}-${oficina.uf}` : 'Endereço da Oficina';
+  const cep = oficina?.cep ? `CEP: ${oficina.cep}` : '';
   const cnpj = oficina?.cnpj ? `CNPJ: ${oficina.cnpj}` : '';
   const telefone = oficina?.telefone ? `Telefone: ${oficina.telefone}` : '';
   const email = oficina?.email ? `Email: ${oficina.email}` : '';
-  const enderecoOficina = oficina ? `${oficina.endereco}, ${oficina.cidade}-${oficina.uf}, CEP: ${oficina.cep}` : 'Endereço da Oficina';
-  
-  const headerTextX = margin + 40; // Always add space for logo
 
-  doc.setFontSize(18);
-  doc.setFont('helvetica', 'bold');
-  doc.text(title, pageWidth / 2, currentY + 5, { align: 'center' });
+  const workshopInfoX = margin + 40;
   
-  currentY += 15;
-  
-  doc.setFontSize(12);
   doc.setFont('helvetica', 'bold');
-  doc.text(nomeEmpresa, headerTextX, currentY);
-  currentY += 6;
-
-  doc.setFontSize(9);
+  doc.setFontSize(14);
+  doc.text(nomeEmpresa, workshopInfoX, currentY + 5);
+  
   doc.setFont('helvetica', 'normal');
-   doc.text(enderecoOficina, headerTextX, currentY);
-   currentY += 4;
-   const contactInfo = [cnpj, telefone, email].filter(Boolean).join(' | ');
-   doc.text(contactInfo, headerTextX, currentY);
+  doc.setFontSize(10);
+  doc.text(enderecoOficina, workshopInfoX, currentY + 12);
+  doc.text(cep, workshopInfoX, currentY + 17);
+  doc.text(`${cnpj} | ${telefone}`, workshopInfoX, currentY + 22);
+  doc.text(email, workshopInfoX, currentY + 27);
 
-  currentY += 10;
+
+  // Document Title
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(18);
+  doc.text(title, pageWidth - margin, currentY + 5, { align: 'right' });
+  
+  currentY += 40; // Increase Y to move past the header content
   
   doc.setLineWidth(0.5);
   doc.line(margin, currentY, pageWidth - margin, currentY);
@@ -91,7 +92,7 @@ export const generateOrcamentoPDF = async (
   const pageWidth = doc.internal.pageSize.getWidth();
   const margin = 15;
   
-  let currentY = drawHeader(doc, oficina, 'Orçamento de Peças e Serviços');
+  let currentY = drawHeader(doc, oficina, 'Orçamento');
   currentY += 8;
 
   // Orçamento Info
