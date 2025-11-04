@@ -128,10 +128,14 @@ export function AddOrdemServicoForm({
   const watchedPecas = form.watch('pecas');
   
   const selectedItemIds = useMemo(() => {
+    // For services, we use description as a unique key if no ID is present
     const servicosIds = watchedServicos.map(s => s.descricao); 
     const pecasIds = watchedPecas.map(p => p.itemId).filter(Boolean) as string[];
-    return [...servicosIds, ...pecasIds];
-  }, [watchedServicos, watchedPecas]);
+    // A service might not have an ID if manually typed, so we use description as a temp key
+    const allServicos = servicos.map(s => s.id)
+    return [...pecasIds, ...allServicos];
+  }, [watchedServicos, watchedPecas, servicos]);
+
 
   useEffect(() => {
     const totalServicos = watchedServicos.reduce((sum, servico) => sum + (Number(servico.valor) || 0), 0);
@@ -205,16 +209,14 @@ export function AddOrdemServicoForm({
     }
   }
 
-  const handleItemSelect = (index: number, item: Peca | Servico, type: 'peca' | 'servico', itemType: 'servicos' | 'pecas') => {
-    if (itemType === 'servicos') {
-        updateServico(index, {
-            ...form.getValues(`servicos.${index}`),
+  const handleItemSelect = (item: Peca | Servico, type: 'peca' | 'servico') => {
+    if (type === 'servico') {
+        appendServico({
             descricao: item.descricao,
             valor: (item as Servico).valorPadrao,
         })
-    } else { // itemType === 'pecas'
-        updatePeca(index, {
-            ...form.getValues(`pecas.${index}`),
+    } else { // type === 'peca'
+        appendPeca({
             itemId: item.id,
             descricao: item.descricao,
             valorUnitario: (item as Peca).valorVenda,
@@ -222,6 +224,7 @@ export function AddOrdemServicoForm({
         })
     }
   }
+
 
   const handleClientChange = (clientId: string) => {
     const client = clients.find(c => c.id === clientId);
@@ -357,24 +360,31 @@ export function AddOrdemServicoForm({
         </div>
 
         <div className="space-y-4 rounded-md border p-4">
-          <h3 className="font-medium">Serviços</h3>
-          {servicosFields.map((field, index) => (
+            <div className="flex justify-between items-center">
+                <h3 className="font-medium">Serviços e Peças</h3>
+                <ItemSelector
+                    pecas={pecas}
+                    servicos={servicos}
+                    onSelect={handleItemSelect}
+                    selectedItemIds={selectedItemIds}
+                    trigger={
+                        <Button type="button" variant="outline" size="sm">
+                            <PlusCircle className="mr-2 h-4 w-4" />
+                            Adicionar
+                        </Button>
+                    }
+                />
+            </div>
+            {servicosFields.length > 0 && <h4 className="text-sm font-medium text-muted-foreground">Serviços</h4>}
+            {servicosFields.map((field, index) => (
               <div key={field.id} className="flex flex-col md:flex-row items-end gap-2 border-b md:border-none pb-4 md:pb-0 mb-4 md:mb-0">
                 <div className="flex-1 w-full">
                   <FormLabel className={cn(index !== 0 && "md:hidden", "text-xs md:hidden")}>Descrição</FormLabel>
                    <FormField control={form.control} name={`servicos.${index}.descricao`} render={({ field }) => (
                         <FormItem>
-                           <ItemSelector
-                                pecas={[]}
-                                servicos={servicos}
-                                onSelect={(item, type) => handleItemSelect(index, item, type, 'servicos')}
-                                selectedItemIds={selectedItemIds}
-                                trigger={
-                                    <FormControl>
-                                        <Input placeholder="Selecione ou digite um serviço" {...field} />
-                                    </FormControl>
-                                }
-                            />
+                           <FormControl>
+                                <Input placeholder="Digite um serviço" {...field} />
+                            </FormControl>
                            <FormMessage />
                         </FormItem>)}
                     />
@@ -392,39 +402,17 @@ export function AddOrdemServicoForm({
                     </Button>
                 </div>
               </div>
-          ))}
-          <Button type="button" variant="outline" size="sm" onClick={() => appendServico({ descricao: '', valor: 0 })}>
-            <PlusCircle className="mr-2 h-4 w-4" /> Adicionar Serviço
-          </Button>
-        </div>
-
-        <div className="space-y-4 rounded-md border p-4">
-          <h3 className="font-medium">Peças</h3>
-          {pecasFields.length > 0 && (
-            <div className="hidden md:grid grid-cols-12 gap-x-2 text-sm font-medium text-muted-foreground px-1">
-                <div className="col-span-5">Item/Descrição</div>
-                <div className="col-span-2">Qtd.</div>
-                <div className="col-span-2">Vlr. Unitário</div>
-                <div className="col-span-2">Subtotal</div>
-            </div>
-          )}
-          {pecasFields.map((field, index) => (
+            ))}
+            {pecasFields.length > 0 && <h4 className="text-sm font-medium text-muted-foreground pt-4">Peças</h4>}
+            {pecasFields.map((field, index) => (
               <div key={field.id} className="grid grid-cols-12 gap-x-2 gap-y-2 items-start border-b pb-4 mb-4 md:border-none md:pb-0 md:mb-2">
                 <div className="col-span-12 md:col-span-5">
                   <FormLabel className="text-xs md:hidden">Descrição</FormLabel>
                    <FormField control={form.control} name={`pecas.${index}.descricao`} render={({ field }) => (
                         <FormItem>
-                            <ItemSelector
-                                pecas={pecas}
-                                servicos={[]}
-                                onSelect={(item, type) => handleItemSelect(index, item, type, 'pecas')}
-                                selectedItemIds={selectedItemIds}
-                                trigger={
-                                    <FormControl>
-                                        <Input placeholder="Selecione ou digite uma peça" {...field} />
-                                    </FormControl>
-                                }
-                            />
+                            <FormControl>
+                                <Input placeholder="Digite uma peça" {...field} />
+                            </FormControl>
                             <FormMessage />
                         </FormItem>)}
                     />
@@ -452,10 +440,7 @@ export function AddOrdemServicoForm({
                     </Button>
                 </div>
               </div>
-          ))}
-          <Button type="button" variant="outline" size="sm" onClick={() => appendPeca({ descricao: '', quantidade: 1, valorUnitario: 0, itemId: '' })}>
-            <PlusCircle className="mr-2 h-4 w-4" /> Adicionar Peça
-          </Button>
+            ))}
         </div>
 
         <FormField control={form.control} name="observacoes" render={({ field }) => (
