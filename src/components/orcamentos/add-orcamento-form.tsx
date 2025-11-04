@@ -157,7 +157,6 @@ export function AddOrcamentoForm({
         tipo: type,
         descricao: item.descricao,
         valorUnitario: type === 'peca' ? (item as Peca).valorVenda : 0, // No unit value for service
-        quantidade: 1,
         valorTotal: type === 'peca' ? (item as Peca).valorVenda : (item as Servico).valorPadrao, // For service, this is the manual total
     })
   }
@@ -183,283 +182,285 @@ export function AddOrcamentoForm({
 
   return (
     <Form {...form}>
-      <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6 max-h-[80vh] overflow-y-auto p-1 pr-4">
-        <div className="flex flex-col md:flex-row gap-4">
-          <FormField
-            control={form.control}
-            name="clienteId"
-            render={({ field }) => (
-              <FormItem className="flex-1">
-                <FormLabel>Cliente</FormLabel>
-                <Select
-                  onValueChange={handleClientChange}
-                  defaultValue={field.value}
-                >
-                  <FormControl>
-                    <SelectTrigger>
-                      <SelectValue placeholder="Selecione um cliente" />
-                    </SelectTrigger>
-                  </FormControl>
-                  <SelectContent>
-                    {clients.map((client) => (
-                      <SelectItem key={client.id} value={client.id}>
-                        {client.nome}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-          <FormField
-            control={form.control}
-            name="veiculoId"
-            render={({ field }) => (
-              <FormItem className="flex-1">
-                <FormLabel>Veículo</FormLabel>
-                <Select
-                  onValueChange={handleVehicleChange}
-                  value={field.value}
-                  disabled={!selectedClientId}
-                >
-                  <FormControl>
-                    <SelectTrigger>
-                      <SelectValue placeholder="Selecione um veículo" />
-                    </SelectTrigger>
-                  </FormControl>
-                  <SelectContent>
-                    {filteredVehicles.map((vehicle) => (
-                      <SelectItem key={vehicle.id} value={vehicle.id}>
-                        {`${vehicle.fabricante} ${vehicle.modelo} (${vehicle.placa})`}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-        </div>
-
-        <div className="space-y-4 rounded-md border p-4">
-          <div className="flex justify-between items-center">
-            <h3 className="font-medium">Itens do Orçamento</h3>
-             <ItemSelector
-                pecas={pecas}
-                servicos={servicos}
-                onSelect={handleItemSelect}
-                selectedItemIds={selectedItemIds}
-                trigger={
-                    <Button type="button" variant="outline" size="sm">
-                        <PlusCircle className="mr-2 h-4 w-4" />
-                        Adicionar Item
-                    </Button>
-                }
+      <form onSubmit={form.handleSubmit(onSubmit)} className="flex flex-col h-[80vh]">
+        <div className="flex-grow overflow-y-auto pr-4 space-y-6">
+          <div className="flex flex-col md:flex-row gap-4">
+            <FormField
+              control={form.control}
+              name="clienteId"
+              render={({ field }) => (
+                <FormItem className="flex-1">
+                  <FormLabel>Cliente</FormLabel>
+                  <Select
+                    onValueChange={handleClientChange}
+                    defaultValue={field.value}
+                  >
+                    <FormControl>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Selecione um cliente" />
+                      </SelectTrigger>
+                    </FormControl>
+                    <SelectContent>
+                      {clients.map((client) => (
+                        <SelectItem key={client.id} value={client.id}>
+                          {client.nome}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            <FormField
+              control={form.control}
+              name="veiculoId"
+              render={({ field }) => (
+                <FormItem className="flex-1">
+                  <FormLabel>Veículo</FormLabel>
+                  <Select
+                    onValueChange={handleVehicleChange}
+                    value={field.value}
+                    disabled={!selectedClientId}
+                  >
+                    <FormControl>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Selecione um veículo" />
+                      </SelectTrigger>
+                    </FormControl>
+                    <SelectContent>
+                      {filteredVehicles.map((vehicle) => (
+                        <SelectItem key={vehicle.id} value={vehicle.id}>
+                          {`${vehicle.fabricante} ${vehicle.modelo} (${vehicle.placa})`}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  <FormMessage />
+                </FormItem>
+              )}
             />
           </div>
-          {fields.length > 0 && (
-             <div className="hidden md:grid grid-cols-12 gap-x-2 text-sm font-medium text-muted-foreground px-1">
-                <div className="col-span-5">Item/Descrição</div>
-                <div className="col-span-2">Qtd.</div>
-                <div className="col-span-2">Vlr. Unitário</div>
-                <div className="col-span-2">Subtotal</div>
-             </div>
-          )}
-          {fields.map((field, index) => {
-            const item = watchedItens[index];
-            const isPeca = item.tipo === 'peca';
-             const subtotal = isPeca 
-                ? (Number(item.quantidade) || 0) * (Number(item.valorUnitario) || 0) 
-                : (Number(item.valorTotal) || 0);
 
-            if (isPeca) {
-                 const newTotal = (Number(item.quantidade) || 0) * (Number(item.valorUnitario) || 0);
-                 if (item.valorTotal !== newTotal) {
-                     form.setValue(`itens.${index}.valorTotal`, newTotal, { shouldValidate: true });
-                 }
-            }
-            
-            return (
-              <div
-                key={field.id}
-                className="flex flex-col md:grid md:grid-cols-12 gap-2 md:gap-x-2 items-start border-b md:border-none pb-4 md:pb-0 mb-4 md:mb-0"
-              >
-                <div className="col-span-12 md:col-span-5 w-full">
-                  <FormLabel className="text-xs md:hidden">Item/Descrição</FormLabel>
-                  <FormField
-                    control={form.control}
-                    name={`itens.${index}.descricao`}
-                    render={({ field }) => (
-                      <FormItem className="w-full">
-                         <FormControl>
-                            <Input
-                                readOnly
-                                disabled
-                                {...field}
-                            />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                </div>
-                 <div className="col-span-12 md:col-span-2 w-full">
-                    <FormLabel className="text-xs md:hidden">Qtd.</FormLabel>
+          <div className="space-y-4 rounded-md border p-4">
+            <div className="flex justify-between items-center">
+              <h3 className="font-medium">Itens do Orçamento</h3>
+               <ItemSelector
+                  pecas={pecas}
+                  servicos={servicos}
+                  onSelect={handleItemSelect}
+                  selectedItemIds={selectedItemIds}
+                  trigger={
+                      <Button type="button" variant="outline" size="sm">
+                          <PlusCircle className="mr-2 h-4 w-4" />
+                          Adicionar Item
+                      </Button>
+                  }
+              />
+            </div>
+            {fields.length > 0 && (
+               <div className="hidden md:grid grid-cols-12 gap-x-2 text-sm font-medium text-muted-foreground px-1">
+                  <div className="col-span-5">Item/Descrição</div>
+                  <div className="col-span-2">Qtd.</div>
+                  <div className="col-span-2">Vlr. Unitário</div>
+                  <div className="col-span-2">Subtotal</div>
+               </div>
+            )}
+            {fields.map((field, index) => {
+              const item = watchedItens[index];
+              const isPeca = item.tipo === 'peca';
+               const subtotal = isPeca 
+                  ? (Number(item.quantidade) || 0) * (Number(item.valorUnitario) || 0) 
+                  : (Number(item.valorTotal) || 0);
+
+              if (isPeca) {
+                   const newTotal = (Number(item.quantidade) || 0) * (Number(item.valorUnitario) || 0);
+                   if (item.valorTotal !== newTotal) {
+                       form.setValue(`itens.${index}.valorTotal`, newTotal, { shouldValidate: true });
+                   }
+              }
+              
+              return (
+                <div
+                  key={field.id}
+                  className="flex flex-col md:grid md:grid-cols-12 gap-2 md:gap-x-2 items-start border-b md:border-none pb-4 md:pb-0 mb-4 md:mb-0"
+                >
+                  <div className="col-span-12 md:col-span-5 w-full">
+                    <FormLabel className="text-xs md:hidden">Item/Descrição</FormLabel>
                     <FormField
                       control={form.control}
-                      name={`itens.${index}.quantidade`}
+                      name={`itens.${index}.descricao`}
                       render={({ field }) => (
-                        <FormItem>
-                          <FormControl>
-                            <Input type="number" placeholder="1" {...field} />
+                        <FormItem className="w-full">
+                           <FormControl>
+                              <Input
+                                  readOnly
+                                  disabled
+                                  {...field}
+                              />
                           </FormControl>
                           <FormMessage />
                         </FormItem>
                       )}
                     />
+                  </div>
+                   <div className="col-span-12 md:col-span-2 w-full">
+                      <FormLabel className="text-xs md:hidden">Qtd.</FormLabel>
+                      <FormField
+                        control={form.control}
+                        name={`itens.${index}.quantidade`}
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormControl>
+                              <Input type="number" placeholder="1" {...field} />
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                  </div>
+                  <div className="col-span-12 md:col-span-2 w-full">
+                      <FormLabel className="text-xs md:hidden">Vlr. Unitário</FormLabel>
+                      <FormField
+                        control={form.control}
+                        name={`itens.${index}.valorUnitario`}
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormControl>
+                              <Input type="number" placeholder="100.00" {...field} disabled={!isPeca} readOnly={!isPeca}/>
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                  </div>
+                  <div className="col-span-10 md:col-span-2 w-full">
+                      <FormLabel className="text-xs md:hidden">Subtotal</FormLabel>
+                       <FormField
+                        control={form.control}
+                        name={`itens.${index}.valorTotal`}
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormControl>
+                               <Input 
+                                  type="number"
+                                  {...field} 
+                                  readOnly={isPeca}
+                                  disabled={isPeca}
+                                  value={isPeca ? subtotal.toFixed(2) : field.value}
+                               />
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                  </div>
+                  <div className="col-span-2 md:col-span-1 flex items-end h-full w-full">
+                      <Button
+                          type="button"
+                          variant="destructive"
+                          size="icon"
+                          onClick={() => remove(index)}
+                          className="h-10 w-full"
+                      >
+                          <Trash2 className="h-4 w-4" />
+                          <span className="sr-only">Remover Item</span>
+                      </Button>
+                  </div>
                 </div>
-                <div className="col-span-12 md:col-span-2 w-full">
-                    <FormLabel className="text-xs md:hidden">Vlr. Unitário</FormLabel>
-                    <FormField
-                      control={form.control}
-                      name={`itens.${index}.valorUnitario`}
-                      render={({ field }) => (
-                        <FormItem>
+              );
+            })}
+            {fields.length === 0 && (
+               <p className="text-sm text-muted-foreground text-center py-4">Nenhum item adicionado.</p>
+            )}
+          </div>
+          
+          <div className="flex flex-col md:flex-row gap-4">
+               <FormField
+                  control={form.control}
+                  name="dataValidade"
+                  render={({ field }) => (
+                    <FormItem className="flex flex-col flex-1">
+                      <FormLabel>Data de Validade</FormLabel>
+                      <Popover>
+                        <PopoverTrigger asChild>
                           <FormControl>
-                            <Input type="number" placeholder="100.00" {...field} disabled={!isPeca} readOnly={!isPeca}/>
+                            <Button
+                              variant={'outline'}
+                              className={cn(
+                                'w-full pl-3 text-left font-normal',
+                                !field.value && 'text-muted-foreground'
+                              )}
+                            >
+                              {field.value ? (
+                                format(field.value, 'PPP')
+                              ) : (
+                                <span>Escolha uma data</span>
+                              )}
+                              <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
+                            </Button>
                           </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-                </div>
-                <div className="col-span-10 md:col-span-2 w-full">
-                    <FormLabel className="text-xs md:hidden">Subtotal</FormLabel>
-                     <FormField
-                      control={form.control}
-                      name={`itens.${index}.valorTotal`}
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormControl>
-                             <Input 
-                                type="number"
-                                {...field} 
-                                readOnly={isPeca}
-                                disabled={isPeca}
-                                value={isPeca ? subtotal.toFixed(2) : field.value}
-                             />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-                </div>
-                <div className="col-span-2 md:col-span-1 flex items-end h-full w-full">
-                    <Button
-                        type="button"
-                        variant="destructive"
-                        size="icon"
-                        onClick={() => remove(index)}
-                        className="h-10 w-full"
-                    >
-                        <Trash2 className="h-4 w-4" />
-                        <span className="sr-only">Remover Item</span>
-                    </Button>
-                </div>
-              </div>
-            );
-          })}
-          {fields.length === 0 && (
-             <p className="text-sm text-muted-foreground text-center py-4">Nenhum item adicionado.</p>
-          )}
-        </div>
-        
-        <div className="flex flex-col md:flex-row gap-4">
-             <FormField
-                control={form.control}
-                name="dataValidade"
-                render={({ field }) => (
-                  <FormItem className="flex flex-col flex-1">
-                    <FormLabel>Data de Validade</FormLabel>
-                    <Popover>
-                      <PopoverTrigger asChild>
-                        <FormControl>
-                          <Button
-                            variant={'outline'}
-                            className={cn(
-                              'w-full pl-3 text-left font-normal',
-                              !field.value && 'text-muted-foreground'
-                            )}
-                          >
-                            {field.value ? (
-                              format(field.value, 'PPP')
-                            ) : (
-                              <span>Escolha uma data</span>
-                            )}
-                            <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
-                          </Button>
-                        </FormControl>
-                      </PopoverTrigger>
-                      <PopoverContent className="w-auto p-0" align="start">
-                        <Calendar
-                          mode="single"
-                          selected={field.value}
-                          onSelect={field.onChange}
-                          disabled={(date) => date < new Date()}
-                          initialFocus
-                        />
-                      </PopoverContent>
-                    </Popover>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-
-             <FormField
-                control={form.control}
-                name="status"
-                render={({ field }) => (
-                  <FormItem className="flex-1">
-                    <FormLabel>Status</FormLabel>
-                    <Select onValueChange={field.onChange} defaultValue={field.value}>
-                      <FormControl>
-                        <SelectTrigger>
-                          <SelectValue placeholder="Selecione o status" />
-                        </SelectTrigger>
-                      </FormControl>
-                      <SelectContent>
-                        <SelectItem value="pendente">Pendente</SelectItem>
-                        <SelectItem value="aprovado">Aprovado</SelectItem>
-                        <SelectItem value="rejeitado">Rejeitado</SelectItem>
-                      </SelectContent>
-                    </Select>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-        </div>
-
-
-        <FormField
-          control={form.control}
-          name="observacoes"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>Observações</FormLabel>
-              <FormControl>
-                <Textarea
-                  placeholder="Detalhes adicionais, condições, etc."
-                  className="resize-none"
-                  {...field}
+                        </PopoverTrigger>
+                        <PopoverContent className="w-auto p-0" align="start">
+                          <Calendar
+                            mode="single"
+                            selected={field.value}
+                            onSelect={field.onChange}
+                            disabled={(date) => date < new Date()}
+                            initialFocus
+                          />
+                        </PopoverContent>
+                      </Popover>
+                      <FormMessage />
+                    </FormItem>
+                  )}
                 />
-              </FormControl>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
+
+               <FormField
+                  control={form.control}
+                  name="status"
+                  render={({ field }) => (
+                    <FormItem className="flex-1">
+                      <FormLabel>Status</FormLabel>
+                      <Select onValueChange={field.onChange} defaultValue={field.value}>
+                        <FormControl>
+                          <SelectTrigger>
+                            <SelectValue placeholder="Selecione o status" />
+                          </SelectTrigger>
+                        </FormControl>
+                        <SelectContent>
+                          <SelectItem value="pendente">Pendente</SelectItem>
+                          <SelectItem value="aprovado">Aprovado</SelectItem>
+                          <SelectItem value="rejeitado">Rejeitado</SelectItem>
+                        </SelectContent>
+                      </Select>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+          </div>
+
+
+          <FormField
+            control={form.control}
+            name="observacoes"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Observações</FormLabel>
+                <FormControl>
+                  <Textarea
+                    placeholder="Detalhes adicionais, condições, etc."
+                    className="resize-none"
+                    {...field}
+                  />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+        </div>
         
-        <div className="flex flex-col-reverse sm:flex-row items-center justify-between pt-4">
+        <div className="flex flex-col-reverse sm:flex-row items-center justify-between pt-4 border-t sticky bottom-0 bg-background/95 z-10">
             <div className="text-lg font-semibold mt-4 sm:mt-0">
                 <span>Valor Total: </span>
                 <span>{totalValue.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}</span>

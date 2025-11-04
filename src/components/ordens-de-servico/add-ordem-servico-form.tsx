@@ -248,7 +248,8 @@ export function AddOrdemServicoForm({
 
   return (
     <Form {...form}>
-      <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6 max-h-[80vh] overflow-y-auto p-1 pr-4">
+       <form onSubmit={form.handleSubmit(onSubmit)} className="flex flex-col h-[80vh]">
+        <div className="flex-grow overflow-y-auto pr-4 space-y-6">
         <div className="flex flex-col md:flex-row gap-4">
           <FormField
             control={form.control}
@@ -260,9 +261,7 @@ export function AddOrdemServicoForm({
                   onValueChange={handleClientChange}
                   defaultValue={field.value}
                 >
-                  <FormControl>
-                    <SelectTrigger><SelectValue placeholder="Selecione um cliente" /></SelectTrigger>
-                  </FormControl>
+                  <FormControl><SelectTrigger><SelectValue placeholder="Selecione um cliente" /></SelectTrigger></FormControl>
                   <SelectContent>
                     {clients.map((client) => (
                       <SelectItem key={client.id} value={client.id}>{client.nome}</SelectItem>
@@ -449,8 +448,9 @@ export function AddOrdemServicoForm({
               <FormMessage />
             </FormItem>)}
         />
+        </div>
         
-        <div className="flex flex-col-reverse sm:flex-row items-center justify-between pt-4 sticky bottom-0 bg-background/95 pb-4">
+        <div className="flex flex-col-reverse sm:flex-row items-center justify-between pt-4 border-t sticky bottom-0 bg-background/95 z-10">
             <div className="text-lg font-semibold mt-4 sm:mt-0">
                 <span>Valor Total: </span>
                 <span>{valorTotal.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}</span>
