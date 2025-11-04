@@ -147,8 +147,8 @@ export function EditOrcamentoForm({
         itemId: item.id,
         tipo: type,
         descricao: item.descricao,
-        valorUnitario: type === 'peca' ? (item as Peca).valorVenda : 0,
         quantidade: 1,
+        valorUnitario: type === 'peca' ? (item as Peca).valorVenda : 0,
         valorTotal: type === 'peca' ? (item as Peca).valorVenda : (item as Servico).valorPadrao,
     })
   }

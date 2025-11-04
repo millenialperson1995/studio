@@ -139,8 +139,9 @@ export function EditOrdemServicoForm({
   const selectedItemIds = useMemo(() => {
     const servicosIds = watchedServicos.map(s => s.descricao); 
     const pecasIds = watchedPecas.map(p => p.itemId).filter(Boolean) as string[];
-    return [...servicosIds, ...pecasIds];
-  }, [watchedServicos, watchedPecas]);
+    const allServicos = servicos.map(s => s.id);
+    return [...pecasIds, ...servicosIds, ...allServicos];
+  }, [watchedServicos, watchedPecas, servicos]);
 
 
    useEffect(() => {
@@ -271,23 +272,13 @@ export function EditOrdemServicoForm({
     }
   }
 
-  const handleItemSelect = (index: number, item: Peca | Servico, type: 'peca' | 'servico', itemType: 'servicos' | 'pecas') => {
-    if (itemType === 'servicos') {
-        updateServico(index, {
-            ...form.getValues(`servicos.${index}`),
-            descricao: item.descricao,
-            valor: (item as Servico).valorPadrao,
-        })
-    } else { // itemType === 'pecas'
-        updatePeca(index, {
-            ...form.getValues(`pecas.${index}`),
-            itemId: item.id,
-            descricao: item.descricao,
-            valorUnitario: (item as Peca).valorVenda,
-            quantidade: 1,
-        })
+  const handleItemSelect = (item: Peca | Servico, type: 'peca' | 'servico') => {
+    if (type === 'servico') {
+      appendServico({ descricao: item.descricao, valor: (item as Servico).valorPadrao });
+    } else {
+      appendPeca({ itemId: item.id, descricao: item.descricao, quantidade: 1, valorUnitario: (item as Peca).valorVenda });
     }
-  }
+  };
 
   const handleClientChange = (clientId: string) => {
     const client = clients.find(c => c.id === clientId);
@@ -455,105 +446,93 @@ export function EditOrdemServicoForm({
 
 
         <div className="space-y-4 rounded-md border p-4">
-          <h3 className="font-medium">Serviços</h3>
-          {servicosFields.map((field, index) => (
-              <div key={field.id} className="flex flex-col md:flex-row items-end gap-2 border-b md:border-none pb-4 md:pb-0 mb-4 md:mb-0">
-                <div className="flex-1 w-full">
-                  <FormLabel className={cn(index !== 0 && "md:hidden", "text-xs md:hidden")}>Descrição</FormLabel>
-                   <FormField control={form.control} name={`servicos.${index}.descricao`} render={({ field }) => (
-                        <FormItem>
-                           <ItemSelector
-                                pecas={[]}
-                                servicos={servicos}
-                                onSelect={(item, type) => handleItemSelect(index, item, type, 'servicos')}
-                                selectedItemIds={selectedItemIds}
-                                trigger={
-                                    <FormControl>
-                                        <Input placeholder="Selecione ou digite um serviço" {...field} />
-                                    </FormControl>
-                                }
-                            />
-                           <FormMessage />
-                        </FormItem>)}
-                    />
-                </div>
-                 <div className="flex-grow-0 flex-shrink-0 basis-1/3 w-full md:w-auto">
-                    <FormLabel className={cn(index !== 0 && "md:hidden", "text-xs md:hidden")}>Valor</FormLabel>
-                    <FormField control={form.control} name={`servicos.${index}.valor`} render={({ field }) => (
-                        <FormItem><FormControl><Input type="number" placeholder="400.00" {...field} /></FormControl><FormMessage /></FormItem>)}
-                    />
-                </div>
-                <div className="w-full md:w-auto">
-                    <Button type="button" variant="destructive" size="icon" onClick={() => removeServico(index)} className="w-full md:w-10 h-10">
-                        <Trash2 className="h-4 w-4" />
-                        <span className="sr-only">Remover Serviço</span>
-                    </Button>
-                </div>
-              </div>
-          ))}
-          <Button type="button" variant="outline" size="sm" onClick={() => appendServico({ descricao: '', valor: 0 })}>
-            <PlusCircle className="mr-2 h-4 w-4" /> Adicionar Serviço
-          </Button>
-        </div>
+          <div className="flex justify-between items-center">
+            <h3 className="font-medium">Serviços e Peças</h3>
+            <ItemSelector
+              pecas={pecas}
+              servicos={servicos}
+              onSelect={handleItemSelect}
+              selectedItemIds={selectedItemIds}
+              trigger={
+                <Button type="button" variant="outline" size="sm">
+                  <PlusCircle className="mr-2 h-4 w-4" /> Adicionar
+                </Button>
+              }
+            />
+          </div>
 
-        <div className="space-y-4 rounded-md border p-4">
-          <h3 className="font-medium">Peças</h3>
-          {pecasFields.length > 0 && (
-            <div className="hidden md:grid grid-cols-12 gap-x-2 text-sm font-medium text-muted-foreground px-1">
-                <div className="col-span-5">Item/Descrição</div>
-                <div className="col-span-2">Qtd.</div>
-                <div className="col-span-2">Vlr. Unitário</div>
-                <div className="col-span-2">Subtotal</div>
-            </div>
-          )}
-          {pecasFields.map((field, index) => (
-              <div key={field.id} className="grid grid-cols-12 gap-x-2 gap-y-2 items-start border-b pb-4 mb-4 md:border-none md:pb-0 md:mb-2">
-                <div className="col-span-12 md:col-span-5">
-                  <FormLabel className="text-xs md:hidden">Descrição</FormLabel>
-                   <FormField control={form.control} name={`pecas.${index}.descricao`} render={({ field }) => (
-                        <FormItem>
-                            <ItemSelector
-                                pecas={pecas}
-                                servicos={[]}
-                                onSelect={(item, type) => handleItemSelect(index, item, type, 'pecas')}
-                                selectedItemIds={selectedItemIds}
-                                trigger={
-                                    <FormControl>
-                                        <Input placeholder="Selecione ou digite uma peça" {...field} />
-                                    </FormControl>
-                                }
-                            />
-                            <FormMessage />
-                        </FormItem>)}
-                    />
-                </div>
-                 <div className="col-span-4 md:col-span-2">
-                    <FormLabel className="text-xs md:hidden">Qtd.</FormLabel>
-                    <FormField control={form.control} name={`pecas.${index}.quantidade`} render={({ field }) => (
-                        <FormItem><FormControl><Input type="number" placeholder="1" {...field} /></FormControl><FormMessage /></FormItem>)}
-                    />
-                </div>
-                <div className="col-span-4 md:col-span-2">
-                    <FormLabel className="text-xs md:hidden">Vlr. Unitário</FormLabel>
-                    <FormField control={form.control} name={`pecas.${index}.valorUnitario`} render={({ field }) => (
-                        <FormItem><FormControl><Input type="number" placeholder="100.00" {...field} /></FormControl><FormMessage /></FormItem>)}
-                    />
-                </div>
-                <div className="col-span-4 md:col-span-2">
-                     <FormLabel className="text-xs md:hidden">Subtotal</FormLabel>
-                    <Input readOnly disabled value={((form.watch(`pecas.${index}.quantidade`) || 0) * (form.watch(`pecas.${index}.valorUnitario`) || 0)).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })} />
-                </div>
-                <div className="col-span-12 md:col-span-1 flex items-end h-full">
-                    <Button type="button" variant="destructive" size="icon" onClick={() => removePeca(index)} className="w-full h-10">
-                        <Trash2 className="h-4 w-4" />
-                        <span className="sr-only">Remover Peça</span>
-                    </Button>
-                </div>
+          {servicosFields.length > 0 && <h4 className="text-sm font-medium text-muted-foreground">Serviços</h4>}
+          {servicosFields.map((field, index) => (
+            <div key={field.id} className="flex flex-col md:flex-row items-end gap-2 border-b md:border-none pb-4 md:pb-0 mb-4 md:mb-0">
+              <div className="flex-1 w-full">
+                <FormLabel className={cn(index !== 0 && "md:hidden", "text-xs md:hidden")}>Descrição</FormLabel>
+                <FormField control={form.control} name={`servicos.${index}.descricao`} render={({ field }) => (
+                  <FormItem>
+                    <FormControl><Input placeholder="Digite um serviço" {...field} /></FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )} />
               </div>
+              <div className="flex-grow-0 flex-shrink-0 basis-1/3 w-full md:w-auto">
+                <FormLabel className={cn(index !== 0 && "md:hidden", "text-xs md:hidden")}>Valor</FormLabel>
+                <FormField control={form.control} name={`servicos.${index}.valor`} render={({ field }) => (
+                  <FormItem>
+                    <FormControl><Input type="number" placeholder="400.00" {...field} /></FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )} />
+              </div>
+              <div className="w-full md:w-auto">
+                <Button type="button" variant="destructive" size="icon" onClick={() => removeServico(index)} className="w-full md:w-10 h-10">
+                  <Trash2 className="h-4 w-4" />
+                  <span className="sr-only">Remover Serviço</span>
+                </Button>
+              </div>
+            </div>
           ))}
-          <Button type="button" variant="outline" size="sm" onClick={() => appendPeca({ descricao: '', quantidade: 1, valorUnitario: 0, itemId: '' })}>
-            <PlusCircle className="mr-2 h-4 w-4" /> Adicionar Peça
-          </Button>
+
+          {pecasFields.length > 0 && <h4 className="text-sm font-medium text-muted-foreground pt-4">Peças</h4>}
+          {pecasFields.map((field, index) => (
+            <div key={field.id} className="grid grid-cols-12 gap-x-2 gap-y-2 items-start border-b pb-4 mb-4 md:border-none md:pb-0 md:mb-2">
+              <div className="col-span-12 md:col-span-5">
+                <FormLabel className="text-xs md:hidden">Descrição</FormLabel>
+                <FormField control={form.control} name={`pecas.${index}.descricao`} render={({ field }) => (
+                  <FormItem>
+                    <FormControl><Input placeholder="Digite uma peça" {...field} /></FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )} />
+              </div>
+              <div className="col-span-4 md:col-span-2">
+                <FormLabel className="text-xs md:hidden">Qtd.</FormLabel>
+                <FormField control={form.control} name={`pecas.${index}.quantidade`} render={({ field }) => (
+                  <FormItem>
+                    <FormControl><Input type="number" placeholder="1" {...field} /></FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )} />
+              </div>
+              <div className="col-span-4 md:col-span-2">
+                <FormLabel className="text-xs md:hidden">Vlr. Unitário</FormLabel>
+                <FormField control={form.control} name={`pecas.${index}.valorUnitario`} render={({ field }) => (
+                  <FormItem>
+                    <FormControl><Input type="number" placeholder="100.00" {...field} /></FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )} />
+              </div>
+              <div className="col-span-4 md:col-span-2">
+                <FormLabel className="text-xs md:hidden">Subtotal</FormLabel>
+                <Input readOnly disabled value={((form.watch(`pecas.${index}.quantidade`) || 0) * (form.watch(`pecas.${index}.valorUnitario`) || 0)).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })} />
+              </div>
+              <div className="col-span-12 md:col-span-1 flex items-end h-full">
+                <Button type="button" variant="destructive" size="icon" onClick={() => removePeca(index)} className="w-full h-10">
+                  <Trash2 className="h-4 w-4" />
+                  <span className="sr-only">Remover Peça</span>
+                </Button>
+              </div>
+            </div>
+          ))}
         </div>
         
         <FormField control={form.control} name="observacoes" render={({ field }) => (

@@ -156,6 +156,7 @@ export function AddOrcamentoForm({
         itemId: item.id,
         tipo: type,
         descricao: item.descricao,
+        quantidade: 1,
         valorUnitario: type === 'peca' ? (item as Peca).valorVenda : 0, // No unit value for service
         valorTotal: type === 'peca' ? (item as Peca).valorVenda : (item as Servico).valorPadrao, // For service, this is the manual total
     })
