@@ -1,7 +1,7 @@
 "use client"
 
 import * as React from "react"
-import { Check, ChevronsUpDown, Package, Wrench } from "lucide-react"
+import { Check, ChevronsUpDown, Package, PlusCircle, Wrench } from "lucide-react"
 
 import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
@@ -29,11 +29,10 @@ interface ItemSelectorProps {
     pecas: Peca[];
     servicos: Servico[];
     onSelect: (item: Peca | Servico, type: 'peca' | 'servico') => void;
-    trigger: React.ReactNode;
     selectedItemIds: string[];
 }
 
-export function ItemSelector({ pecas, servicos, onSelect, trigger, selectedItemIds }: ItemSelectorProps) {
+export function ItemSelector({ pecas, servicos, onSelect, selectedItemIds }: ItemSelectorProps) {
   const [open, setOpen] = React.useState(false);
   const { toast } = useToast();
 
@@ -48,9 +47,12 @@ export function ItemSelector({ pecas, servicos, onSelect, trigger, selectedItemI
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
-        {trigger}
+        <Button type="button" variant="outline" size="sm">
+            <PlusCircle className="mr-2 h-4 w-4" />
+            Adicionar Item
+        </Button>
       </DialogTrigger>
-      <DialogContent className="p-0 gap-0">
+      <DialogContent className="p-0 gap-0 w-full max-w-lg sm:max-w-xl">
           <DialogHeader className="p-4 border-b">
             <DialogTitle>Adicionar Item</DialogTitle>
           </DialogHeader>

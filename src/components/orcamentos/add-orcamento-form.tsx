@@ -183,8 +183,8 @@ export function AddOrcamentoForm({
 
   return (
     <Form {...form}>
-      <form onSubmit={form.handleSubmit(onSubmit)} className="flex flex-col h-[80vh]">
-        <div className="flex-grow overflow-y-auto pr-4 space-y-6">
+      <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+        <div className="pr-4 space-y-6 h-[calc(80vh-8rem)] overflow-y-auto">
           <div className="flex flex-col md:flex-row gap-4">
             <FormField
               control={form.control}
@@ -251,13 +251,7 @@ export function AddOrcamentoForm({
                   servicos={servicos}
                   onSelect={handleItemSelect}
                   selectedItemIds={selectedItemIds}
-                  trigger={
-                      <Button type="button" variant="outline" size="sm">
-                          <PlusCircle className="mr-2 h-4 w-4" />
-                          Adicionar Item
-                      </Button>
-                  }
-              />
+               />
             </div>
             {fields.length > 0 && (
                <div className="hidden md:grid grid-cols-12 gap-x-2 text-sm font-medium text-muted-foreground px-1">
@@ -461,7 +455,7 @@ export function AddOrcamentoForm({
           />
         </div>
         
-        <div className="flex flex-col-reverse sm:flex-row items-center justify-between pt-4 border-t sticky bottom-0 bg-background/95 z-10">
+        <div className="flex flex-col-reverse sm:flex-row items-center justify-between pt-4 border-t">
             <div className="text-lg font-semibold mt-4 sm:mt-0">
                 <span>Valor Total: </span>
                 <span>{totalValue.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}</span>
