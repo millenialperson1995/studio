@@ -11,9 +11,33 @@ service cloud.firestore {
     function isOwner(userId) {
       return request.auth.uid == userId;
     }
-    
+
     function isCreatingOwnedResource() {
       return request.resource.data.userId == request.auth.uid;
+    }
+
+    function isValidEmail(email) {
+      return email.matches(/^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/);
+    }
+
+    function isValidCNPJ(cnpj) {
+      // Verifica se o CNPJ tem 14 dígitos numéricos
+      return cnpj.matches(/^[0-9]{14}$/);
+    }
+
+    function isValidCPF(cpf) {
+      // Verifica se o CPF tem 11 dígitos numéricos
+      return cpf.matches(/^[0-9]{11}$/);
+    }
+
+    function hasValidStructure(data, requiredFields) {
+      // Verifica se todos os campos obrigatórios existem
+      for (field in requiredFields) {
+        if (!data.keys().hasAny([requiredFields[field]])) {
+          return false;
+        }
+      }
+      return true;
     }
 
     // --- User Profiles ---
@@ -25,36 +49,78 @@ service cloud.firestore {
 
     // --- Workshop Settings ---
     match /oficinas/{userId} {
-        allow read, write: if isSignedIn() && isOwner(userId);
+        allow read, write: if isSignedIn() && isOwner(userId) &&
+          request.resource.data.keys().hasAll(['nomeEmpresa', 'cnpj', 'endereco', 'cidade', 'uf', 'cep', 'telefone']) &&
+          request.resource.data.nomeEmpresa is string && request.resource.data.nomeEmpresa.size() > 0 &&
+          request.resource.data.cnpj is string && isValidCNPJ(request.resource.data.cnpj) &&
+          request.resource.data.endereco is string && request.resource.data.endereco.size() > 0 &&
+          request.resource.data.cidade is string && request.resource.data.cidade.size() > 0 &&
+          request.resource.data.uf is string && request.resource.data.uf.matches(/^[A-Z]{2}$/) &&
+          request.resource.data.cep is string && request.resource.data.cep.matches(/^[0-9]{8}$/) &&
+          request.resource.data.telefone is string && request.resource.data.telefone.matches(/^[0-9]{10,11}$/);
     }
-    
+
     // --- Rules for Top-level User-Owned Collections ---
 
     match /clientes/{docId} {
       allow read: if isSignedIn() && isOwner(resource.data.userId);
-      allow create: if isSignedIn() && isCreatingOwnedResource();
-      allow update: if isSignedIn() && isOwner(get(/databases/$(database)/documents/clientes/$(docId)).data.userId);
+      allow create: if isSignedIn() && isCreatingOwnedResource() &&
+        request.resource.data.keys().hasAll(['nome', 'userId']) &&
+        request.resource.data.nome is string && request.resource.data.nome.size() > 0 &&
+        request.resource.data.userId is string;
+      allow update: if isSignedIn() && isOwner(get(/databases/$(database)/documents/clientes/$(docId)).data.userId) &&
+        request.resource.data.nome is string && request.resource.data.nome.size() > 0;
       allow delete: if isSignedIn() && isOwner(get(/databases/$(database)/documents/clientes/$(docId)).data.userId);
     }
 
     match /orcamentos/{docId} {
       allow read: if isSignedIn() && isOwner(resource.data.userId);
-      allow create: if isSignedIn() && isCreatingOwnedResource();
-      allow update: if isSignedIn() && isOwner(get(/databases/$(database)/documents/orcamentos/$(docId)).data.userId);
+      allow create: if isSignedIn() && isCreatingOwnedResource() &&
+        request.resource.data.keys().hasAll(['clienteId', 'veiculoId', 'userId', 'dataCriacao', 'status', 'itens', 'valorTotal']) &&
+        request.resource.data.clienteId is string &&
+        request.resource.data.veiculoId is string &&
+        request.resource.data.userId is string &&
+        request.resource.data.status is string &&
+        request.resource.data.status in ['pendente', 'aprovado', 'rejeitado'] &&
+        request.resource.data.itens is list &&
+        request.resource.data.valorTotal is number && request.resource.data.valorTotal >= 0;
+      allow update: if isSignedIn() && isOwner(get(/databases/$(database)/documents/orcamentos/$(docId)).data.userId) &&
+        request.resource.data.clienteId is string &&
+        request.resource.data.veiculoId is string &&
+        request.resource.data.status is string &&
+        request.resource.data.status in ['pendente', 'aprovado', 'rejeitado'] &&
+        request.resource.data.itens is list &&
+        request.resource.data.valorTotal is number && request.resource.data.valorTotal >= 0;
       allow delete: if isSignedIn() && isOwner(get(/databases/$(database)/documents/orcamentos/$(docId)).data.userId);
     }
 
     match /pecas/{docId} {
       allow read: if isSignedIn() && isOwner(resource.data.userId);
-      allow create: if isSignedIn() && isCreatingOwnedResource();
-      allow update: if isSignedIn() && isOwner(get(/databases/$(database)/documents/pecas/$(docId)).data.userId);
+      allow create: if isSignedIn() && isCreatingOwnedResource() &&
+        request.resource.data.keys().hasAll(['codigo', 'descricao', 'userId', 'valorVenda']) &&
+        request.resource.data.codigo is string && request.resource.data.codigo.size() > 0 &&
+        request.resource.data.descricao is string && request.resource.data.descricao.size() > 0 &&
+        request.resource.data.userId is string &&
+        request.resource.data.valorVenda is number && request.resource.data.valorVenda >= 0;
+      allow update: if isSignedIn() && isOwner(get(/databases/$(database)/documents/pecas/$(docId)).data.userId) &&
+        request.resource.data.codigo is string && request.resource.data.codigo.size() > 0 &&
+        request.resource.data.descricao is string && request.resource.data.descricao.size() > 0 &&
+        request.resource.data.valorVenda is number && request.resource.data.valorVenda >= 0;
       allow delete: if isSignedIn() && isOwner(get(/databases/$(database)/documents/pecas/$(docId)).data.userId);
     }
 
     match /servicos/{docId} {
       allow read: if isSignedIn() && isOwner(resource.data.userId);
-      allow create: if isSignedIn() && isCreatingOwnedResource();
-      allow update: if isSignedIn() && isOwner(get(/databases/$(database)/documents/servicos/$(docId)).data.userId);
+      allow create: if isSignedIn() && isCreatingOwnedResource() &&
+        request.resource.data.keys().hasAll(['codigo', 'descricao', 'userId', 'valorPadrao']) &&
+        request.resource.data.codigo is string && request.resource.data.codigo.size() > 0 &&
+        request.resource.data.descricao is string && request.resource.data.descricao.size() > 0 &&
+        request.resource.data.userId is string &&
+        request.resource.data.valorPadrao is number && request.resource.data.valorPadrao >= 0;
+      allow update: if isSignedIn() && isOwner(get(/databases/$(database)/documents/servicos/$(docId)).data.userId) &&
+        request.resource.data.codigo is string && request.resource.data.codigo.size() > 0 &&
+        request.resource.data.descricao is string && request.resource.data.descricao.size() > 0 &&
+        request.resource.data.valorPadrao is number && request.resource.data.valorPadrao >= 0;
       allow delete: if isSignedIn() && isOwner(get(/databases/$(database)/documents/servicos/$(docId)).data.userId);
     }
 
@@ -62,14 +128,31 @@ service cloud.firestore {
     // Firestore rule paths are case-sensitive. Assuming collection is 'ordensServico'
     match /ordensServico/{ordemServicoId} {
         allow read: if isSignedIn() && isOwner(resource.data.userId);
-        allow create: if isSignedIn() && isCreatingOwnedResource();
-        allow update: if isSignedIn() && isOwner(get(/databases/$(database)/documents/ordensServico/$(ordemServicoId)).data.userId);
+        allow create: if isSignedIn() && isCreatingOwnedResource() &&
+          request.resource.data.keys().hasAll(['clienteId', 'veiculoId', 'userId', 'status', 'dataEntrada', 'valorTotal']) &&
+          request.resource.data.clienteId is string &&
+          request.resource.data.veiculoId is string &&
+          request.resource.data.userId is string &&
+          request.resource.data.status is string &&
+          request.resource.data.status in ['pendente', 'andamento', 'concluida', 'cancelada'] &&
+          request.resource.data.valorTotal is number && request.resource.data.valorTotal >= 0;
+        allow update: if isSignedIn() && isOwner(get(/databases/$(database)/documents/ordensServico/$(ordemServicoId)).data.userId) &&
+          request.resource.data.clienteId is string &&
+          request.resource.data.veiculoId is string &&
+          request.resource.data.status is string &&
+          request.resource.data.status in ['pendente', 'andamento', 'concluida', 'cancelada'] &&
+          request.resource.data.valorTotal is number && request.resource.data.valorTotal >= 0;
         allow delete: if isSignedIn() && isOwner(get(/databases/$(database)/documents/ordensServico/$(ordemServicoId)).data.userId);
     }
-    
+
     // --- Subcollections ---
     match /clientes/{clienteId}/veiculos/{veiculoId} {
-        allow create: if isSignedIn() && isCreatingOwnedResource();
+        allow create: if isSignedIn() && isCreatingOwnedResource() &&
+          request.resource.data.keys().hasAll(['clienteId', 'placa', 'fabricante', 'modelo']) &&
+          request.resource.data.clienteId is string &&
+          request.resource.data.placa is string && request.resource.data.placa.size() > 0 &&
+          request.resource.data.fabricante is string && request.resource.data.fabricante.size() > 0 &&
+          request.resource.data.modelo is string && request.resource.data.modelo.size() > 0;
         allow read, update, delete: if isSignedIn() && isOwner(get(/databases/$(database)/documents/clientes/$(clienteId)).data.userId);
     }
   }
