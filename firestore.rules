@@ -13,63 +13,63 @@ service cloud.firestore {
     }
     
     function isCreatingOwnedResource() {
-      // Ensure the 'userId' field in the new document matches the authenticated user's UID.
       return request.resource.data.userId == request.auth.uid;
     }
 
     // --- User Profiles ---
     match /users/{userId} {
-        // Any signed-in user can read any profile (e.g., to see names, avatars).
         allow read: if isSignedIn();
-        // A user can only create their own profile document.
         allow create: if isSignedIn() && request.auth.uid == userId;
-        // A user can only update or delete their own profile.
         allow update, delete: if isOwner(userId);
     }
 
     // --- Workshop Settings ---
     match /oficinas/{userId} {
-        // A user can only read and write to their own workshop settings.
         allow read, write: if isSignedIn() && isOwner(userId);
     }
     
     // --- Rules for Top-level User-Owned Collections ---
-    // This applies to: clientes, orcamentos, pecas, servicos
-    match /{collection}/{docId} 
-        where collection in ['clientes', 'orcamentos', 'pecas', 'servicos'] {
-      
-      // Allow reading a document if the user is the owner.
+
+    match /clientes/{docId} {
       allow read: if isSignedIn() && isOwner(resource.data.userId);
-
-      // Allow creating documents if they are setting the 'userId' to their own UID.
       allow create: if isSignedIn() && isCreatingOwnedResource();
+      allow update: if isSignedIn() && isOwner(get(/databases/$(database)/documents/clientes/$(docId)).data.userId);
+      allow delete: if isSignedIn() && isOwner(get(/databases/$(database)/documents/clientes/$(docId)).data.userId);
+    }
 
-      // Allow updating if the user owns the existing document.
-      allow update: if isSignedIn() && isOwner(get(/databases/$(database)/documents/$(collection)/$(docId)).data.userId);
-      
-      // Allow deleting if the user owns the document.
-      allow delete: if isSignedIn() && isOwner(get(/databases/$(database)/documents/$(collection)/$(docId)).data.userId);
+    match /orcamentos/{docId} {
+      allow read: if isSignedIn() && isOwner(resource.data.userId);
+      allow create: if isSignedIn() && isCreatingOwnedResource();
+      allow update: if isSignedIn() && isOwner(get(/databases/$(database)/documents/orcamentos/$(docId)).data.userId);
+      allow delete: if isSignedIn() && isOwner(get(/databases/$(database)/documents/orcamentos/$(docId)).data.userId);
+    }
+
+    match /pecas/{docId} {
+      allow read: if isSignedIn() && isOwner(resource.data.userId);
+      allow create: if isSignedIn() && isCreatingOwnedResource();
+      allow update: if isSignedIn() && isOwner(get(/databases/$(database)/documents/pecas/$(docId)).data.userId);
+      allow delete: if isSignedIn() && isOwner(get(/databases/$(database)/documents/pecas/$(docId)).data.userId);
+    }
+
+    match /servicos/{docId} {
+      allow read: if isSignedIn() && isOwner(resource.data.userId);
+      allow create: if isSignedIn() && isCreatingOwnedResource();
+      allow update: if isSignedIn() && isOwner(get(/databases/$(database)/documents/servicos/$(docId)).data.userId);
+      allow delete: if isSignedIn() && isOwner(get(/databases/$(database)/documents/servicos/$(docId)).data.userId);
     }
 
     // --- Specific Rule for OrdemServico ---
+    // Firestore rule paths are case-sensitive. Assuming collection is 'ordensServico'
     match /ordensServico/{ordemServicoId} {
         allow read: if isSignedIn() && isOwner(resource.data.userId);
         allow create: if isSignedIn() && isCreatingOwnedResource();
-
-        // Allow update only if the user owns the existing document
         allow update: if isSignedIn() && isOwner(get(/databases/$(database)/documents/ordensServico/$(ordemServicoId)).data.userId);
-        
-        // Allow deletion only by the owner of the Service Order itself.
-        // The transaction on the client-side handles reverting associated data.
         allow delete: if isSignedIn() && isOwner(get(/databases/$(database)/documents/ordensServico/$(ordemServicoId)).data.userId);
     }
     
     // --- Subcollections ---
-    // Rule for 'veiculos' as a subcollection.
     match /clientes/{clienteId}/veiculos/{veiculoId} {
-        // Allow create if the new document belongs to the user.
         allow create: if isSignedIn() && isCreatingOwnedResource();
-        // Allow read, update, delete by checking the parent client document's userId.
         allow read, update, delete: if isSignedIn() && isOwner(get(/databases/$(database)/documents/clientes/$(clienteId)).data.userId);
     }
   }
