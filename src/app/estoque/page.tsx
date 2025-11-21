@@ -1,15 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import AppHeader from '@/components/layout/app-header';
-import AppSidebar from '@/components/layout/app-sidebar';
-import {
-  Sidebar,
-  SidebarInset,
-  SidebarProvider,
-} from '@/components/ui/sidebar';
 import { Button } from '@/components/ui/button';
-import { PlusCircle } from 'lucide-react';
 import {
   Card,
   CardContent,
@@ -32,6 +24,8 @@ import {
 import { AddPecaForm } from '@/components/estoque/add-peca-form';
 import PecaTable from '@/components/estoque/peca-table';
 import AuthenticatedPage from '@/components/layout/authenticated-page';
+import MobileLayout from '@/components/layout/mobile-layout';
+import { PlusCircle } from 'lucide-react';
 
 function EstoqueContent() {
   const [isDialogOpen, setIsDialogOpen] = useState(false);
@@ -92,16 +86,8 @@ function EstoqueContent() {
 
 export default function EstoquePage() {
   return (
-    <SidebarProvider>
-      <Sidebar>
-        <AppSidebar />
-      </Sidebar>
-      <SidebarInset>
-        <AppHeader />
-        <AuthenticatedPage>
-          <EstoqueContent />
-        </AuthenticatedPage>
-      </SidebarInset>
-    </SidebarProvider>
+    <MobileLayout>
+      <EstoqueContent />
+    </MobileLayout>
   );
 }
