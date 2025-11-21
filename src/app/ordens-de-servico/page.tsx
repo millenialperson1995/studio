@@ -1,13 +1,6 @@
 'use client';
 
 import { useState, useMemo } from 'react';
-import AppHeader from '@/components/layout/app-header';
-import AppSidebar from '@/components/layout/app-sidebar';
-import {
-  Sidebar,
-  SidebarInset,
-  SidebarProvider,
-} from '@/components/ui/sidebar';
 import { Button } from '@/components/ui/button';
 import { PlusCircle } from 'lucide-react';
 import {
@@ -32,9 +25,9 @@ import {
 } from '@/components/ui/dialog';
 import OrdemServicoTable from '@/components/ordens-de-servico/ordem-servico-table';
 import { AddOrdemServicoForm } from '@/components/ordens-de-servico/add-ordem-servico-form';
-import AuthenticatedPage from '@/components/layout/authenticated-page';
 import { toDate } from '@/lib/utils';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
+import MobileLayout from '@/components/layout/mobile-layout';
 
 const ITEMS_PER_PAGE = 5;
 
@@ -72,7 +65,7 @@ function OrdensDeServicoContent() {
     useCollection<Servico>(servicosCollectionRef);
   const { data: pecas, isLoading: isLoadingPecas } =
     useCollection<Peca>(pecasCollectionRef);
-    
+
   const sortedOrdensServico = useMemo(() => {
     if (!ordensServico) return [];
     return [...ordensServico].sort((a, b) => toDate(b.dataEntrada).getTime() - toDate(a.dataEntrada).getTime());
@@ -87,10 +80,10 @@ function OrdensDeServicoContent() {
   const isLoading = isLoadingOrdens || isLoadingClients || isLoadingVehicles || isLoadingServicos || isLoadingPecas;
 
   const canCreate = !isLoading && clients && clients.length > 0 && vehicles && vehicles.length > 0;
-  const buttonTooltip = (!clients || clients.length === 0) 
-    ? 'Cadastre um cliente primeiro.' 
-    : (!vehicles || vehicles.length === 0) 
-    ? 'Cadastre um veículo primeiro.' 
+  const buttonTooltip = (!clients || clients.length === 0)
+    ? 'Cadastre um cliente primeiro.'
+    : (!vehicles || vehicles.length === 0)
+    ? 'Cadastre um veículo primeiro.'
     : 'Criar nova ordem de serviço';
 
 
@@ -185,16 +178,8 @@ function OrdensDeServicoContent() {
 
 export default function OrdensDeServicoPage() {
   return (
-    <SidebarProvider>
-      <Sidebar>
-        <AppSidebar />
-      </Sidebar>
-      <SidebarInset>
-        <AppHeader />
-        <AuthenticatedPage>
-          <OrdensDeServicoContent />
-        </AuthenticatedPage>
-      </SidebarInset>
-    </SidebarProvider>
+    <MobileLayout>
+      <OrdensDeServicoContent />
+    </MobileLayout>
   );
 }

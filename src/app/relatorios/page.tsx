@@ -1,13 +1,6 @@
 'use client';
 
 import { useMemo } from 'react';
-import AppHeader from '@/components/layout/app-header';
-import AppSidebar from '@/components/layout/app-sidebar';
-import {
-  Sidebar,
-  SidebarInset,
-  SidebarProvider,
-} from '@/components/ui/sidebar';
 import { useCollection, useFirestore, useUser, useVehicles } from '@/firebase';
 import { useMemoFirebase } from '@/firebase/provider';
 import { collection, query, where } from 'firebase/firestore';
@@ -16,8 +9,8 @@ import FaturamentoAnualCard from '@/components/relatorios/faturamento-anual-card
 import ServicosRentaveisCard from '@/components/relatorios/servicos-rentaveis-card';
 import ReceitaClienteCard from '@/components/relatorios/receita-cliente-card';
 import HistoricoVeiculoCard from '@/components/relatorios/historico-veiculo-card';
-import AuthenticatedPage from '@/components/layout/authenticated-page';
 import { toDate } from '@/lib/utils';
+import MobileLayout from '@/components/layout/mobile-layout';
 
 
 function RelatoriosContent() {
@@ -29,12 +22,12 @@ function RelatoriosContent() {
     () => (firestore && user?.uid ? query(collection(firestore, 'ordensServico'), where('userId', '==', user.uid), where('status', '==', 'concluida')) : null),
     [firestore, user?.uid]
   );
-  
+
   const clientesQuery = useMemoFirebase(
     () => (firestore && user?.uid ? query(collection(firestore, 'clientes'), where('userId', '==', user.uid)) : null),
     [firestore, user?.uid]
   );
-  
+
   const { data: ordensServico, isLoading: isLoadingOrdens } = useCollection<OrdemServico>(ordensQuery);
   const { data: clientes, isLoading: isLoadingClientes } = useCollection<Cliente>(clientesQuery);
 
@@ -83,7 +76,7 @@ function RelatoriosContent() {
           servicosCount[servico.descricao] = (servicosCount[servico.descricao] || 0) + servico.valor;
         });
       });
-    
+
     return Object.entries(servicosCount)
       .map(([name, total]) => ({ name, total }))
       .sort((a, b) => b.total - a.total)
@@ -101,7 +94,7 @@ function RelatoriosContent() {
         receitaCount[clientName] = (receitaCount[clientName] || 0) + os.valorTotal;
       }
     });
-    
+
     return Object.entries(receitaCount)
       .map(([name, total]) => ({ name, total }))
       .sort((a, b) => b.total - a.total)
@@ -122,8 +115,8 @@ function RelatoriosContent() {
         <FaturamentoAnualCard data={faturamentoData} />
         <ServicosRentaveisCard data={servicosRentaveisData} />
         <ReceitaClienteCard data={receitaClienteData} />
-        <HistoricoVeiculoCard 
-            vehicles={vehicles || []} 
+        <HistoricoVeiculoCard
+            vehicles={vehicles || []}
             clients={clientes || []}
             ordensServico={ordensServico || []}
         />
@@ -134,16 +127,8 @@ function RelatoriosContent() {
 
 export default function RelatoriosPage() {
   return (
-    <SidebarProvider>
-      <Sidebar>
-        <AppSidebar />
-      </Sidebar>
-      <SidebarInset>
-        <AppHeader />
-        <AuthenticatedPage>
-          <RelatoriosContent />
-        </AuthenticatedPage>
-      </SidebarInset>
-    </SidebarProvider>
+    <MobileLayout>
+      <RelatoriosContent />
+    </MobileLayout>
   );
 }

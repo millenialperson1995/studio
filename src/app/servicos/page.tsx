@@ -1,13 +1,6 @@
 'use client';
 
 import { useState } from 'react';
-import AppHeader from '@/components/layout/app-header';
-import AppSidebar from '@/components/layout/app-sidebar';
-import {
-  Sidebar,
-  SidebarInset,
-  SidebarProvider,
-} from '@/components/ui/sidebar';
 import { Button } from '@/components/ui/button';
 import { PlusCircle } from 'lucide-react';
 import {
@@ -31,7 +24,7 @@ import {
 } from '@/components/ui/dialog';
 import { AddServicoForm } from '@/components/servicos/add-servico-form';
 import ServicoTable from '@/components/servicos/servico-table';
-import AuthenticatedPage from '@/components/layout/authenticated-page';
+import MobileLayout from '@/components/layout/mobile-layout';
 
 function ServicosContent() {
   const [isDialogOpen, setIsDialogOpen] = useState(false);
@@ -92,16 +85,8 @@ function ServicosContent() {
 
 export default function ServicosPage() {
   return (
-    <SidebarProvider>
-      <Sidebar>
-        <AppSidebar />
-      </Sidebar>
-      <SidebarInset>
-        <AppHeader />
-        <AuthenticatedPage>
-          <ServicosContent />
-        </AuthenticatedPage>
-      </SidebarInset>
-    </SidebarProvider>
+    <MobileLayout>
+      <ServicosContent />
+    </MobileLayout>
   );
 }

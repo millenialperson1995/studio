@@ -1,6 +1,6 @@
 'use client';
 
-import { Bell, Search, Settings, User, LogOut, PanelLeft } from 'lucide-react';
+import { Bell, Search, Settings, User, LogOut } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import {
@@ -12,7 +12,6 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { SidebarTrigger } from '../ui/sidebar';
 import { useAuth, useUser } from '@/firebase';
 import { useRouter } from 'next/navigation';
 import { signOut } from 'firebase/auth';
@@ -33,7 +32,7 @@ export default function AppHeader() {
       console.error('Error signing out: ', error);
     }
   };
-  
+
   const getInitials = (name?: string | null) => {
     if (!name) return 'AD';
     const names = name.split(' ');
@@ -51,13 +50,6 @@ export default function AppHeader() {
 
   return (
     <header className="flex h-16 items-center gap-4 border-b bg-card px-4 md:px-6 sticky top-0 z-30">
-      <div className="md:hidden">
-        <SidebarTrigger>
-           <PanelLeft className="h-6 w-6" />
-           <span className="sr-only">Toggle Sidebar</span>
-        </SidebarTrigger>
-      </div>
-      
       <div className="w-full flex-1">
         <form>
           <div className="relative">

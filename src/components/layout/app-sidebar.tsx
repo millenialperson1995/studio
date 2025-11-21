@@ -1,99 +1,98 @@
 import {
-    Car,
-    FileText,
-    LayoutDashboard,
-    LineChart,
-    List,
-    Package,
-    Settings,
-    Users,
-    Wrench,
-  } from 'lucide-react';
-  import {
-    SidebarHeader,
-    SidebarContent,
-    SidebarMenu,
-    SidebarMenuItem,
-    SidebarMenuButton,
-    SidebarFooter,
-    useSidebar,
-  } from '../ui/sidebar';
-  import { cn } from '@/lib/utils';
-  import LogoImage from '../ui/logo-image';
+  Car,
+  FileText,
+  LayoutDashboard,
+  LineChart,
+  List,
+  Package,
+  Settings,
+  Users,
+  Wrench,
+} from 'lucide-react';
+import {
+  SidebarHeader,
+  SidebarContent,
+  SidebarMenu,
+  SidebarMenuItem,
+  SidebarMenuButton,
+  SidebarFooter,
+  useSidebar,
+} from '../ui/sidebar';
+import { cn } from '@/lib/utils';
+import LogoImage from '../ui/logo-image';
 
+const AppSidebar = () => {
+  const { state } = useSidebar();
+  const isCollapsed = state === 'collapsed';
 
-  const AppSidebar = () => {
-    const { state } = useSidebar();
-    const isCollapsed = state === 'collapsed';
-    return (
-      <>
-        <SidebarHeader>
-          <div className={cn("flex items-center gap-2 p-2", isCollapsed ? 'justify-center' : '')}>
-            <LogoImage width={32} height={32} />
-            <h1
-              className={`text-lg font-semibold text-foreground transition-opacity duration-200 ${isCollapsed ? 'opacity-0 w-0' : 'opacity-100'}`}
-            >
-              Retífica Figueirêdo
-            </h1>
-          </div>
-        </SidebarHeader>
-        <SidebarContent>
-          <SidebarMenu>
-            <SidebarMenuItem>
-                <SidebarMenuButton href="/" tooltip="Dashboard">
-                    <LayoutDashboard />
-                    {!isCollapsed && 'Dashboard'}
-                </SidebarMenuButton>
-            </SidebarMenuItem>
-             <SidebarMenuItem>
-                <SidebarMenuButton href="/relatorios" tooltip="Relatórios">
-                    <LineChart />
-                    {!isCollapsed && 'Relatórios'}
-                </SidebarMenuButton>
-            </SidebarMenuItem>
-            <SidebarMenuItem>
-                <SidebarMenuButton href="/clientes" tooltip="Clientes">
-                    <Users />
-                    {!isCollapsed && 'Clientes'}
-                </SidebarMenuButton>
-            </SidebarMenuItem>
-            <SidebarMenuItem>
-                <SidebarMenuButton href="/veiculos" tooltip="Veículos">
-                    <Car />
-                    {!isCollapsed && 'Veículos'}
-                </SidebarMenuButton>
-            </SidebarMenuItem>
-            <SidebarMenuItem>
-                <SidebarMenuButton href="/orcamentos" tooltip="Orçamentos">
-                    <FileText />
-                    {!isCollapsed && 'Orçamentos'}
-                </SidebarMenuButton>
-            </SidebarMenuItem>
-            <SidebarMenuItem>
-                <SidebarMenuButton href="/ordens-de-servico" tooltip="Ordens de Serviço">
-                    <Wrench />
-                    {!isCollapsed && 'Ordens de Serviço'}
-                </SidebarMenuButton>
-            </SidebarMenuItem>
-            <SidebarMenuItem>
-                <SidebarMenuButton href="/estoque" tooltip="Estoque">
-                    <Package />
-                    {!isCollapsed && 'Estoque'}
-                </SidebarMenuButton>
-            </SidebarMenuItem>
-            <SidebarMenuItem>
-                <SidebarMenuButton href="/servicos" tooltip="Serviços">
-                    <List />
-                    {!isCollapsed && 'Serviços'}
-                </SidebarMenuButton>
-            </SidebarMenuItem>
-          </SidebarMenu>
-        </SidebarContent>
-        <SidebarFooter className="mt-auto">
-        </SidebarFooter>
-      </>
-    );
-  };
-  
-  export default AppSidebar;
-  
+  return (
+    <>
+      <SidebarHeader>
+        <div className={cn("flex items-center gap-2 p-2", isCollapsed ? 'justify-center' : '')}>
+          <LogoImage width={32} height={32} />
+          <h1
+            className={`text-lg font-semibold text-foreground transition-opacity duration-200 ${isCollapsed ? 'opacity-0 w-0' : 'opacity-100'}`}
+          >
+            Retífica Figueirêdo
+          </h1>
+        </div>
+      </SidebarHeader>
+      <SidebarContent>
+        <SidebarMenu>
+          <SidebarMenuItem>
+            <SidebarMenuButton href="/" tooltip="Dashboard">
+              <LayoutDashboard />
+              {!isCollapsed && 'Dashboard'}
+            </SidebarMenuButton>
+          </SidebarMenuItem>
+          <SidebarMenuItem>
+            <SidebarMenuButton href="/relatorios" tooltip="Relatórios">
+              <LineChart />
+              {!isCollapsed && 'Relatórios'}
+            </SidebarMenuButton>
+          </SidebarMenuItem>
+          <SidebarMenuItem>
+            <SidebarMenuButton href="/clientes" tooltip="Clientes">
+              <Users />
+              {!isCollapsed && 'Clientes'}
+            </SidebarMenuButton>
+          </SidebarMenuItem>
+          <SidebarMenuItem>
+            <SidebarMenuButton href="/veiculos" tooltip="Veículos">
+              <Car />
+              {!isCollapsed && 'Veículos'}
+            </SidebarMenuButton>
+          </SidebarMenuItem>
+          <SidebarMenuItem>
+            <SidebarMenuButton href="/orcamentos" tooltip="Orçamentos">
+              <FileText />
+              {!isCollapsed && 'Orçamentos'}
+            </SidebarMenuButton>
+          </SidebarMenuItem>
+          <SidebarMenuItem>
+            <SidebarMenuButton href="/ordens-de-servico" tooltip="Ordens de Serviço">
+              <Wrench />
+              {!isCollapsed && 'Ordens de Serviço'}
+            </SidebarMenuButton>
+          </SidebarMenuItem>
+          <SidebarMenuItem>
+            <SidebarMenuButton href="/estoque" tooltip="Estoque">
+              <Package />
+              {!isCollapsed && 'Estoque'}
+            </SidebarMenuButton>
+          </SidebarMenuItem>
+          <SidebarMenuItem>
+            <SidebarMenuButton href="/servicos" tooltip="Serviços">
+              <List />
+              {!isCollapsed && 'Serviços'}
+            </SidebarMenuButton>
+          </SidebarMenuItem>
+        </SidebarMenu>
+      </SidebarContent>
+      <SidebarFooter className="mt-auto">
+      </SidebarFooter>
+    </>
+  );
+};
+
+export default AppSidebar;

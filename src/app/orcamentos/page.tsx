@@ -1,13 +1,6 @@
 'use client';
 
 import { useState, useMemo } from 'react';
-import AppHeader from '@/components/layout/app-header';
-import AppSidebar from '@/components/layout/app-sidebar';
-import {
-  Sidebar,
-  SidebarInset,
-  SidebarProvider,
-} from '@/components/ui/sidebar';
 import { Button } from '@/components/ui/button';
 import { PlusCircle } from 'lucide-react';
 import {
@@ -31,10 +24,10 @@ import {
   DialogTrigger,
 } from '@/components/ui/dialog';
 import OrcamentoTable from '@/components/orcamentos/orcamento-table';
-import AuthenticatedPage from '@/components/layout/authenticated-page';
 import { toDate } from '@/lib/utils';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { AddOrcamentoForm } from '@/components/orcamentos/add-orcamento-form';
+import MobileLayout from '@/components/layout/mobile-layout';
 
 const ITEMS_PER_PAGE = 5;
 
@@ -75,7 +68,7 @@ function OrcamentosContent() {
     if (!orcamentos) return [];
     return [...orcamentos].sort((a, b) => toDate(b.dataCriacao).getTime() - toDate(a.dataCriacao).getTime());
   }, [orcamentos]);
-  
+
   const totalPages = Math.ceil((sortedOrcamentos?.length || 0) / ITEMS_PER_PAGE);
   const paginatedOrcamentos = sortedOrcamentos.slice(
     (currentPage - 1) * ITEMS_PER_PAGE,
@@ -85,10 +78,10 @@ function OrcamentosContent() {
   const isLoading = isLoadingOrcamentos || isLoadingClients || isLoadingVehicles || isLoadingServicos || isLoadingPecas;
 
   const canCreate = !isLoading && clients && clients.length > 0 && vehicles && vehicles.length > 0;
-  const buttonTooltip = (!clients || clients.length === 0) 
-    ? 'Cadastre um cliente primeiro.' 
-    : (!vehicles || vehicles.length === 0) 
-    ? 'Cadastre um veículo primeiro.' 
+  const buttonTooltip = (!clients || clients.length === 0)
+    ? 'Cadastre um cliente primeiro.'
+    : (!vehicles || vehicles.length === 0)
+    ? 'Cadastre um veículo primeiro.'
     : 'Criar novo orçamento';
 
 
@@ -105,7 +98,7 @@ function OrcamentosContent() {
             <Tooltip>
                 <TooltipTrigger asChild>
                     {/* The button is wrapped in a span to allow tooltip to show even when disabled */}
-                    <span tabIndex={canCreate ? -1 : 0}> 
+                    <span tabIndex={canCreate ? -1 : 0}>
                          <Button disabled={!canCreate} onClick={() => canCreate && setIsAddDialogOpen(true)}>
                            <PlusCircle className="mr-2 h-4 w-4" />
                            Novo Orçamento
@@ -184,16 +177,8 @@ function OrcamentosContent() {
 
 export default function OrcamentosPage() {
   return (
-    <SidebarProvider>
-      <Sidebar>
-        <AppSidebar />
-      </Sidebar>
-      <SidebarInset>
-        <AppHeader />
-        <AuthenticatedPage>
-          <OrcamentosContent />
-        </AuthenticatedPage>
-      </SidebarInset>
-    </SidebarProvider>
+    <MobileLayout>
+      <OrcamentosContent />
+    </MobileLayout>
   );
 }

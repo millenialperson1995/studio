@@ -85,3 +85,10 @@
     @apply bg-background text-foreground;
   }
 }
+
+/* Ajustes para mobile com bottom navigation */
+@media (max-width: 767px) {
+  .pb-16 {
+    padding-bottom: 4rem; /* Altura do bottom navigation */
+  }
+}

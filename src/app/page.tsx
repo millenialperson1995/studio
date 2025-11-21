@@ -1,8 +1,5 @@
 'use client';
 import { useMemo } from 'react';
-import AppHeader from '@/components/layout/app-header';
-import AppSidebar from '@/components/layout/app-sidebar';
-import { Sidebar, SidebarInset, SidebarProvider } from '@/components/ui/sidebar';
 import StatCard from '@/components/dashboard/stat-card';
 import {
   Car,
@@ -19,7 +16,7 @@ import { collection, query, where } from 'firebase/firestore';
 import { useMemoFirebase } from '@/firebase/provider';
 import type { Cliente, OrdemServico, Orcamento } from '@/lib/types';
 import { toDate } from '@/lib/utils';
-import AuthenticatedPage from '@/components/layout/authenticated-page';
+import MobileLayout from '@/components/layout/mobile-layout';
 
 function DashboardContent() {
   const firestore = useFirestore();
@@ -38,7 +35,7 @@ function DashboardContent() {
     () => (firestore && user?.uid ? query(collection(firestore, 'ordensServico'), where('userId', '==', user.uid)) : null),
     [firestore, user?.uid]
   );
-  
+
   const { data: clientes, isLoading: isLoadingClientes } = useCollection<Cliente>(clientesRef);
   const { data: orcamentos, isLoading: isLoadingOrcamentos } = useCollection<Orcamento>(orcamentosRef);
   const { data: ordensServico, isLoading: isLoadingOrdens } = useCollection<OrdemServico>(ordensQuery);
@@ -65,9 +62,9 @@ function DashboardContent() {
     const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
 
     // Stat Cards
-    const ordensConcluidasMes = ordensServico.filter(os => 
-      os.status === 'concluida' && 
-      os.dataConclusao && 
+    const ordensConcluidasMes = ordensServico.filter(os =>
+      os.status === 'concluida' &&
+      os.dataConclusao &&
       toDate(os.dataConclusao) >= startOfMonth
     );
 
@@ -75,14 +72,14 @@ function DashboardContent() {
     const ordensAndamento = ordensServico.filter(os => os.status === 'andamento').length;
     const orcamentosPendentes = orcamentos.filter(o => o.status === 'pendente').length;
     const totalClientes = clientes.length;
-    const novosClientesMes = clientes.filter(c => 
+    const novosClientesMes = clientes.filter(c =>
         c.createdAt && toDate(c.createdAt) >= startOfMonth
     ).length;
 
     // Revenue Chart (Last 3 months)
     const monthlyRevenue: { [key: string]: number } = {};
     const monthNames = ["Jan", "Fev", "Mar", "Abr", "Mai", "Jun", "Jul", "Ago", "Set", "Out", "Nov", "Dez"];
-    
+
     for (let i = 2; i >= 0; i--) {
         const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
         const monthKey = `${monthNames[d.getMonth()]}`;
@@ -128,38 +125,38 @@ function DashboardContent() {
       recentOrders,
     };
   }, [isLoading, clientes, orcamentos, ordensServico]);
-  
+
   if (isLoading) {
     return null; // The loading skeleton is handled by AuthenticatedPage
   }
-  
+
   const stats = [
-    { 
-      title: "Receita Mensal", 
-      value: `R$ ${dashboardStats.receitaMensal.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`, 
+    {
+      title: "Receita Mensal",
+      value: `R$ ${dashboardStats.receitaMensal.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`,
       icon: <CircleDollarSign className="h-6 w-6 text-muted-foreground" />,
       description: "Receita do mês atual"
     },
-    { 
-      title: "Ordens em Andamento", 
+    {
+      title: "Ordens em Andamento",
       value: dashboardStats.ordensAndamento.toString(),
       icon: <Clock className="h-6 w-6 text-muted-foreground" />,
       description: "Serviços ativos no momento"
     },
-    { 
-      title: "Ordens Concluídas", 
+    {
+      title: "Ordens Concluídas",
       value: dashboardStats.ordensConcluidasMes.toString(),
       icon: <Wrench className="h-6 w-6 text-muted-foreground" />,
       description: "Ordens finalizadas este mês"
     },
-    { 
-      title: "Orçamentos Pendentes", 
+    {
+      title: "Orçamentos Pendentes",
       value: dashboardStats.orcamentosPendentes.toString(),
       icon: <FileText className="h-6 w-6 text-muted-foreground" />,
       description: "Aguardando aprovação do cliente"
     },
-    { 
-      title: "Total de Clientes", 
+    {
+      title: "Total de Clientes",
       value: dashboardStats.totalClientes.toString(),
       icon: <Users className="h-6 w-6 text-muted-foreground" />,
       description: `${dashboardStats.novosClientesMes} novos este mês`
@@ -179,7 +176,7 @@ function DashboardContent() {
               />
             ))}
         </div>
-      
+
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
         <div className="lg:col-span-2">
           <RevenueChartCard data={dashboardStats.revenueData} />
@@ -193,7 +190,7 @@ function DashboardContent() {
               />
         </div>
       </div>
-      
+
             <RecentActivityCard
                 title="Ordens de Serviço Recentes"
                 items={dashboardStats.recentOrders}
@@ -206,16 +203,8 @@ function DashboardContent() {
 
 export default function Home() {
   return (
-    <SidebarProvider>
-      <Sidebar>
-        <AppSidebar />
-      </Sidebar>
-      <SidebarInset>
-        <AppHeader />
-        <AuthenticatedPage>
-          <DashboardContent />
-        </AuthenticatedPage>
-      </SidebarInset>
-    </SidebarProvider>
+    <MobileLayout>
+      <DashboardContent />
+    </MobileLayout>
   );
 }

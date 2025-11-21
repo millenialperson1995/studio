@@ -1,13 +1,6 @@
 'use client';
 
 import { useState } from 'react';
-import AppHeader from '@/components/layout/app-header';
-import AppSidebar from '@/components/layout/app-sidebar';
-import {
-  Sidebar,
-  SidebarInset,
-  SidebarProvider,
-} from '@/components/ui/sidebar';
 import { Button } from '@/components/ui/button';
 import { PlusCircle } from 'lucide-react';
 import {
@@ -31,7 +24,7 @@ import {
 } from '@/components/ui/dialog';
 import { AddVehicleForm } from '@/components/veiculos/add-vehicle-form';
 import VehicleTable from '@/components/veiculos/vehicle-table';
-import AuthenticatedPage from '@/components/layout/authenticated-page';
+import MobileLayout from '@/components/layout/mobile-layout';
 
 function VeiculosContent() {
   const [isDialogOpen, setIsDialogOpen] = useState(false);
@@ -44,7 +37,7 @@ function VeiculosContent() {
     [firestore, user?.uid]
   );
   const { data: clients, isLoading: isLoadingClients } = useCollection<Cliente>(clientsCollectionRef);
-  
+
   const isLoading = isLoadingVehicles || isLoadingClients;
 
   if (isLoading) {
@@ -94,16 +87,8 @@ function VeiculosContent() {
 
 export default function VeiculosPage() {
   return (
-    <SidebarProvider>
-      <Sidebar>
-        <AppSidebar />
-      </Sidebar>
-      <SidebarInset>
-        <AppHeader />
-        <AuthenticatedPage>
-          <VeiculosContent />
-        </AuthenticatedPage>
-      </SidebarInset>
-    </SidebarProvider>
+    <MobileLayout>
+      <VeiculosContent />
+    </MobileLayout>
   );
 }

@@ -1,13 +1,6 @@
 'use client';
 
 import { useState } from 'react';
-import AppHeader from '@/components/layout/app-header';
-import AppSidebar from '@/components/layout/app-sidebar';
-import {
-  Sidebar,
-  SidebarInset,
-  SidebarProvider,
-} from '@/components/ui/sidebar';
 import { Button } from '@/components/ui/button';
 import { PlusCircle } from 'lucide-react';
 import ClientTable from '@/components/clientes/client-table';
@@ -31,7 +24,7 @@ import {
   DialogTrigger,
 } from '@/components/ui/dialog';
 import { AddClientForm } from '@/components/clientes/add-client-form';
-import AuthenticatedPage from '@/components/layout/authenticated-page';
+import MobileLayout from '@/components/layout/mobile-layout';
 
 function ClientesContent() {
   const [isDialogOpen, setIsDialogOpen] = useState(false);
@@ -42,7 +35,7 @@ function ClientesContent() {
     () => (firestore && user?.uid ? query(collection(firestore, 'clientes'), where('userId', '==', user.uid)) : null),
     [firestore, user?.uid]
   );
-  
+
   const {
     data: clients,
     isLoading,
@@ -98,16 +91,8 @@ function ClientesContent() {
 
 export default function ClientesPage() {
   return (
-    <SidebarProvider>
-      <Sidebar>
-        <AppSidebar />
-      </Sidebar>
-      <SidebarInset>
-        <AppHeader />
-        <AuthenticatedPage>
-          <ClientesContent />
-        </AuthenticatedPage>
-      </SidebarInset>
-    </SidebarProvider>
+    <MobileLayout>
+      <ClientesContent />
+    </MobileLayout>
   );
 }
