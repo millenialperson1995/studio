@@ -1,12 +1,6 @@
 'use client';
 
-import AppHeader from '@/components/layout/app-header';
-import AppSidebar from '@/components/layout/app-sidebar';
-import {
-  Sidebar,
-  SidebarInset,
-  SidebarProvider,
-} from '@/components/ui/sidebar';
+import MobileLayout from '@/components/layout/mobile-layout';
 import { useDoc, useFirestore, useUser } from '@/firebase';
 import { doc } from 'firebase/firestore';
 import { useMemoFirebase } from '@/firebase/provider';
@@ -23,7 +17,7 @@ function ConfiguracoesContent() {
     () => (firestore && user?.uid ? doc(firestore, 'oficinas', user.uid) : null),
     [firestore, user?.uid]
   );
-  
+
   const { data: oficina, isLoading, error } = useDoc<Oficina>(oficinaDocRef);
 
   if (isLoading) {
@@ -36,7 +30,7 @@ function ConfiguracoesContent() {
         <h1 className="text-2xl font-semibold">Configurações</h1>
         <p className="text-muted-foreground">Gerencie as informações da sua empresa que aparecem em documentos e relatórios.</p>
       </div>
-      
+
       <Card>
           <CardHeader>
               <CardTitle>Dados da Oficina</CardTitle>
@@ -46,7 +40,7 @@ function ConfiguracoesContent() {
               <OficinaForm oficina={oficina} />
           </CardContent>
       </Card>
-      
+
        {error && (
             <Card className="border-destructive">
                 <CardHeader>
@@ -61,17 +55,11 @@ function ConfiguracoesContent() {
 
 export default function ConfiguracoesPage() {
   return (
-    <SidebarProvider>
-      <Sidebar>
-        <AppSidebar />
-      </Sidebar>
-      <SidebarInset>
-        <AppHeader />
-        <AuthenticatedPage>
-          <ConfiguracoesContent />
-        </AuthenticatedPage>
-      </SidebarInset>
-    </SidebarProvider>
+    <MobileLayout>
+      <AuthenticatedPage>
+        <ConfiguracoesContent />
+      </AuthenticatedPage>
+    </MobileLayout>
   );
 }
     

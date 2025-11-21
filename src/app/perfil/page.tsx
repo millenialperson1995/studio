@@ -1,12 +1,6 @@
 'use client';
 
-import AppHeader from '@/components/layout/app-header';
-import AppSidebar from '@/components/layout/app-sidebar';
-import {
-  Sidebar,
-  SidebarInset,
-  SidebarProvider,
-} from '@/components/ui/sidebar';
+import MobileLayout from '@/components/layout/mobile-layout';
 import { useDoc, useFirestore, useUser } from '@/firebase';
 import { doc } from 'firebase/firestore';
 import { useMemoFirebase } from '@/firebase/provider';
@@ -23,7 +17,7 @@ function PerfilContent() {
     () => (firestore && user?.uid ? doc(firestore, 'users', user.uid) : null),
     [firestore, user?.uid]
   );
-  
+
   const { data: userProfile, isLoading, error } = useDoc<UserProfile>(userDocRef);
 
   if (isLoading) {
@@ -36,7 +30,7 @@ function PerfilContent() {
         <h1 className="text-2xl font-semibold">Perfil</h1>
         <p className="text-muted-foreground">Gerencie suas informações pessoais.</p>
       </div>
-      
+
       <Card>
           <CardHeader>
               <CardTitle>Seus Dados</CardTitle>
@@ -46,7 +40,7 @@ function PerfilContent() {
               <PerfilForm userProfile={userProfile} />
           </CardContent>
       </Card>
-      
+
        {error && (
             <Card className="border-destructive">
                 <CardHeader>
@@ -61,16 +55,10 @@ function PerfilContent() {
 
 export default function PerfilPage() {
   return (
-    <SidebarProvider>
-      <Sidebar>
-        <AppSidebar />
-      </Sidebar>
-      <SidebarInset>
-        <AppHeader />
-        <AuthenticatedPage>
-          <PerfilContent />
-        </AuthenticatedPage>
-      </SidebarInset>
-    </SidebarProvider>
+    <MobileLayout>
+      <AuthenticatedPage>
+        <PerfilContent />
+      </AuthenticatedPage>
+    </MobileLayout>
   );
 }
