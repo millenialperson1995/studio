@@ -1,5 +1,6 @@
 'use client';
 import { useMemo } from 'react';
+import Link from 'next/link';
 import StatCard from '@/components/dashboard/stat-card';
 import {
   Car,
@@ -135,46 +136,62 @@ function DashboardContent() {
       title: "Receita Mensal",
       value: `R$ ${dashboardStats.receitaMensal.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`,
       icon: <CircleDollarSign className="h-6 w-6 text-muted-foreground" />,
-      description: "Receita do mês atual"
+      description: "Receita do mês atual",
+      href: null,
     },
     {
       title: "Ordens em Andamento",
       value: dashboardStats.ordensAndamento.toString(),
       icon: <Clock className="h-6 w-6 text-muted-foreground" />,
-      description: "Serviços ativos no momento"
+      description: "Serviços ativos no momento",
+      href: "/ordens-de-servico?status=andamento",
     },
     {
       title: "Ordens Concluídas",
       value: dashboardStats.ordensConcluidasMes.toString(),
       icon: <Wrench className="h-6 w-6 text-muted-foreground" />,
-      description: "Ordens finalizadas este mês"
+      description: "Ordens finalizadas este mês",
+      href: "/ordens-de-servico?status=concluida",
     },
     {
       title: "Orçamentos Pendentes",
       value: dashboardStats.orcamentosPendentes.toString(),
       icon: <FileText className="h-6 w-6 text-muted-foreground" />,
-      description: "Aguardando aprovação do cliente"
+      description: "Aguardando aprovação do cliente",
+      href: "/orcamentos?status=pendente",
     },
     {
       title: "Total de Clientes",
       value: dashboardStats.totalClientes.toString(),
       icon: <Users className="h-6 w-6 text-muted-foreground" />,
-      description: `${dashboardStats.novosClientesMes} novos este mês`
+      description: `${dashboardStats.novosClientesMes} novos este mês`,
+      href: "/clientes",
     }
   ];
 
   return (
     <main className="flex-1 space-y-6 p-4 md:p-6 lg:p-8">
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-4">
-            {stats.map(stat => (
-              <StatCard
-                key={stat.title}
-                title={stat.title}
-                value={stat.value}
-                icon={stat.icon}
-                description={stat.description}
-              />
-            ))}
+            {stats.map(stat => {
+              const card = (
+                  <StatCard
+                    title={stat.title}
+                    value={stat.value}
+                    icon={stat.icon}
+                    description={stat.description}
+                  />
+              );
+
+              if (stat.href) {
+                return (
+                  <Link href={stat.href} key={stat.title} className="hover:cursor-pointer transition-transform duration-200 hover:scale-105">
+                    {card}
+                  </Link>
+                );
+              }
+
+              return <div key={stat.title}>{card}</div>;
+            })}
         </div>
 
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
