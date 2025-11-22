@@ -9,6 +9,7 @@ import {
   CardHeader,
   CardTitle,
   CardDescription,
+  CardFooter,
 } from '@/components/ui/card';
 import { useCollection, useFirestore, useUser } from '@/firebase';
 import { useMemoFirebase } from '@/firebase/provider';
@@ -26,8 +27,11 @@ import { AddServicoForm } from '@/components/servicos/add-servico-form';
 import ServicoTable from '@/components/servicos/servico-table';
 import MobileLayout from '@/components/layout/mobile-layout';
 
+const ITEMS_PER_PAGE = 5;
+
 function ServicosContent() {
   const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const [currentPage, setCurrentPage] = useState(1);
   const firestore = useFirestore();
   const { user } = useUser();
   const servicosCollectionRef = useMemoFirebase(
@@ -35,6 +39,12 @@ function ServicosContent() {
     [firestore, user?.uid]
   );
   const { data: servicos, isLoading, error } = useCollection<Servico>(servicosCollectionRef);
+
+  const totalPages = Math.ceil((servicos?.length || 0) / ITEMS_PER_PAGE);
+  const paginatedServicos = servicos?.slice(
+    (currentPage - 1) * ITEMS_PER_PAGE,
+    currentPage * ITEMS_PER_PAGE
+  ) || [];
 
   if (isLoading) {
     return null; // Skeleton handled by AuthenticatedPage
@@ -71,13 +81,40 @@ function ServicosContent() {
           </CardDescription>
         </CardHeader>
         <CardContent>
-          <ServicoTable servicos={servicos || []} />
+          <ServicoTable servicos={paginatedServicos} />
           {error && (
             <div className="text-destructive text-center p-4">
               Ocorreu um erro ao carregar os serviços. Tente novamente.
             </div>
           )}
         </CardContent>
+        {totalPages > 1 && (
+          <CardFooter>
+            <div className="flex w-full items-center justify-between text-xs text-muted-foreground">
+              <div>
+                Página {currentPage} de {totalPages}
+              </div>
+              <div className="flex items-center gap-2">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
+                  disabled={currentPage === 1}
+                >
+                  Anterior
+                </Button>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))}
+                  disabled={currentPage === totalPages}
+                >
+                  Próxima
+                </Button>
+              </div>
+            </div>
+          </CardFooter>
+        )}
       </Card>
     </main>
   );

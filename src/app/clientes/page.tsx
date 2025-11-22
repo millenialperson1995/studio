@@ -10,10 +10,11 @@ import {
   CardHeader,
   CardTitle,
   CardDescription,
+  CardFooter,
 } from '@/components/ui/card';
 import { useCollection, useFirestore, useUser } from '@/firebase';
 import { useMemoFirebase } from '@/firebase/provider';
-import { collection, query, where } from 'firebase/firestore';
+import { collection, query, where, orderBy } from 'firebase/firestore';
 import type { Cliente } from '@/lib/types';
 import {
   Dialog,
@@ -26,13 +27,16 @@ import {
 import { AddClientForm } from '@/components/clientes/add-client-form';
 import MobileLayout from '@/components/layout/mobile-layout';
 
+const ITEMS_PER_PAGE = 5;
+
 function ClientesContent() {
   const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const [currentPage, setCurrentPage] = useState(1);
   const firestore = useFirestore();
   const { user } = useUser();
 
   const clientesCollectionRef = useMemoFirebase(
-    () => (firestore && user?.uid ? query(collection(firestore, 'clientes'), where('userId', '==', user.uid)) : null),
+    () => (firestore && user?.uid ? query(collection(firestore, 'clientes'), where('userId', '==', user.uid), orderBy('createdAt', 'desc')) : null),
     [firestore, user?.uid]
   );
 
@@ -41,6 +45,12 @@ function ClientesContent() {
     isLoading,
     error,
   } = useCollection<Cliente>(clientesCollectionRef);
+
+  const totalPages = Math.ceil((clients?.length || 0) / ITEMS_PER_PAGE);
+  const paginatedClients = clients?.slice(
+    (currentPage - 1) * ITEMS_PER_PAGE,
+    currentPage * ITEMS_PER_PAGE
+  ) || [];
 
   if (isLoading) {
      return null; // Skeleton handled by AuthenticatedPage
@@ -77,13 +87,40 @@ function ClientesContent() {
           </CardDescription>
         </CardHeader>
         <CardContent>
-          <ClientTable clients={clients || []} />
+          <ClientTable clients={paginatedClients} />
           {error && (
             <div className="text-destructive text-center p-4">
               Ocorreu um erro ao carregar os clientes. Tente novamente mais tarde.
             </div>
           )}
         </CardContent>
+        {totalPages > 1 && (
+          <CardFooter>
+            <div className="flex w-full items-center justify-between text-xs text-muted-foreground">
+              <div>
+                Página {currentPage} de {totalPages}
+              </div>
+              <div className="flex items-center gap-2">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
+                  disabled={currentPage === 1}
+                >
+                  Anterior
+                </Button>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))}
+                  disabled={currentPage === totalPages}
+                >
+                  Próxima
+                </Button>
+              </div>
+            </div>
+          </CardFooter>
+        )}
       </Card>
     </main>
   );

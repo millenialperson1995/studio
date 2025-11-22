@@ -8,6 +8,7 @@ import {
   CardHeader,
   CardTitle,
   CardDescription,
+  CardFooter,
 } from '@/components/ui/card';
 import { useCollection, useFirestore, useUser } from '@/firebase';
 import { useMemoFirebase } from '@/firebase/provider';
@@ -23,12 +24,14 @@ import {
 } from '@/components/ui/dialog';
 import { AddPecaForm } from '@/components/estoque/add-peca-form';
 import PecaTable from '@/components/estoque/peca-table';
-import AuthenticatedPage from '@/components/layout/authenticated-page';
 import MobileLayout from '@/components/layout/mobile-layout';
 import { PlusCircle } from 'lucide-react';
 
+const ITEMS_PER_PAGE = 5;
+
 function EstoqueContent() {
   const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const [currentPage, setCurrentPage] = useState(1);
   const firestore = useFirestore();
   const { user } = useUser();
   const pecasCollectionRef = useMemoFirebase(
@@ -36,6 +39,12 @@ function EstoqueContent() {
     [firestore, user?.uid]
   );
   const { data: pecas, isLoading, error } = useCollection<Peca>(pecasCollectionRef);
+
+  const totalPages = Math.ceil((pecas?.length || 0) / ITEMS_PER_PAGE);
+  const paginatedPecas = pecas?.slice(
+    (currentPage - 1) * ITEMS_PER_PAGE,
+    currentPage * ITEMS_PER_PAGE
+  ) || [];
 
   if (isLoading) {
     return null; // Skeleton handled by AuthenticatedPage
@@ -72,13 +81,40 @@ function EstoqueContent() {
           </CardDescription>
         </CardHeader>
         <CardContent>
-          <PecaTable pecas={pecas || []} />
+          <PecaTable pecas={paginatedPecas} />
           {error && (
             <div className="text-destructive text-center p-4">
               Ocorreu um erro ao carregar as peças. Tente novamente.
             </div>
           )}
         </CardContent>
+        {totalPages > 1 && (
+          <CardFooter>
+            <div className="flex w-full items-center justify-between text-xs text-muted-foreground">
+              <div>
+                Página {currentPage} de {totalPages}
+              </div>
+              <div className="flex items-center gap-2">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
+                  disabled={currentPage === 1}
+                >
+                  Anterior
+                </Button>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))}
+                  disabled={currentPage === totalPages}
+                >
+                  Próxima
+                </Button>
+              </div>
+            </div>
+          </CardFooter>
+        )}
       </Card>
     </main>
   );
