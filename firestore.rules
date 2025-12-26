@@ -67,6 +67,13 @@ service cloud.firestore {
         allow delete: if isSignedIn() && isOwner(get(/databases/$(database)/documents/ordensServico/$(ordemServicoId)).data.userId);
     }
 
+    match /resumos/{docId} {
+        allow read: if isSignedIn() && isOwner(resource.data.userId);
+        allow create: if isSignedIn() && isCreatingOwnedResource();
+        allow update: if isSignedIn() && isOwner(get(/databases/$(database)/documents/resumos/$(docId)).data.userId);
+        allow delete: if isSignedIn() && isOwner(get(/databases/$(database)/documents/resumos/$(docId)).data.userId);
+    }
+
     // --- Subcollections ---
     match /clientes/{clienteId}/veiculos/{veiculoId} {
         allow create: if isSignedIn() && isCreatingOwnedResource();

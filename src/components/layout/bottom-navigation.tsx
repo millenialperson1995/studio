@@ -1,7 +1,7 @@
 'use client';
 
 import { Button } from '@/components/ui/button';
-import { Car, FileText, LayoutDashboard, LineChart, List, Package, Plus, Settings, Users, Wrench } from 'lucide-react';
+import { Car, FileText, LayoutDashboard, LineChart, List, Package, Plus, Settings, Users, Wrench, ScrollText } from 'lucide-react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { cn } from '@/lib/utils';
@@ -20,6 +20,7 @@ const mainNavItems = [
 // Itens secundários que aparecem ao expandir
 const additionalNavItems = [
   { href: '/ordens-de-servico', label: 'Ordens', icon: Wrench },
+  { href: '/resumos', label: 'Resumos', icon: ScrollText },
   { href: '/estoque', label: 'Estoque', icon: Package },
   { href: '/servicos', label: 'Serviços', icon: List },
   { href: '/relatorios', label: 'Relatórios', icon: LineChart },
@@ -65,6 +66,7 @@ export default function BottomNavigation() {
             {additionalNavItems.map((item) => {
               const isActive = pathname === item.href;
               const IconComponent = item.icon;
+              const isNewFeature = item.href === '/resumos';
 
               return (
                 <Button
@@ -77,13 +79,26 @@ export default function BottomNavigation() {
                     isActive ? 'text-primary bg-primary/10' : 'text-muted-foreground'
                   )}
                 >
-                  <Link href={item.href} onClick={() => setIsExpanded(false)}>
-                    <IconComponent
-                      className={cn('h-7 w-7 mb-2', {
+                  <Link href={item.href} onClick={() => setIsExpanded(false)} className="flex flex-col items-center gap-1">
+                    <div className="relative">
+                      <IconComponent className={cn('h-6 w-6', {
                         'text-primary': isActive,
-                      })}
-                    />
-                    <span className="text-xs font-bold text-center leading-none">{item.label}</span>
+                      })} />
+                      {isNewFeature && (
+                        <span className="absolute -top-1 -right-1 flex h-2 w-2">
+                          <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75"></span>
+                          <span className="relative inline-flex rounded-full h-2 w-2 bg-green-500"></span>
+                        </span>
+                      )}
+                    </div>
+                    <span className={cn("text-[0.7rem] font-bold text-center leading-none", isActive && 'text-primary')}>
+                      {item.label}
+                    </span>
+                    {isNewFeature && (
+                      <span className="text-[0.5rem] font-extrabold px-1.5 py-0.5 bg-gradient-to-r from-green-500 to-emerald-500 text-white rounded-full">
+                        NOVO
+                      </span>
+                    )}
                   </Link>
                 </Button>
               );

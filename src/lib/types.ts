@@ -114,10 +114,10 @@ export interface ItemServico {
 }
 
 export interface ItemPeca {
-    itemId?: string; // ID of the part in the 'pecas' collection
-    descricao: string;
-    quantidade: number;
-    valorUnitario: number;
+  itemId?: string; // ID of the part in the 'pecas' collection
+  descricao: string;
+  quantidade: number;
+  valorUnitario: number;
 }
 
 
@@ -155,5 +155,28 @@ export interface Peca {
   valorVenda: number;
   fornecedor: string;
   alertaEstoqueBaixo: boolean;
+  createdAt?: any;
+}
+
+export interface ItemResumo {
+  veiculo: string;
+  descricao: string;
+  valor: number;
+  mes: number;
+  ano: number;
+}
+
+export interface ResumoServico {
+  id: string;
+  userId: string;
+  clienteId: string;
+  clienteNome: string;
+  mes: number;
+  ano: number;
+  dataReferencia: any;
+  itens: ItemResumo[];
+  valorTotal: number;
+  status: 'rascunho' | 'fechado';
+  observacoes?: string;
   createdAt?: any;
 }

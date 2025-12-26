@@ -8,6 +8,7 @@ import {
   Settings,
   Users,
   Wrench,
+  ScrollText,
 } from 'lucide-react';
 import {
   SidebarHeader,
@@ -73,6 +74,12 @@ const AppSidebar = () => {
             <SidebarMenuButton href="/ordens-de-servico" tooltip="Ordens de Serviço">
               <Wrench />
               {!isCollapsed && 'Ordens de Serviço'}
+            </SidebarMenuButton>
+          </SidebarMenuItem>
+          <SidebarMenuItem>
+            <SidebarMenuButton href="/resumos" tooltip="Resumo de Serviços">
+              <ScrollText />
+              {!isCollapsed && 'Resumo de Serviços'}
             </SidebarMenuButton>
           </SidebarMenuItem>
           <SidebarMenuItem>

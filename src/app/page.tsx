@@ -174,7 +174,37 @@ function DashboardContent() {
   ];
 
   return (
-    <main className="flex-1 space-y-6 p-4 md:p-6 lg:p-8">
+    <main className="flex-1 space-y-6 p-4 md:p-6 lg:p-8 mb-20 md:mb-0">
+      {/* New Feature Announcement Banner */}
+      <Link href="/resumos">
+        <div className="relative overflow-hidden rounded-xl bg-gradient-to-r from-blue-600 via-purple-600 to-pink-600 p-1 hover:shadow-lg transition-all duration-300 cursor-pointer group">
+          <div className="bg-background rounded-lg p-4 md:p-6">
+            <div className="flex items-start gap-4">
+              <div className="flex-shrink-0 text-4xl animate-bounce">
+                🚀
+              </div>
+              <div className="flex-1 min-w-0">
+                <div className="flex items-center gap-2 mb-1">
+                  <h3 className="text-lg md:text-xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
+                    Novo Módulo Lançado!
+                  </h3>
+                  <span className="px-2 py-0.5 text-xs font-bold bg-gradient-to-r from-green-500 to-emerald-500 text-white rounded-full animate-pulse">
+                    NOVO
+                  </span>
+                </div>
+                <p className="text-sm md:text-base text-muted-foreground mb-2">
+                  <span className="font-semibold text-foreground">Resumos de Serviços</span> - Organize e gerencie fechamentos mensais para seus clientes de forma fácil e profissional.
+                </p>
+                <p className="text-xs md:text-sm text-primary font-medium group-hover:underline">
+                  Clique para experimentar agora →
+                </p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </Link>
+
+      <h1 className="text-2xl md:text-3xl font-bold">Dashboard</h1>
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-4">
         {stats.map(stat => {
           const card = (
