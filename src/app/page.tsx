@@ -19,6 +19,10 @@ import type { Cliente, OrdemServico, Orcamento } from '@/lib/types';
 import { toDate } from '@/lib/utils';
 import MobileLayout from '@/components/layout/mobile-layout';
 
+import DashboardSkeleton from '@/components/dashboard/dashboard-skeleton';
+
+// ... imports
+
 function DashboardContent() {
   const firestore = useFirestore();
   const { user } = useUser();
@@ -74,7 +78,7 @@ function DashboardContent() {
     const orcamentosPendentes = orcamentos.filter(o => o.status === 'pendente').length;
     const totalClientes = clientes.length;
     const novosClientesMes = clientes.filter(c =>
-        c.createdAt && toDate(c.createdAt) >= startOfMonth
+      c.createdAt && toDate(c.createdAt) >= startOfMonth
     ).length;
 
     // Revenue Chart (Last 3 months)
@@ -82,36 +86,36 @@ function DashboardContent() {
     const monthNames = ["Jan", "Fev", "Mar", "Abr", "Mai", "Jun", "Jul", "Ago", "Set", "Out", "Nov", "Dez"];
 
     for (let i = 2; i >= 0; i--) {
-        const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
-        const monthKey = `${monthNames[d.getMonth()]}`;
-        monthlyRevenue[monthKey] = 0;
+      const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
+      const monthKey = `${monthNames[d.getMonth()]}`;
+      monthlyRevenue[monthKey] = 0;
     }
 
     ordensServico.forEach(os => {
-        if (os.status === 'concluida' && os.dataConclusao) {
-            const conclusionDate = toDate(os.dataConclusao);
-            const monthDiff = (now.getFullYear() - conclusionDate.getFullYear()) * 12 + (now.getMonth() - conclusionDate.getMonth());
-            if (monthDiff >= 0 && monthDiff < 3) {
-                 const monthKey = `${monthNames[conclusionDate.getMonth()]}`;
-                 monthlyRevenue[monthKey] += os.valorTotal;
-            }
+      if (os.status === 'concluida' && os.dataConclusao) {
+        const conclusionDate = toDate(os.dataConclusao);
+        const monthDiff = (now.getFullYear() - conclusionDate.getFullYear()) * 12 + (now.getMonth() - conclusionDate.getMonth());
+        if (monthDiff >= 0 && monthDiff < 3) {
+          const monthKey = `${monthNames[conclusionDate.getMonth()]}`;
+          monthlyRevenue[monthKey] += os.valorTotal;
         }
+      }
     });
 
     const revenueData = Object.keys(monthlyRevenue).map(month => ({
-        month,
-        revenue: monthlyRevenue[month],
+      month,
+      revenue: monthlyRevenue[month],
     }));
 
     // Recent Activity Lists
     const pendingQuotes = orcamentos
-        .filter(o => o.status === 'pendente')
-        .sort((a, b) => toDate(b.dataCriacao).getTime() - toDate(a.dataCriacao).getTime())
-        .slice(0, 5);
+      .filter(o => o.status === 'pendente')
+      .sort((a, b) => toDate(b.dataCriacao).getTime() - toDate(a.dataCriacao).getTime())
+      .slice(0, 5);
 
     const recentOrders = ordensServico
-        .sort((a, b) => toDate(b.dataEntrada).getTime() - toDate(a.dataEntrada).getTime())
-        .slice(0, 5);
+      .sort((a, b) => toDate(b.dataEntrada).getTime() - toDate(a.dataEntrada).getTime())
+      .slice(0, 5);
 
 
     return {
@@ -128,7 +132,7 @@ function DashboardContent() {
   }, [isLoading, clientes, orcamentos, ordensServico]);
 
   if (isLoading) {
-    return null; // The loading skeleton is handled by AuthenticatedPage
+    return <DashboardSkeleton />;
   }
 
   const stats = [
@@ -171,49 +175,49 @@ function DashboardContent() {
 
   return (
     <main className="flex-1 space-y-6 p-4 md:p-6 lg:p-8">
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-4">
-            {stats.map(stat => {
-              const card = (
-                  <StatCard
-                    title={stat.title}
-                    value={stat.value}
-                    icon={stat.icon}
-                    description={stat.description}
-                  />
-              );
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-4">
+        {stats.map(stat => {
+          const card = (
+            <StatCard
+              title={stat.title}
+              value={stat.value}
+              icon={stat.icon}
+              description={stat.description}
+            />
+          );
 
-              if (stat.href) {
-                return (
-                  <Link href={stat.href} key={stat.title} className="hover:cursor-pointer transition-transform duration-200 hover:scale-105">
-                    {card}
-                  </Link>
-                );
-              }
+          if (stat.href) {
+            return (
+              <Link href={stat.href} key={stat.title} className="hover:cursor-pointer transition-transform duration-200 hover:scale-105">
+                {card}
+              </Link>
+            );
+          }
 
-              return <div key={stat.title}>{card}</div>;
-            })}
-        </div>
+          return <div key={stat.title}>{card}</div>;
+        })}
+      </div>
 
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
         <div className="lg:col-span-2">
           <RevenueChartCard data={dashboardStats.revenueData} />
         </div>
         <div className="lg:col-span-1">
-              <RecentActivityCard
-                title="Orçamentos Pendentes"
-                items={dashboardStats.pendingQuotes}
-                icon={<FileText className="h-5 w-5" />}
-                emptyMessage="Nenhum orçamento pendente."
-              />
+          <RecentActivityCard
+            title="Orçamentos Pendentes"
+            items={dashboardStats.pendingQuotes}
+            icon={<FileText className="h-5 w-5" />}
+            emptyMessage="Nenhum orçamento pendente."
+          />
         </div>
       </div>
 
-            <RecentActivityCard
-                title="Ordens de Serviço Recentes"
-                items={dashboardStats.recentOrders}
-                icon={<Car className="h-5 w-5" />}
-                emptyMessage="Nenhuma ordem de serviço recente."
-            />
+      <RecentActivityCard
+        title="Ordens de Serviço Recentes"
+        items={dashboardStats.recentOrders}
+        icon={<Car className="h-5 w-5" />}
+        emptyMessage="Nenhuma ordem de serviço recente."
+      />
     </main>
   );
 }

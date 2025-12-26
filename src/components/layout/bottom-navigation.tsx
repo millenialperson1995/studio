@@ -5,20 +5,21 @@ import { Car, FileText, LayoutDashboard, LineChart, List, Package, Plus, Setting
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { cn } from '@/lib/utils';
-import { useState } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import LogoImage from '../ui/logo-image';
+import { useOnClickOutside } from 'usehooks-ts';
 
 // Itens principais que sempre aparecem
 const mainNavItems = [
   { href: '/', label: 'Dashboard', icon: LayoutDashboard },
   { href: '/clientes', label: 'Clientes', icon: Users },
   { href: '/orcamentos', label: 'Orçamentos', icon: FileText },
-  { href: '/ordens-de-servico', label: 'Ordens', icon: Wrench },
+  { href: '/veiculos', label: 'Veículos', icon: Car },
 ];
 
 // Itens secundários que aparecem ao expandir
 const additionalNavItems = [
-  { href: '/veiculos', label: 'Veículos', icon: Car },
+  { href: '/ordens-de-servico', label: 'Ordens', icon: Wrench },
   { href: '/estoque', label: 'Estoque', icon: Package },
   { href: '/servicos', label: 'Serviços', icon: List },
   { href: '/relatorios', label: 'Relatórios', icon: LineChart },
@@ -27,24 +28,40 @@ const additionalNavItems = [
 export default function BottomNavigation() {
   const pathname = usePathname();
   const [isExpanded, setIsExpanded] = useState(false);
+  const containerRef = useRef<HTMLDivElement>(null);
 
   const toggleExpanded = () => setIsExpanded(!isExpanded);
 
+  // Close when clicking outside
+  useOnClickOutside(containerRef as React.RefObject<HTMLElement>, () => setIsExpanded(false));
+
+  // Close on scroll
+  useEffect(() => {
+    const handleScroll = () => {
+      if (isExpanded) {
+        setIsExpanded(false);
+      }
+    };
+
+    window.addEventListener('scroll', handleScroll, { passive: true });
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, [isExpanded]);
+
   return (
-    <div className="fixed bottom-0 left-0 right-0 bg-background border-t md:hidden z-50 shadow-lg">
-      {/* Itens expandidos acima */}
+    <div ref={containerRef} className="fixed bottom-0 left-0 right-0 pointer-events-none md:hidden z-50">
+      {/* Itens expandidos (Menu Flutuante) */}
       {isExpanded && (
-        <div className="relative z-40 bg-popover border-b border-muted shadow-lg">
+        <div className="absolute bottom-20 left-4 right-4 pointer-events-auto bg-popover/95 backdrop-blur-md border border-border shadow-2xl rounded-xl overflow-hidden animate-in slide-in-from-bottom-5 fade-in duration-200">
           {/* Logo no topo */}
-          <div className="flex justify-center py-2">
+          <div className="flex justify-center py-3 bg-muted/30 border-b border-border/50">
             <div className="flex flex-col items-center">
               <LogoImage width={32} height={32} />
-              <span className="text-xs mt-1 text-muted-foreground">Retífica Figueirêdo</span>
+              <span className="text-xs mt-1 font-bold text-muted-foreground">Retífica Figueirêdo</span>
             </div>
           </div>
 
           {/* Itens adicionais */}
-          <div className="flex justify-around items-center p-1">
+          <div className="grid grid-cols-4 gap-2 p-4">
             {additionalNavItems.map((item) => {
               const isActive = pathname === item.href;
               const IconComponent = item.icon;
@@ -56,17 +73,17 @@ export default function BottomNavigation() {
                   variant="ghost"
                   size="sm"
                   className={cn(
-                    "flex flex-col items-center justify-center h-14 w-14 p-2 rounded-none",
-                    isActive ? 'text-primary' : 'text-muted-foreground'
+                    "flex flex-col items-center justify-center h-20 w-auto p-1 rounded-lg hover:bg-accent",
+                    isActive ? 'text-primary bg-primary/10' : 'text-muted-foreground'
                   )}
                 >
                   <Link href={item.href} onClick={() => setIsExpanded(false)}>
                     <IconComponent
-                      className={cn('h-5 w-5', {
+                      className={cn('h-7 w-7 mb-2', {
                         'text-primary': isActive,
                       })}
                     />
-                    <span className="text-[0.5rem] mt-1 font-medium">{item.label}</span>
+                    <span className="text-xs font-bold text-center leading-none">{item.label}</span>
                   </Link>
                 </Button>
               );
@@ -76,7 +93,7 @@ export default function BottomNavigation() {
       )}
 
       {/* Navegação principal (inferior) */}
-      <div className="flex justify-around items-center p-1">
+      <div className="pointer-events-auto bg-background/95 backdrop-blur-lg border-t border-border shadow-[0_-5px_20px_rgba(0,0,0,0.1)] flex justify-around items-end pb-2 pt-2 min-h-[80px]">
         {mainNavItems.slice(0, 2).map((item) => {
           const isActive = pathname === item.href;
           const IconComponent = item.icon;
@@ -88,39 +105,35 @@ export default function BottomNavigation() {
               variant="ghost"
               size="sm"
               className={cn(
-                "flex flex-col items-center justify-center h-16 w-14 p-2 rounded-none",
-                isActive ? 'text-primary' : 'text-muted-foreground'
+                "flex flex-col items-center justify-center h-16 w-16 p-1 rounded-xl transition-all duration-200 hover:bg-transparent focus:bg-transparent active:bg-transparent",
+                isActive ? 'text-primary' : 'text-muted-foreground hover:text-foreground'
               )}
             >
               <Link href={item.href}>
                 <IconComponent
-                  className={cn('h-6 w-6', {
+                  className={cn('h-6 w-6 mb-1', {
                     'text-primary': isActive,
                   })}
                 />
-                <span className="text-[0.6rem] mt-1 font-medium">{item.label}</span>
+                <span className="text-[0.7rem] font-bold">{item.label}</span>
               </Link>
             </Button>
           );
         })}
 
         {/* Botão central de expansão */}
-        <div className="relative flex flex-col items-center">
+        <div className="relative flex flex-col items-center -top-6">
           <Button
             variant="default"
-            size="sm"
+            size="lg"
             className={cn(
-              "flex items-center justify-center h-16 w-16 rounded-full bg-gradient-to-r from-primary to-primary/90 text-primary-foreground -mt-6 z-10",
-              "shadow-lg hover:shadow-xl transition-all duration-300 transform hover:scale-105 active:scale-95"
+              "flex items-center justify-center h-16 w-16 rounded-full bg-primary text-primary-foreground shadow-xl border-4 border-background",
+              "hover:scale-110 active:scale-95 transition-all duration-300",
+              isExpanded && "bg-destructive text-destructive-foreground rotate-45"
             )}
             onClick={toggleExpanded}
           >
-            <Plus
-              className={cn(
-                "h-6 w-6 transition-transform duration-300",
-                isExpanded ? "rotate-45" : ""
-              )}
-            />
+            <Plus className="h-8 w-8" />
           </Button>
         </div>
 
@@ -135,17 +148,17 @@ export default function BottomNavigation() {
               variant="ghost"
               size="sm"
               className={cn(
-                "flex flex-col items-center justify-center h-16 w-14 p-2 rounded-none",
-                isActive ? 'text-primary' : 'text-muted-foreground'
+                "flex flex-col items-center justify-center h-16 w-16 p-1 rounded-xl transition-all duration-200 hover:bg-transparent focus:bg-transparent active:bg-transparent",
+                isActive ? 'text-primary' : 'text-muted-foreground hover:text-foreground'
               )}
             >
               <Link href={item.href}>
                 <IconComponent
-                  className={cn('h-6 w-6', {
+                  className={cn('h-6 w-6 mb-1', {
                     'text-primary': isActive,
                   })}
                 />
-                <span className="text-[0.6rem] mt-1 font-medium">{item.label}</span>
+                <span className="text-[0.7rem] font-bold">{item.label}</span>
               </Link>
             </Button>
           );
