@@ -6,11 +6,20 @@ import { cn } from '@/lib/utils';
 import { FirebaseClientProvider } from '@/firebase';
 
 export const metadata: Metadata = {
-  title: 'Retífica Figueiredo',
-  description: 'Sistema de Gestão para Retíficas',
+  title: 'Retífica Figueirêdo',
+  description: 'Sistema de Gestão para Retíficas e Oficinas Mecânicas',
   manifest: '/manifest.json',
   icons: {
     icon: '/favicon.ico',
+    apple: '/icons/logo-192x192.png',
+  },
+  appleWebApp: {
+    capable: true,
+    statusBarStyle: 'default',
+    title: 'Retífica Figueirêdo',
+  },
+  formatDetection: {
+    telephone: false,
   },
 };
 
