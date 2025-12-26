@@ -67,11 +67,11 @@ const formatCNPJ = (value: string): string => {
 };
 
 const formatTelefone = (value: string): string => {
-    if (!value) return '';
-    value = value.replace(/\D/g, ''); // Remove tudo que não é dígito
-    value = value.replace(/^(\d{2})(\d)/, '($1) $2');
-    value = value.replace(/(\d)(\d{4})$/, '$1-$2');
-    return value.substring(0, 15); // Limita o tamanho para (xx) xxxxx-xxxx
+  if (!value) return '';
+  value = value.replace(/\D/g, ''); // Remove tudo que não é dígito
+  value = value.replace(/^(\d{2})(\d)/, '($1) $2');
+  value = value.replace(/(\d)(\d{4})$/, '$1-$2');
+  return value.substring(0, 15); // Limita o tamanho para (xx) xxxxx-xxxx
 }
 
 
@@ -97,18 +97,34 @@ export function OficinaForm({ oficina }: OficinaFormProps) {
 
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
-    values: {
-      nomeEmpresa: oficina?.nomeEmpresa || '',
-      cnpj: oficina?.cnpj || '',
-      telefone: oficina?.telefone || '',
-      email: oficina?.email || '',
-      cep: oficina?.cep || '',
-      endereco: oficina?.endereco || '',
-      cidade: oficina?.cidade || '',
-      uf: oficina?.uf || '',
+    defaultValues: {
+      nomeEmpresa: '',
+      cnpj: '',
+      telefone: '',
+      email: '',
+      cep: '',
+      endereco: '',
+      cidade: '',
+      uf: '',
     },
     mode: 'onChange' // Validate on change to show CNPJ error immediately
   });
+
+  // Update form when oficina data loads
+  useEffect(() => {
+    if (oficina) {
+      form.reset({
+        nomeEmpresa: oficina.nomeEmpresa || '',
+        cnpj: oficina.cnpj || '',
+        telefone: oficina.telefone || '',
+        email: oficina.email || '',
+        cep: oficina.cep || '',
+        endereco: oficina.endereco || '',
+        cidade: oficina.cidade || '',
+        uf: oficina.uf || '',
+      });
+    }
+  }, [oficina, form]);
 
   const cepValue = form.watch('cep');
 
@@ -148,7 +164,7 @@ export function OficinaForm({ oficina }: OficinaFormProps) {
 
     try {
       const oficinaDocRef = doc(firestore, 'oficinas', user.uid);
-      
+
       const oficinaData = {
         ...values,
         userId: user.uid,
@@ -188,115 +204,115 @@ export function OficinaForm({ oficina }: OficinaFormProps) {
           )}
         />
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <FormField
+          <FormField
             control={form.control}
             name="cnpj"
             render={({ field }) => (
-                <FormItem>
+              <FormItem>
                 <FormLabel>CNPJ</FormLabel>
                 <FormControl>
-                    <Input 
-                      placeholder="00.000.000/0001-00" 
-                      {...field}
-                      onChange={(e) => {
-                        const formatted = formatCNPJ(e.target.value);
-                        field.onChange(formatted);
-                      }}
-                    />
+                  <Input
+                    placeholder="00.000.000/0001-00"
+                    {...field}
+                    onChange={(e) => {
+                      const formatted = formatCNPJ(e.target.value);
+                      field.onChange(formatted);
+                    }}
+                  />
                 </FormControl>
                 <FormMessage />
-                </FormItem>
+              </FormItem>
             )}
-            />
-            <FormField
+          />
+          <FormField
             control={form.control}
             name="telefone"
             render={({ field }) => (
-                <FormItem>
+              <FormItem>
                 <FormLabel>Telefone</FormLabel>
                 <FormControl>
-                    <Input 
-                        placeholder="(81) 99999-9999" 
-                        {...field} 
-                        onChange={(e) => {
-                            const formatted = formatTelefone(e.target.value);
-                            field.onChange(formatted);
-                        }}
-                    />
+                  <Input
+                    placeholder="(81) 99999-9999"
+                    {...field}
+                    onChange={(e) => {
+                      const formatted = formatTelefone(e.target.value);
+                      field.onChange(formatted);
+                    }}
+                  />
                 </FormControl>
                 <FormMessage />
-                </FormItem>
+              </FormItem>
             )}
-            />
+          />
         </div>
-         <FormField
+        <FormField
+          control={form.control}
+          name="email"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Email de Contato</FormLabel>
+              <FormControl>
+                <Input type="email" placeholder="contato@suaoficina.com" {...field} />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+        <div className="grid grid-cols-1 md:grid-cols-5 gap-6">
+          <FormField
             control={form.control}
-            name="email"
+            name="cep"
             render={({ field }) => (
-                <FormItem>
-                <FormLabel>Email de Contato</FormLabel>
+              <FormItem className='md:col-span-1'>
+                <FormLabel>CEP</FormLabel>
                 <FormControl>
-                    <Input type="email" placeholder="contato@suaoficina.com" {...field} />
+                  <Input placeholder="00000-000" {...field} />
                 </FormControl>
                 <FormMessage />
-                </FormItem>
+              </FormItem>
             )}
-            />
-        <div className="grid grid-cols-1 md:grid-cols-5 gap-6">
-             <FormField
-                control={form.control}
-                name="cep"
-                render={({ field }) => (
-                <FormItem className='md:col-span-1'>
-                    <FormLabel>CEP</FormLabel>
-                    <FormControl>
-                    <Input placeholder="00000-000" {...field} />
-                    </FormControl>
-                    <FormMessage />
-                </FormItem>
-                )}
-            />
-            <FormField
-                control={form.control}
-                name="endereco"
-                render={({ field }) => (
-                <FormItem className='md:col-span-4'>
-                    <FormLabel>Endereço</FormLabel>
-                    <FormControl>
-                    <Input placeholder="Rua, Avenida, etc, Nº" {...field} />
-                    </FormControl>
-                    <FormMessage />
-                </FormItem>
-                )}
-            />
+          />
+          <FormField
+            control={form.control}
+            name="endereco"
+            render={({ field }) => (
+              <FormItem className='md:col-span-4'>
+                <FormLabel>Endereço</FormLabel>
+                <FormControl>
+                  <Input placeholder="Rua, Avenida, etc, Nº" {...field} />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
         </div>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-             <FormField
-                control={form.control}
-                name="cidade"
-                render={({ field }) => (
-                <FormItem>
-                    <FormLabel>Cidade</FormLabel>
-                    <FormControl>
-                    <Input placeholder="Ex: Olinda" {...field} />
-                    </FormControl>
-                    <FormMessage />
-                </FormItem>
-                )}
-            />
-             <FormField
-                control={form.control}
-                name="uf"
-                render={({ field }) => (
-                <FormItem>
-                    <FormLabel>UF</FormLabel>
-                    <FormControl>
-                    <Input placeholder="PE" {...field} />
-                    </FormControl>
-                    <FormMessage />
-                </FormItem>
-                )}
-            />
+          <FormField
+            control={form.control}
+            name="cidade"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Cidade</FormLabel>
+                <FormControl>
+                  <Input placeholder="Ex: Olinda" {...field} />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+          <FormField
+            control={form.control}
+            name="uf"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>UF</FormLabel>
+                <FormControl>
+                  <Input placeholder="PE" {...field} />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
         </div>
 
         <div className="flex justify-end pt-4">
