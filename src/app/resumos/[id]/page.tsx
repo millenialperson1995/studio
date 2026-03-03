@@ -35,7 +35,7 @@ import { collection, query, where, orderBy, doc, getDoc, setDoc, updateDoc, addD
 import type { Cliente, ResumoServico, ItemResumo } from '@/lib/types';
 import MobileLayout from '@/components/layout/mobile-layout';
 import Link from 'next/link';
-import { generateResumoPDF } from '@/lib/pdf-generator';
+import { generateResumoPDF, sharePDF } from '@/lib/pdf-generator';
 import { DatePicker } from '@/components/ui/date-picker';
 import {
     Dialog,
@@ -228,10 +228,14 @@ export default function ResumoEditPage({ params }: PageProps) {
         console.log('Gerando PDF filtrado:', resumoData);
 
         try {
-            await generateResumoPDF(resumoData, null);
-            toast({ title: 'Sucesso', description: 'PDF gerado com sucesso!' });
+            const { blob, fileName } = await generateResumoPDF(resumoData, null);
+            await sharePDF(blob, fileName);
             setShowPdfDialog(false);
-        } catch (error) {
+        } catch (error: any) {
+            if (error?.name === 'AbortError') {
+                setShowPdfDialog(false);
+                return;
+            }
             console.error("Erro ao gerar PDF:", error);
             toast({ title: 'Erro', description: 'Falha ao gerar PDF.', variant: 'destructive' });
         }

@@ -18,6 +18,36 @@ const getLogoDataUri = (): string => {
   return '/icons/logo.png';
 };
 
+/**
+ * Compartilha ou faz download de um PDF.
+ * Em dispositivos com Web Share API (PWA/mobile), abre o seletor de apps
+ * enviando o arquivo PDF diretamente (ex: WhatsApp recebe o arquivo, não um link blob).
+ * Em desktops sem suporte, faz download normalmente.
+ */
+export async function sharePDF(blob: Blob, fileName: string): Promise<void> {
+  const file = new File([blob], fileName, { type: 'application/pdf' });
+
+  if (
+    typeof navigator !== 'undefined' &&
+    typeof navigator.share === 'function' &&
+    navigator.canShare &&
+    navigator.canShare({ files: [file] })
+  ) {
+    await navigator.share({
+      files: [file],
+      title: fileName.replace('.pdf', ''),
+    });
+  } else {
+    // Fallback: download direto
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = fileName;
+    a.click();
+    setTimeout(() => URL.revokeObjectURL(url), 10000);
+  }
+}
+
 
 const drawHeader = (doc: jsPDF, oficina: Oficina | null, title: string) => {
   const pageHeight = doc.internal.pageSize.getHeight();
@@ -91,7 +121,7 @@ export const generateOrcamentoPDF = async (
   cliente: Cliente,
   veiculo: Veiculo,
   oficina: Oficina | null
-) => {
+): Promise<{ blob: Blob; fileName: string }> => {
   const doc = new jsPDF();
   const pageHeight = doc.internal.pageSize.getHeight();
   const pageWidth = doc.internal.pageSize.getWidth();
@@ -192,8 +222,10 @@ export const generateOrcamentoPDF = async (
   const dataCriacao = orcamento.dataCriacao?.toDate ? orcamento.dataCriacao.toDate() : new Date();
   drawFooter(doc, 'Orçamento', dataCriacao);
 
-  // Save the PDF
-  doc.save(`Orcamento-${cliente.nome.split(' ')[0]}-${orcamento.id.substring(0, 4)}.pdf`);
+  // Retorna o blob e o nome do arquivo
+  const fileName = `Orcamento-${cliente.nome.split(' ')[0]}-${orcamento.id.substring(0, 4)}.pdf`;
+  const blob = doc.output('blob');
+  return { blob, fileName };
 };
 
 
@@ -202,7 +234,7 @@ export const generateOrdemServicoPDF = async (
   cliente: Cliente,
   veiculo: Veiculo,
   oficina: Oficina | null
-) => {
+): Promise<{ blob: Blob; fileName: string }> => {
   const doc = new jsPDF();
   const pageHeight = doc.internal.pageSize.getHeight();
   const pageWidth = doc.internal.pageSize.getWidth();
@@ -323,8 +355,10 @@ export const generateOrdemServicoPDF = async (
   // Footer
   drawFooter(doc, 'Ordem de Serviço', dataEntrada);
 
-  // Save the PDF
-  doc.save(`OS-${cliente.nome.split(' ')[0]}-${ordem.id.substring(0, 4)}.pdf`);
+  // Retorna o blob e o nome do arquivo
+  const fileName = `OS-${cliente.nome.split(' ')[0]}-${ordem.id.substring(0, 4)}.pdf`;
+  const blob = doc.output('blob');
+  return { blob, fileName };
 };
 
 import { ResumoServico } from './types';
@@ -332,7 +366,7 @@ import { ResumoServico } from './types';
 export const generateResumoPDF = async (
   resumo: ResumoServico,
   oficina: Oficina | null
-) => {
+): Promise<{ blob: Blob; fileName: string }> => {
   const doc = new jsPDF();
   const pageHeight = doc.internal.pageSize.getHeight();
   const pageWidth = doc.internal.pageSize.getWidth();
@@ -422,7 +456,8 @@ export const generateResumoPDF = async (
   const dataCriacao = resumo.createdAt?.toDate ? resumo.createdAt.toDate() : new Date();
   drawFooter(doc, 'Resumo de Serviços', dataCriacao);
 
-  // Save the PDF
+  // Retorna o blob e o nome do arquivo
   const fileName = `Resumo-${resumo.clienteNome.replace(/\s+/g, '-')}-${mesExtenso}-${resumo.ano}.pdf`;
-  doc.save(fileName);
+  const blob = doc.output('blob');
+  return { blob, fileName };
 };

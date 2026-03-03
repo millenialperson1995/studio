@@ -44,7 +44,7 @@ import { useFirestore, useUser } from '@/firebase';
 import { useToast } from '@/hooks/use-toast';
 import { EditOrdemServicoForm } from './edit-ordem-servico-form';
 import { format } from 'date-fns';
-import { generateOrdemServicoPDF } from '@/lib/pdf-generator';
+import { generateOrdemServicoPDF, sharePDF } from '@/lib/pdf-generator';
 
 interface OrdemServicoTableProps {
   ordensServico: OrdemServico[];
@@ -69,15 +69,15 @@ const statusLabelMap: { [key: string]: string } = {
 };
 
 const paymentStatusVariantMap: { [key: string]: 'default' | 'secondary' | 'destructive' | 'outline' } = {
-    Pago: 'secondary',
-    Pendente: 'outline',
-    Vencido: 'destructive',
+  Pago: 'secondary',
+  Pendente: 'outline',
+  Vencido: 'destructive',
 };
 
 const paymentStatusLabelMap: { [key: string]: string } = {
-    Pendente: 'Pendente',
-    Pago: 'Pago',
-    Vencido: 'Vencido',
+  Pendente: 'Pendente',
+  Pago: 'Pago',
+  Vencido: 'Vencido',
 };
 
 
@@ -111,9 +111,9 @@ export default function OrdemServicoTable({
   const handleMarkAsPaid = (ordem: OrdemServico) => {
     if (!firestore) return;
     const ordemDocRef = doc(firestore, 'ordensServico', ordem.id);
-    updateDocumentNonBlocking(ordemDocRef, { 
+    updateDocumentNonBlocking(ordemDocRef, {
       statusPagamento: 'Pago',
-      dataPagamento: serverTimestamp() 
+      dataPagamento: serverTimestamp()
     });
     toast({
       title: 'Pagamento Registrado',
@@ -123,22 +123,19 @@ export default function OrdemServicoTable({
 
   const handleDownloadPDF = async (ordem: OrdemServico) => {
     if (!firestore || !user) return;
-    
+
     // Find client and vehicle from the main lists, not from denormalized data
     const cliente = clients.find(c => c.id === ordem.clienteId);
     const veiculo = vehicles.find(v => v.id === ordem.veiculoId);
-    
+
     try {
       const oficinaDocRef = doc(firestore, 'oficinas', user.uid);
       const oficinaSnap = await getDoc(oficinaDocRef);
       const oficina = oficinaSnap.exists() ? (oficinaSnap.data() as Oficina) : null;
-      
+
       if (cliente && veiculo) {
-        generateOrdemServicoPDF(ordem, cliente, veiculo, oficina);
-        toast({
-          title: 'PDF Gerado',
-          description: 'O download do seu PDF foi iniciado.',
-        });
+        const { blob, fileName } = await generateOrdemServicoPDF(ordem, cliente, veiculo, oficina);
+        await sharePDF(blob, fileName);
       } else {
         toast({
           variant: 'destructive',
@@ -146,13 +143,14 @@ export default function OrdemServicoTable({
           description: 'Não foi possível encontrar os dados do cliente ou veículo para gerar o PDF.',
         });
       }
-    } catch (error) {
-       console.error("Error fetching workshop details for PDF: ", error);
-       toast({
-          variant: 'destructive',
-          title: 'Erro ao gerar PDF',
-          description: 'Não foi possível buscar as informações da oficina. Tente novamente.',
-        });
+    } catch (error: any) {
+      if (error?.name === 'AbortError') return;
+      console.error("Error fetching workshop details for PDF: ", error);
+      toast({
+        variant: 'destructive',
+        title: 'Erro ao gerar PDF',
+        description: 'Não foi possível gerar o PDF. Tente novamente.',
+      });
     }
   };
 
@@ -161,19 +159,19 @@ export default function OrdemServicoTable({
       setIsDeleteDialogOpen(false);
       return;
     }
-  
+
     try {
       await runTransaction(firestore, async (transaction) => {
         const ordemDocRef = doc(firestore, 'ordensServico', selectedOrdem.id);
         const osDoc = await transaction.get(ordemDocRef);
-  
+
         if (!osDoc.exists()) {
           // If the OS doesn't exist, there's nothing to do.
           return;
         }
-  
+
         const osData = osDoc.data() as OrdemServico;
-  
+
         // Un-reserve parts only if the OS was not already completed or cancelled.
         // If it was 'concluida', the stock was already debited.
         // If it was 'cancelada', the stock was likely already returned.
@@ -192,11 +190,11 @@ export default function OrdemServicoTable({
             }
           }
         }
-  
+
         // We no longer try to update the orcamento, just delete the OS.
         transaction.delete(ordemDocRef);
       });
-  
+
       toast({
         title: 'Ordem de Serviço excluída',
         description: 'A OS foi removida com sucesso.',
@@ -214,11 +212,11 @@ export default function OrdemServicoTable({
       setSelectedOrdem(null);
     }
   };
-  
+
   const formatDate = (date: any) => {
-      if (!date) return 'N/A';
-      const jsDate = date.toDate ? date.toDate() : new Date(date);
-      return format(jsDate, 'dd/MM/yyyy');
+    if (!date) return 'N/A';
+    const jsDate = date.toDate ? date.toDate() : new Date(date);
+    return format(jsDate, 'dd/MM/yyyy');
   }
 
   return (
@@ -242,21 +240,21 @@ export default function OrdemServicoTable({
               ordensServico.map((ordem) => (
                 <TableRow key={ordem.id}>
                   <TableCell>
-                     <div className="font-medium">{ordem.clienteNome}</div>
-                     <div className="text-xs text-muted-foreground">
-                       OS Aberta em: {formatDate(ordem.dataEntrada)}
+                    <div className="font-medium">{ordem.clienteNome}</div>
+                    <div className="text-xs text-muted-foreground">
+                      OS Aberta em: {formatDate(ordem.dataEntrada)}
                     </div>
                   </TableCell>
-                   <TableCell className="hidden lg:table-cell text-muted-foreground">{ordem.veiculoInfo}</TableCell>
-                   <TableCell className="hidden md:table-cell">{`R$ ${ordem.valorTotal.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`}</TableCell>
-                   <TableCell className="hidden sm:table-cell">
+                  <TableCell className="hidden lg:table-cell text-muted-foreground">{ordem.veiculoInfo}</TableCell>
+                  <TableCell className="hidden md:table-cell">{`R$ ${ordem.valorTotal.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`}</TableCell>
+                  <TableCell className="hidden sm:table-cell">
                     <Badge variant={statusVariantMap[ordem.status]} className="text-xs">
-                        {statusLabelMap[ordem.status]}
+                      {statusLabelMap[ordem.status]}
                     </Badge>
                   </TableCell>
-                   <TableCell>
+                  <TableCell>
                     <Badge variant={paymentStatusVariantMap[ordem.statusPagamento]} className="text-xs">
-                        {paymentStatusLabelMap[ordem.statusPagamento]}
+                      {paymentStatusLabelMap[ordem.statusPagamento]}
                     </Badge>
                   </TableCell>
                   <TableCell>
@@ -270,8 +268,8 @@ export default function OrdemServicoTable({
                       <DropdownMenuContent align="end">
                         <DropdownMenuLabel>Ações</DropdownMenuLabel>
                         <DropdownMenuItem onClick={() => handleDownloadPDF(ordem)}>
-                            <FileDown className="mr-2 h-4 w-4" />
-                            Baixar PDF
+                          <FileDown className="mr-2 h-4 w-4" />
+                          Baixar PDF
                         </DropdownMenuItem>
                         <DropdownMenuItem
                           onClick={() => handleEditClick(ordem)}
@@ -281,9 +279,9 @@ export default function OrdemServicoTable({
                           Editar
                         </DropdownMenuItem>
                         {ordem.statusPagamento !== 'Pago' && (
-                           <DropdownMenuItem onClick={() => handleMarkAsPaid(ordem)}>
-                              <DollarSign className="mr-2 h-4 w-4" />
-                              Marcar como Pago
+                          <DropdownMenuItem onClick={() => handleMarkAsPaid(ordem)}>
+                            <DollarSign className="mr-2 h-4 w-4" />
+                            Marcar como Pago
                           </DropdownMenuItem>
                         )}
                         <DropdownMenuSeparator />
