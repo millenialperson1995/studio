@@ -25,6 +25,7 @@ import { collection, serverTimestamp, doc } from 'firebase/firestore';
 import { useFirestore, useUser } from '@/firebase';
 import { useToast } from '@/hooks/use-toast';
 import type { Cliente } from '@/lib/types';
+import { ClienteCombobox } from '@/components/ui/cliente-combobox';
 
 const formSchema = z.object({
   clienteId: z.string().min(1, 'Selecione um cliente.'),
@@ -78,7 +79,7 @@ export function AddVehicleForm({
         userId: user.uid, // Explicitly set userId on the vehicle document
         createdAt: serverTimestamp(),
       };
-      
+
       await addDocumentNonBlocking(newVehicleRef, vehicleData);
 
       toast({
@@ -106,20 +107,14 @@ export function AddVehicleForm({
           render={({ field }) => (
             <FormItem>
               <FormLabel>Cliente</FormLabel>
-              <Select onValueChange={field.onChange} defaultValue={field.value}>
-                <FormControl>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Selecione o proprietário do veículo" />
-                  </SelectTrigger>
-                </FormControl>
-                <SelectContent>
-                  {clients.map((client) => (
-                    <SelectItem key={client.id} value={client.id}>
-                      {client.nome}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+              <FormControl>
+                <ClienteCombobox
+                  clientes={clients}
+                  value={field.value}
+                  onChange={field.onChange}
+                  placeholder="Selecione o proprietário do veículo"
+                />
+              </FormControl>
               <FormMessage />
             </FormItem>
           )}
@@ -138,32 +133,32 @@ export function AddVehicleForm({
           )}
         />
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <FormField
+          <FormField
             control={form.control}
             name="fabricante"
             render={({ field }) => (
-                <FormItem>
+              <FormItem>
                 <FormLabel>Fabricante</FormLabel>
                 <FormControl>
-                    <Input placeholder="Ex: Volkswagen" {...field} />
+                  <Input placeholder="Ex: Volkswagen" {...field} />
                 </FormControl>
                 <FormMessage />
-                </FormItem>
+              </FormItem>
             )}
-            />
-            <FormField
+          />
+          <FormField
             control={form.control}
             name="modelo"
             render={({ field }) => (
-                <FormItem>
+              <FormItem>
                 <FormLabel>Modelo</FormLabel>
                 <FormControl>
-                    <Input placeholder="Ex: Gol" {...field} />
+                  <Input placeholder="Ex: Gol" {...field} />
                 </FormControl>
                 <FormMessage />
-                </FormItem>
+              </FormItem>
             )}
-            />
+          />
         </div>
         <FormField
           control={form.control}
@@ -178,35 +173,35 @@ export function AddVehicleForm({
             </FormItem>
           )}
         />
-         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <FormField
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <FormField
             control={form.control}
             name="motor"
             render={({ field }) => (
-                <FormItem>
+              <FormItem>
                 <FormLabel>Motor (Opcional)</FormLabel>
                 <FormControl>
-                    <Input placeholder="Ex: 1.6 MSI" {...field} />
+                  <Input placeholder="Ex: 1.6 MSI" {...field} />
                 </FormControl>
                 <FormMessage />
-                </FormItem>
+              </FormItem>
             )}
-            />
-            <FormField
+          />
+          <FormField
             control={form.control}
             name="cilindros"
             render={({ field }) => (
-                <FormItem>
+              <FormItem>
                 <FormLabel>Cilindros (Opcional)</FormLabel>
                 <FormControl>
-                    <Input placeholder="Ex: 4" {...field} />
+                  <Input placeholder="Ex: 4" {...field} />
                 </FormControl>
                 <FormMessage />
-                </FormItem>
+              </FormItem>
             )}
-            />
+          />
         </div>
-         <FormField
+        <FormField
           control={form.control}
           name="numeroMotor"
           render={({ field }) => (

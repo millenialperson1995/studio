@@ -33,6 +33,7 @@ import { Calendar } from '../ui/calendar';
 import { cn } from '@/lib/utils';
 import { format } from 'date-fns';
 import { ItemSelector } from './item-selector';
+import { ClienteCombobox } from '@/components/ui/cliente-combobox';
 
 const itemSchema = z.object({
   itemId: z.string().min(1, 'Item inválido'),
@@ -79,7 +80,7 @@ export function EditOrcamentoForm({
   const { user } = useUser();
   const { toast } = useToast();
   const [selectedClientId, setSelectedClientId] = useState(orcamento.clienteId);
-  
+
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
     defaultValues: {
@@ -117,12 +118,12 @@ export function EditOrcamentoForm({
 
     try {
       const orcamentoDocRef = doc(firestore, 'orcamentos', orcamento.id);
-      
+
       const orcamentoData = {
         ...values,
         valorTotal: totalValue,
       };
-      
+
       updateDocumentNonBlocking(orcamentoDocRef, orcamentoData);
 
       toast({
@@ -144,31 +145,31 @@ export function EditOrcamentoForm({
 
   const handleItemSelect = (item: Peca | Servico, type: 'peca' | 'servico') => {
     append({
-        itemId: item.id,
-        tipo: type,
-        descricao: item.descricao,
-        quantidade: 1,
-        valorUnitario: type === 'peca' ? (item as Peca).valorVenda : 0,
-        valorTotal: type === 'peca' ? (item as Peca).valorVenda : (item as Servico).valorPadrao,
+      itemId: item.id,
+      tipo: type,
+      descricao: item.descricao,
+      quantidade: 1,
+      valorUnitario: type === 'peca' ? (item as Peca).valorVenda : 0,
+      valorTotal: type === 'peca' ? (item as Peca).valorVenda : (item as Servico).valorPadrao,
     })
   }
 
   const handleClientChange = (clientId: string) => {
     const client = clients.find(c => c.id === clientId);
-    if(client) {
-        form.setValue('clienteId', clientId);
-        form.setValue('clienteNome', client.nome);
-        setSelectedClientId(clientId);
-        form.setValue('veiculoId', ''); // Reset vehicle
-        form.setValue('veiculoInfo', '');
+    if (client) {
+      form.setValue('clienteId', clientId);
+      form.setValue('clienteNome', client.nome);
+      setSelectedClientId(clientId);
+      form.setValue('veiculoId', ''); // Reset vehicle
+      form.setValue('veiculoInfo', '');
     }
   }
-  
+
   const handleVehicleChange = (vehicleId: string) => {
     const vehicle = vehicles.find(v => v.id === vehicleId);
-    if(vehicle) {
-        form.setValue('veiculoId', vehicleId);
-        form.setValue('veiculoInfo', `${vehicle.fabricante} ${vehicle.modelo} (${vehicle.placa})`);
+    if (vehicle) {
+      form.setValue('veiculoId', vehicleId);
+      form.setValue('veiculoInfo', `${vehicle.fabricante} ${vehicle.modelo} (${vehicle.placa})`);
     }
   }
 
@@ -184,23 +185,13 @@ export function EditOrcamentoForm({
               render={({ field }) => (
                 <FormItem className="flex-1">
                   <FormLabel>Cliente</FormLabel>
-                  <Select
-                    onValueChange={handleClientChange}
-                    defaultValue={field.value}
-                  >
-                    <FormControl>
-                      <SelectTrigger>
-                        <SelectValue placeholder="Selecione um cliente" />
-                      </SelectTrigger>
-                    </FormControl>
-                    <SelectContent>
-                      {clients.map((client) => (
-                        <SelectItem key={client.id} value={client.id}>
-                          {client.nome}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
+                  <FormControl>
+                    <ClienteCombobox
+                      clientes={clients}
+                      value={field.value}
+                      onChange={handleClientChange}
+                    />
+                  </FormControl>
                   <FormMessage />
                 </FormItem>
               )}
@@ -238,35 +229,35 @@ export function EditOrcamentoForm({
           <div className="space-y-4 rounded-md border p-4">
             <div className="flex justify-between items-center">
               <h3 className="font-medium">Itens do Orçamento</h3>
-               <ItemSelector
-                  pecas={pecas}
-                  servicos={servicos}
-                  onSelect={handleItemSelect}
-                  selectedItemIds={selectedItemIds}
+              <ItemSelector
+                pecas={pecas}
+                servicos={servicos}
+                onSelect={handleItemSelect}
+                selectedItemIds={selectedItemIds}
               />
             </div>
             {fields.length > 0 && (
               <div className="hidden md:grid grid-cols-12 gap-x-2 text-sm font-medium text-muted-foreground px-1">
-                  <div className="col-span-5">Item/Descrição</div>
-                  <div className="col-span-2">Qtd.</div>
-                  <div className="col-span-2">Vlr. Unitário</div>
-                  <div className="col-span-2">Subtotal</div>
+                <div className="col-span-5">Item/Descrição</div>
+                <div className="col-span-2">Qtd.</div>
+                <div className="col-span-2">Vlr. Unitário</div>
+                <div className="col-span-2">Subtotal</div>
               </div>
             )}
             {fields.map((field, index) => {
               const item = watchedItens[index];
               const isPeca = item.tipo === 'peca';
-              const subtotal = isPeca 
-                  ? (Number(item.quantidade) || 0) * (Number(item.valorUnitario) || 0) 
-                  : (Number(item.valorTotal) || 0);
+              const subtotal = isPeca
+                ? (Number(item.quantidade) || 0) * (Number(item.valorUnitario) || 0)
+                : (Number(item.valorTotal) || 0);
 
               if (isPeca) {
-                   const newTotal = (Number(item.quantidade) || 0) * (Number(item.valorUnitario) || 0);
-                   if (item.valorTotal !== newTotal) {
-                       form.setValue(`itens.${index}.valorTotal`, newTotal, { shouldValidate: true });
-                   }
+                const newTotal = (Number(item.quantidade) || 0) * (Number(item.valorUnitario) || 0);
+                if (item.valorTotal !== newTotal) {
+                  form.setValue(`itens.${index}.valorTotal`, newTotal, { shouldValidate: true });
+                }
               }
-              
+
               return (
                 <div
                   key={field.id}
@@ -274,157 +265,157 @@ export function EditOrcamentoForm({
                 >
                   <div className="col-span-12 md:col-span-5 w-full">
                     <FormLabel className="text-xs md:hidden">Item/Descrição</FormLabel>
-                     <FormField
-                        control={form.control}
-                        name={`itens.${index}.descricao`}
-                        render={({ field }) => (
-                          <FormItem className="w-full">
-                             <FormControl>
-                                  <Input
-                                      readOnly
-                                      disabled
-                                      {...field}
-                                  />
-                              </FormControl>
-                             <FormMessage />
-                          </FormItem>
-                        )}
-                      />
-                  </div>
-                   <div className="col-span-6 md:col-span-2 w-full">
-                      <FormLabel className="text-xs md:hidden">Qtd.</FormLabel>
-                      <FormField
-                        control={form.control}
-                        name={`itens.${index}.quantidade`}
-                        render={({ field }) => (
-                          <FormItem>
-                            <FormControl>
-                              <Input type="number" placeholder="1" {...field} />
-                            </FormControl>
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      />
+                    <FormField
+                      control={form.control}
+                      name={`itens.${index}.descricao`}
+                      render={({ field }) => (
+                        <FormItem className="w-full">
+                          <FormControl>
+                            <Input
+                              readOnly
+                              disabled
+                              {...field}
+                            />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
                   </div>
                   <div className="col-span-6 md:col-span-2 w-full">
-                      <FormLabel className="text-xs md:hidden">Vlr. Unitário</FormLabel>
-                      <FormField
-                        control={form.control}
-                        name={`itens.${index}.valorUnitario`}
-                        render={({ field }) => (
-                          <FormItem>
-                            <FormControl>
-                              <Input type="number" placeholder="100.00" {...field} disabled={!isPeca} readOnly={!isPeca} />
-                            </FormControl>
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      />
+                    <FormLabel className="text-xs md:hidden">Qtd.</FormLabel>
+                    <FormField
+                      control={form.control}
+                      name={`itens.${index}.quantidade`}
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormControl>
+                            <Input type="number" placeholder="1" {...field} />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                  </div>
+                  <div className="col-span-6 md:col-span-2 w-full">
+                    <FormLabel className="text-xs md:hidden">Vlr. Unitário</FormLabel>
+                    <FormField
+                      control={form.control}
+                      name={`itens.${index}.valorUnitario`}
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormControl>
+                            <Input type="number" placeholder="100.00" {...field} disabled={!isPeca} readOnly={!isPeca} />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
                   </div>
                   <div className="col-span-10 md:col-span-2 w-full">
-                      <FormLabel className="text-xs md:hidden">Subtotal</FormLabel>
-                       <FormField
-                        control={form.control}
-                        name={`itens.${index}.valorTotal`}
-                        render={({ field }) => (
-                          <FormItem>
-                            <FormControl>
-                               <Input 
-                                  type="number"
-                                  {...field} 
-                                  readOnly={isPeca}
-                                  disabled={isPeca}
-                                  value={isPeca ? subtotal.toFixed(2) : field.value}
-                               />
-                            </FormControl>
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      />
+                    <FormLabel className="text-xs md:hidden">Subtotal</FormLabel>
+                    <FormField
+                      control={form.control}
+                      name={`itens.${index}.valorTotal`}
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormControl>
+                            <Input
+                              type="number"
+                              {...field}
+                              readOnly={isPeca}
+                              disabled={isPeca}
+                              value={isPeca ? subtotal.toFixed(2) : field.value}
+                            />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
                   </div>
                   <div className="col-span-2 md:col-span-1 flex items-end h-full w-full">
-                      <Button
-                          type="button"
-                          variant="destructive"
-                          size="icon"
-                          onClick={() => remove(index)}
-                          className="h-10 w-full"
-                      >
-                          <Trash2 className="h-4 w-4" />
-                          <span className="sr-only">Remover Item</span>
-                      </Button>
+                    <Button
+                      type="button"
+                      variant="destructive"
+                      size="icon"
+                      onClick={() => remove(index)}
+                      className="h-10 w-full"
+                    >
+                      <Trash2 className="h-4 w-4" />
+                      <span className="sr-only">Remover Item</span>
+                    </Button>
                   </div>
                 </div>
               );
             })}
-             {fields.length === 0 && (
-               <p className="text-sm text-muted-foreground text-center py-4">Nenhum item adicionado.</p>
+            {fields.length === 0 && (
+              <p className="text-sm text-muted-foreground text-center py-4">Nenhum item adicionado.</p>
             )}
           </div>
-          
-          <div className="flex flex-col md:flex-row gap-4">
-               <FormField
-                  control={form.control}
-                  name="dataValidade"
-                  render={({ field }) => (
-                    <FormItem className="flex flex-col flex-1">
-                      <FormLabel>Data de Validade</FormLabel>
-                      <Popover>
-                        <PopoverTrigger asChild>
-                          <FormControl>
-                            <Button
-                              variant={'outline'}
-                              className={cn(
-                                'w-full pl-3 text-left font-normal',
-                                !field.value && 'text-muted-foreground'
-                              )}
-                            >
-                              {field.value ? (
-                                format(field.value, 'PPP')
-                              ) : (
-                                <span>Escolha uma data</span>
-                              )}
-                              <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
-                            </Button>
-                          </FormControl>
-                        </PopoverTrigger>
-                        <PopoverContent className="w-auto p-0" align="start">
-                          <Calendar
-                            mode="single"
-                            selected={field.value}
-                            onSelect={field.onChange}
-                            disabled={(date) => date < new Date()}
-                            initialFocus
-                          />
-                        </PopoverContent>
-                      </Popover>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
 
-               <FormField
-                  control={form.control}
-                  name="status"
-                  render={({ field }) => (
-                    <FormItem className="flex-1">
-                      <FormLabel>Status</FormLabel>
-                      <Select onValueChange={field.onChange} defaultValue={field.value}>
-                        <FormControl>
-                          <SelectTrigger>
-                            <SelectValue placeholder="Selecione o status" />
-                          </SelectTrigger>
-                        </FormControl>
-                        <SelectContent>
-                          <SelectItem value="pendente">Pendente</SelectItem>
-                          <SelectItem value="aprovado">Aprovado</SelectItem>
-                          <SelectItem value="rejeitado">Rejeitado</SelectItem>
-                        </SelectContent>
-                      </Select>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
+          <div className="flex flex-col md:flex-row gap-4">
+            <FormField
+              control={form.control}
+              name="dataValidade"
+              render={({ field }) => (
+                <FormItem className="flex flex-col flex-1">
+                  <FormLabel>Data de Validade</FormLabel>
+                  <Popover>
+                    <PopoverTrigger asChild>
+                      <FormControl>
+                        <Button
+                          variant={'outline'}
+                          className={cn(
+                            'w-full pl-3 text-left font-normal',
+                            !field.value && 'text-muted-foreground'
+                          )}
+                        >
+                          {field.value ? (
+                            format(field.value, 'PPP')
+                          ) : (
+                            <span>Escolha uma data</span>
+                          )}
+                          <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
+                        </Button>
+                      </FormControl>
+                    </PopoverTrigger>
+                    <PopoverContent className="w-auto p-0" align="start">
+                      <Calendar
+                        mode="single"
+                        selected={field.value}
+                        onSelect={field.onChange}
+                        disabled={(date) => date < new Date()}
+                        initialFocus
+                      />
+                    </PopoverContent>
+                  </Popover>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            <FormField
+              control={form.control}
+              name="status"
+              render={({ field }) => (
+                <FormItem className="flex-1">
+                  <FormLabel>Status</FormLabel>
+                  <Select onValueChange={field.onChange} defaultValue={field.value}>
+                    <FormControl>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Selecione o status" />
+                      </SelectTrigger>
+                    </FormControl>
+                    <SelectContent>
+                      <SelectItem value="pendente">Pendente</SelectItem>
+                      <SelectItem value="aprovado">Aprovado</SelectItem>
+                      <SelectItem value="rejeitado">Rejeitado</SelectItem>
+                    </SelectContent>
+                  </Select>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
           </div>
 
 
@@ -446,15 +437,15 @@ export function EditOrcamentoForm({
             )}
           />
         </div>
-        
+
         <div className="flex flex-col-reverse sm:flex-row items-center justify-between pt-4 border-t">
-            <div className="text-lg font-semibold mt-4 sm:mt-0">
-                <span>Valor Total: </span>
-                <span>{totalValue.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}</span>
-            </div>
-            <Button type="submit" disabled={form.formState.isSubmitting}>
-                {form.formState.isSubmitting ? 'Salvando...' : 'Salvar Alterações'}
-            </Button>
+          <div className="text-lg font-semibold mt-4 sm:mt-0">
+            <span>Valor Total: </span>
+            <span>{totalValue.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}</span>
+          </div>
+          <Button type="submit" disabled={form.formState.isSubmitting}>
+            {form.formState.isSubmitting ? 'Salvando...' : 'Salvar Alterações'}
+          </Button>
         </div>
       </form>
     </Form>

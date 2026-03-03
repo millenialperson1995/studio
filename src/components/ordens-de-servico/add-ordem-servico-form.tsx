@@ -32,6 +32,7 @@ import { Calendar } from '../ui/calendar';
 import { cn } from '@/lib/utils';
 import { format } from 'date-fns';
 import { ItemSelector } from '../orcamentos/item-selector';
+import { ClienteCombobox } from '@/components/ui/cliente-combobox';
 
 const servicoSchema = z.object({
   descricao: z.string().min(1, 'A descrição é obrigatória.'),
@@ -65,7 +66,7 @@ export function AddOrdemServicoForm({
   const { user } = useUser();
   const { toast } = useToast();
   const [selectedClientId, setSelectedClientId] = useState('');
-  
+
   const pecasMap = new Map(pecas.map(p => [p.id, p]));
 
   const formSchema = z.object({
@@ -81,7 +82,7 @@ export function AddOrdemServicoForm({
     observacoes: z.string().optional(),
     servicos: z.array(servicoSchema),
     pecas: z.array(pecaSchema)
-    .superRefine((pecas, ctx) => {
+      .superRefine((pecas, ctx) => {
         pecas.forEach((item, index) => {
           if (item.itemId) {
             const peca = pecasMap.get(item.itemId);
@@ -126,10 +127,10 @@ export function AddOrdemServicoForm({
 
   const watchedServicos = form.watch('servicos');
   const watchedPecas = form.watch('pecas');
-  
+
   const selectedItemIds = useMemo(() => {
     // For services, we use description as a unique key if no ID is present
-    const servicosIds = watchedServicos.map(s => s.descricao); 
+    const servicosIds = watchedServicos.map(s => s.descricao);
     const pecasIds = watchedPecas.map(p => p.itemId).filter(Boolean) as string[];
     // A service might not have an ID if manually typed, so we use description as a temp key
     const allServicos = servicos.map(s => s.id)
@@ -152,51 +153,51 @@ export function AddOrdemServicoForm({
 
   async function onSubmit(values: z.infer<typeof formSchema>) {
     if (!firestore || !user) return;
-    
+
     try {
-        await runTransaction(firestore, async (transaction: Transaction) => {
-            // 1. Reserve all parts and check stock
-            for (const itemPeca of values.pecas) {
-                if (!itemPeca.itemId) continue; // Skip manually added parts without an ID
-                
-                const pecaRef = doc(firestore, 'pecas', itemPeca.itemId);
-                const pecaDoc = await transaction.get(pecaRef);
+      await runTransaction(firestore, async (transaction: Transaction) => {
+        // 1. Reserve all parts and check stock
+        for (const itemPeca of values.pecas) {
+          if (!itemPeca.itemId) continue; // Skip manually added parts without an ID
 
-                if (!pecaDoc.exists()) {
-                    throw new Error(`A peça ${itemPeca.descricao} não foi encontrada no estoque.`);
-                }
-                const pecaData = pecaDoc.data() as Peca;
-                const estoqueDisponivel = pecaData.quantidadeEstoque - (pecaData.quantidadeReservada || 0);
-                if (itemPeca.quantidade > estoqueDisponivel) {
-                    throw new Error(`Estoque insuficiente para: ${pecaData.descricao}. Disponível: ${estoqueDisponivel}, solicitado: ${itemPeca.quantidade}.`);
-                }
-                // Reserve the part
-                transaction.update(pecaRef, {
-                    quantidadeReservada: (pecaData.quantidadeReservada || 0) + itemPeca.quantidade
-                });
-            }
+          const pecaRef = doc(firestore, 'pecas', itemPeca.itemId);
+          const pecaDoc = await transaction.get(pecaRef);
 
-            // 2. Create the Service Order
-            const osCollectionRef = collection(firestore, 'ordensServico');
-            const newOSRef = doc(osCollectionRef);
+          if (!pecaDoc.exists()) {
+            throw new Error(`A peça ${itemPeca.descricao} não foi encontrada no estoque.`);
+          }
+          const pecaData = pecaDoc.data() as Peca;
+          const estoqueDisponivel = pecaData.quantidadeEstoque - (pecaData.quantidadeReservada || 0);
+          if (itemPeca.quantidade > estoqueDisponivel) {
+            throw new Error(`Estoque insuficiente para: ${pecaData.descricao}. Disponível: ${estoqueDisponivel}, solicitado: ${itemPeca.quantidade}.`);
+          }
+          // Reserve the part
+          transaction.update(pecaRef, {
+            quantidadeReservada: (pecaData.quantidadeReservada || 0) + itemPeca.quantidade
+          });
+        }
 
-            const osData = {
-                ...values,
-                id: newOSRef.id,
-                userId: user.uid,
-                valorTotal: values.valorTotal,
-                createdAt: serverTimestamp()
-            };
-            
-            transaction.set(newOSRef, osData);
-        });
+        // 2. Create the Service Order
+        const osCollectionRef = collection(firestore, 'ordensServico');
+        const newOSRef = doc(osCollectionRef);
 
-        toast({
-            title: 'Sucesso!',
-            description: 'Ordem de Serviço criada e estoque reservado com sucesso.',
-        });
-        form.reset();
-        setDialogOpen(false);
+        const osData = {
+          ...values,
+          id: newOSRef.id,
+          userId: user.uid,
+          valorTotal: values.valorTotal,
+          createdAt: serverTimestamp()
+        };
+
+        transaction.set(newOSRef, osData);
+      });
+
+      toast({
+        title: 'Sucesso!',
+        description: 'Ordem de Serviço criada e estoque reservado com sucesso.',
+      });
+      form.reset();
+      setDialogOpen(false);
 
     } catch (error: any) {
       console.error('Error adding document: ', error);
@@ -211,123 +212,119 @@ export function AddOrdemServicoForm({
 
   const handleItemSelect = (item: Peca | Servico, type: 'peca' | 'servico') => {
     if (type === 'servico') {
-        appendServico({
-            descricao: item.descricao,
-            valor: (item as Servico).valorPadrao,
-        })
+      appendServico({
+        descricao: item.descricao,
+        valor: (item as Servico).valorPadrao,
+      })
     } else { // type === 'peca'
-        appendPeca({
-            itemId: item.id,
-            descricao: item.descricao,
-            valorUnitario: (item as Peca).valorVenda,
-            quantidade: 1,
-        })
+      appendPeca({
+        itemId: item.id,
+        descricao: item.descricao,
+        valorUnitario: (item as Peca).valorVenda,
+        quantidade: 1,
+      })
     }
   }
 
 
   const handleClientChange = (clientId: string) => {
     const client = clients.find(c => c.id === clientId);
-    if(client) {
-        form.setValue('clienteId', clientId);
-        form.setValue('clienteNome', client.nome);
-        setSelectedClientId(clientId);
-        form.setValue('veiculoId', ''); // Reset vehicle
-        form.setValue('veiculoInfo', '');
+    if (client) {
+      form.setValue('clienteId', clientId);
+      form.setValue('clienteNome', client.nome);
+      setSelectedClientId(clientId);
+      form.setValue('veiculoId', ''); // Reset vehicle
+      form.setValue('veiculoInfo', '');
     }
   }
-  
+
   const handleVehicleChange = (vehicleId: string) => {
     const vehicle = vehicles.find(v => v.id === vehicleId);
-    if(vehicle) {
-        form.setValue('veiculoId', vehicleId);
-        form.setValue('veiculoInfo', `${vehicle.fabricante} ${vehicle.modelo} (${vehicle.placa})`);
+    if (vehicle) {
+      form.setValue('veiculoId', vehicleId);
+      form.setValue('veiculoInfo', `${vehicle.fabricante} ${vehicle.modelo} (${vehicle.placa})`);
     }
   }
 
 
   return (
     <Form {...form}>
-       <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+      <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
         <div className="pr-4 space-y-6 h-[calc(80vh-8rem)] overflow-y-auto">
-        <div className="flex flex-col md:flex-row gap-4">
-          <FormField
-            control={form.control}
-            name="clienteId"
-            render={({ field }) => (
-              <FormItem className="flex-1">
-                <FormLabel>Cliente</FormLabel>
-                <Select
-                  onValueChange={handleClientChange}
-                  defaultValue={field.value}
-                >
-                  <FormControl><SelectTrigger><SelectValue placeholder="Selecione um cliente" /></SelectTrigger></FormControl>
-                  <SelectContent>
-                    {clients.map((client) => (
-                      <SelectItem key={client.id} value={client.id}>{client.nome}</SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-          <FormField
-            control={form.control}
-            name="veiculoId"
-            render={({ field }) => (
-              <FormItem className="flex-1">
-                <FormLabel>Veículo</FormLabel>
-                <Select onValueChange={handleVehicleChange} value={field.value} disabled={!selectedClientId}>
+          <div className="flex flex-col md:flex-row gap-4">
+            <FormField
+              control={form.control}
+              name="clienteId"
+              render={({ field }) => (
+                <FormItem className="flex-1">
+                  <FormLabel>Cliente</FormLabel>
                   <FormControl>
-                    <SelectTrigger><SelectValue placeholder="Selecione um veículo" /></SelectTrigger>
+                    <ClienteCombobox
+                      clientes={clients}
+                      value={field.value}
+                      onChange={handleClientChange}
+                    />
                   </FormControl>
-                  <SelectContent>
-                    {filteredVehicles.map((vehicle) => (
-                      <SelectItem key={vehicle.id} value={vehicle.id}>
-                        {`${vehicle.fabricante} ${vehicle.modelo} (${vehicle.placa})`}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-        </div>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            <FormField
+              control={form.control}
+              name="veiculoId"
+              render={({ field }) => (
+                <FormItem className="flex-1">
+                  <FormLabel>Veículo</FormLabel>
+                  <Select onValueChange={handleVehicleChange} value={field.value} disabled={!selectedClientId}>
+                    <FormControl>
+                      <SelectTrigger><SelectValue placeholder="Selecione um veículo" /></SelectTrigger>
+                    </FormControl>
+                    <SelectContent>
+                      {filteredVehicles.map((vehicle) => (
+                        <SelectItem key={vehicle.id} value={vehicle.id}>
+                          {`${vehicle.fabricante} ${vehicle.modelo} (${vehicle.placa})`}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+          </div>
 
-        <div className="flex flex-col md:flex-row gap-4">
+          <div className="flex flex-col md:flex-row gap-4">
             <FormField name="dataEntrada" control={form.control} render={({ field }) => (
-                <FormItem className="flex flex-col flex-1"><FormLabel>Data de Entrada</FormLabel>
-                    <Popover><PopoverTrigger asChild><FormControl>
-                        <Button variant={'outline'} className={cn('w-full pl-3 text-left font-normal',!field.value && 'text-muted-foreground')}>
-                            {field.value ? format(field.value, 'PPP') : <span>Escolha uma data</span>}
-                            <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
-                        </Button>
-                    </FormControl></PopoverTrigger>
-                    <PopoverContent className="w-auto p-0" align="start">
-                        <Calendar mode="single" selected={field.value} onSelect={field.onChange} initialFocus/>
-                    </PopoverContent></Popover><FormMessage />
-                </FormItem>)}
+              <FormItem className="flex flex-col flex-1"><FormLabel>Data de Entrada</FormLabel>
+                <Popover><PopoverTrigger asChild><FormControl>
+                  <Button variant={'outline'} className={cn('w-full pl-3 text-left font-normal', !field.value && 'text-muted-foreground')}>
+                    {field.value ? format(field.value, 'PPP') : <span>Escolha uma data</span>}
+                    <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
+                  </Button>
+                </FormControl></PopoverTrigger>
+                  <PopoverContent className="w-auto p-0" align="start">
+                    <Calendar mode="single" selected={field.value} onSelect={field.onChange} initialFocus />
+                  </PopoverContent></Popover><FormMessage />
+              </FormItem>)}
             />
             <FormField name="dataPrevisao" control={form.control} render={({ field }) => (
-                <FormItem className="flex flex-col flex-1"><FormLabel>Previsão de Conclusão</FormLabel>
-                    <Popover><PopoverTrigger asChild><FormControl>
-                        <Button variant={'outline'} className={cn('w-full pl-3 text-left font-normal',!field.value && 'text-muted-foreground')}>
-                            {field.value ? format(field.value, 'PPP') : <span>Escolha uma data</span>}
-                            <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
-                        </Button>
-                    </FormControl></PopoverTrigger>
-                    <PopoverContent className="w-auto p-0" align="start">
-                        <Calendar mode="single" selected={field.value} onSelect={field.onChange} disabled={(date) => date < form.getValues('dataEntrada')} initialFocus/>
-                    </PopoverContent></Popover><FormMessage />
-                </FormItem>)}
+              <FormItem className="flex flex-col flex-1"><FormLabel>Previsão de Conclusão</FormLabel>
+                <Popover><PopoverTrigger asChild><FormControl>
+                  <Button variant={'outline'} className={cn('w-full pl-3 text-left font-normal', !field.value && 'text-muted-foreground')}>
+                    {field.value ? format(field.value, 'PPP') : <span>Escolha uma data</span>}
+                    <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
+                  </Button>
+                </FormControl></PopoverTrigger>
+                  <PopoverContent className="w-auto p-0" align="start">
+                    <Calendar mode="single" selected={field.value} onSelect={field.onChange} disabled={(date) => date < form.getValues('dataEntrada')} initialFocus />
+                  </PopoverContent></Popover><FormMessage />
+              </FormItem>)}
             />
-        </div>
+          </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             <FormField control={form.control} name="mecanicoResponsavel" render={({ field }) => (
-                <FormItem className="flex-1"><FormLabel>Mecânico Responsável</FormLabel>
+              <FormItem className="flex-1"><FormLabel>Mecânico Responsável</FormLabel>
                 <FormControl><Input placeholder="Nome do mecânico" {...field} /></FormControl>
                 <FormMessage /></FormItem>)}
             />
@@ -344,7 +341,7 @@ export function AddOrdemServicoForm({
                 </Select><FormMessage />
               </FormItem>)}
             />
-             <FormField control={form.control} name="statusPagamento" render={({ field }) => (
+            <FormField control={form.control} name="statusPagamento" render={({ field }) => (
               <FormItem className="flex-1"><FormLabel>Status do Pagamento</FormLabel>
                 <Select onValueChange={field.onChange} defaultValue={field.value}>
                   <FormControl><SelectTrigger><SelectValue placeholder="Selecione o status" /></SelectTrigger></FormControl>
@@ -356,43 +353,43 @@ export function AddOrdemServicoForm({
                 </Select><FormMessage />
               </FormItem>)}
             />
-        </div>
+          </div>
 
-        <div className="space-y-4 rounded-md border p-4">
+          <div className="space-y-4 rounded-md border p-4">
             <div className="flex justify-between items-center">
-                <h3 className="font-medium">Serviços e Peças</h3>
-                <ItemSelector
-                    pecas={pecas}
-                    servicos={servicos}
-                    onSelect={handleItemSelect}
-                    selectedItemIds={selectedItemIds}
-                />
+              <h3 className="font-medium">Serviços e Peças</h3>
+              <ItemSelector
+                pecas={pecas}
+                servicos={servicos}
+                onSelect={handleItemSelect}
+                selectedItemIds={selectedItemIds}
+              />
             </div>
             {servicosFields.length > 0 && <h4 className="text-sm font-medium text-muted-foreground">Serviços</h4>}
             {servicosFields.map((field, index) => (
               <div key={field.id} className="flex flex-col md:flex-row items-end gap-2 border-b md:border-none pb-4 md:pb-0 mb-4 md:mb-0">
                 <div className="flex-1 w-full">
                   <FormLabel className={cn(index !== 0 && "md:hidden", "text-xs md:hidden")}>Descrição</FormLabel>
-                   <FormField control={form.control} name={`servicos.${index}.descricao`} render={({ field }) => (
-                        <FormItem>
-                           <FormControl>
-                                <Input placeholder="Digite um serviço" {...field} />
-                            </FormControl>
-                           <FormMessage />
-                        </FormItem>)}
-                    />
+                  <FormField control={form.control} name={`servicos.${index}.descricao`} render={({ field }) => (
+                    <FormItem>
+                      <FormControl>
+                        <Input placeholder="Digite um serviço" {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>)}
+                  />
                 </div>
-                 <div className="flex-grow-0 flex-shrink-0 basis-1/3 w-full md:w-auto">
-                    <FormLabel className={cn(index !== 0 && "md:hidden", "text-xs md:hidden")}>Valor</FormLabel>
-                    <FormField control={form.control} name={`servicos.${index}.valor`} render={({ field }) => (
-                        <FormItem><FormControl><Input type="number" placeholder="400.00" {...field} /></FormControl><FormMessage /></FormItem>)}
-                    />
+                <div className="flex-grow-0 flex-shrink-0 basis-1/3 w-full md:w-auto">
+                  <FormLabel className={cn(index !== 0 && "md:hidden", "text-xs md:hidden")}>Valor</FormLabel>
+                  <FormField control={form.control} name={`servicos.${index}.valor`} render={({ field }) => (
+                    <FormItem><FormControl><Input type="number" placeholder="400.00" {...field} /></FormControl><FormMessage /></FormItem>)}
+                  />
                 </div>
                 <div className="w-full md:w-auto">
-                    <Button type="button" variant="destructive" size="icon" onClick={() => removeServico(index)} className="w-full md:w-10 h-10">
-                        <Trash2 className="h-4 w-4" />
-                        <span className="sr-only">Remover Serviço</span>
-                    </Button>
+                  <Button type="button" variant="destructive" size="icon" onClick={() => removeServico(index)} className="w-full md:w-10 h-10">
+                    <Trash2 className="h-4 w-4" />
+                    <span className="sr-only">Remover Serviço</span>
+                  </Button>
                 </div>
               </div>
             ))}
@@ -401,57 +398,57 @@ export function AddOrdemServicoForm({
               <div key={field.id} className="grid grid-cols-12 gap-x-2 gap-y-2 items-start border-b pb-4 mb-4 md:border-none md:pb-0 md:mb-2">
                 <div className="col-span-12 md:col-span-5">
                   <FormLabel className="text-xs md:hidden">Descrição</FormLabel>
-                   <FormField control={form.control} name={`pecas.${index}.descricao`} render={({ field }) => (
-                        <FormItem>
-                            <FormControl>
-                                <Input placeholder="Digite uma peça" {...field} />
-                            </FormControl>
-                            <FormMessage />
-                        </FormItem>)}
-                    />
-                </div>
-                 <div className="col-span-4 md:col-span-2">
-                    <FormLabel className="text-xs md:hidden">Qtd.</FormLabel>
-                    <FormField control={form.control} name={`pecas.${index}.quantidade`} render={({ field }) => (
-                        <FormItem><FormControl><Input type="number" placeholder="1" {...field} /></FormControl><FormMessage /></FormItem>)}
-                    />
+                  <FormField control={form.control} name={`pecas.${index}.descricao`} render={({ field }) => (
+                    <FormItem>
+                      <FormControl>
+                        <Input placeholder="Digite uma peça" {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>)}
+                  />
                 </div>
                 <div className="col-span-4 md:col-span-2">
-                    <FormLabel className="text-xs md:hidden">Vlr. Unitário</FormLabel>
-                    <FormField control={form.control} name={`pecas.${index}.valorUnitario`} render={({ field }) => (
-                        <FormItem><FormControl><Input type="number" placeholder="100.00" {...field} /></FormControl><FormMessage /></FormItem>)}
-                    />
+                  <FormLabel className="text-xs md:hidden">Qtd.</FormLabel>
+                  <FormField control={form.control} name={`pecas.${index}.quantidade`} render={({ field }) => (
+                    <FormItem><FormControl><Input type="number" placeholder="1" {...field} /></FormControl><FormMessage /></FormItem>)}
+                  />
                 </div>
                 <div className="col-span-4 md:col-span-2">
-                     <FormLabel className="text-xs md:hidden">Subtotal</FormLabel>
-                    <Input readOnly disabled value={((form.watch(`pecas.${index}.quantidade`) || 0) * (form.watch(`pecas.${index}.valorUnitario`) || 0)).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })} />
+                  <FormLabel className="text-xs md:hidden">Vlr. Unitário</FormLabel>
+                  <FormField control={form.control} name={`pecas.${index}.valorUnitario`} render={({ field }) => (
+                    <FormItem><FormControl><Input type="number" placeholder="100.00" {...field} /></FormControl><FormMessage /></FormItem>)}
+                  />
+                </div>
+                <div className="col-span-4 md:col-span-2">
+                  <FormLabel className="text-xs md:hidden">Subtotal</FormLabel>
+                  <Input readOnly disabled value={((form.watch(`pecas.${index}.quantidade`) || 0) * (form.watch(`pecas.${index}.valorUnitario`) || 0)).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })} />
                 </div>
                 <div className="col-span-12 md:col-span-1 flex items-end h-full">
-                    <Button type="button" variant="destructive" size="icon" onClick={() => removePeca(index)} className="w-full h-10">
-                        <Trash2 className="h-4 w-4" />
-                        <span className="sr-only">Remover Peça</span>
-                    </Button>
+                  <Button type="button" variant="destructive" size="icon" onClick={() => removePeca(index)} className="w-full h-10">
+                    <Trash2 className="h-4 w-4" />
+                    <span className="sr-only">Remover Peça</span>
+                  </Button>
                 </div>
               </div>
             ))}
-        </div>
+          </div>
 
-        <FormField control={form.control} name="observacoes" render={({ field }) => (
+          <FormField control={form.control} name="observacoes" render={({ field }) => (
             <FormItem><FormLabel>Observações</FormLabel>
-              <FormControl><Textarea placeholder="Detalhes adicionais, condições, etc." className="resize-none" {...field}/></FormControl>
+              <FormControl><Textarea placeholder="Detalhes adicionais, condições, etc." className="resize-none" {...field} /></FormControl>
               <FormMessage />
             </FormItem>)}
-        />
+          />
         </div>
-        
+
         <div className="flex flex-col-reverse sm:flex-row items-center justify-between pt-4 border-t">
-            <div className="text-lg font-semibold mt-4 sm:mt-0">
-                <span>Valor Total: </span>
-                <span>{valorTotal.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}</span>
-            </div>
-            <Button type="submit" disabled={form.formState.isSubmitting}>
-                {form.formState.isSubmitting ? 'Salvando...' : 'Salvar Ordem de Serviço'}
-            </Button>
+          <div className="text-lg font-semibold mt-4 sm:mt-0">
+            <span>Valor Total: </span>
+            <span>{valorTotal.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}</span>
+          </div>
+          <Button type="submit" disabled={form.formState.isSubmitting}>
+            {form.formState.isSubmitting ? 'Salvando...' : 'Salvar Ordem de Serviço'}
+          </Button>
         </div>
       </form>
     </Form>

@@ -37,6 +37,7 @@ import MobileLayout from '@/components/layout/mobile-layout';
 import Link from 'next/link';
 import { generateResumoPDF, sharePDF } from '@/lib/pdf-generator';
 import { DatePicker } from '@/components/ui/date-picker';
+import { ClienteCombobox } from '@/components/ui/cliente-combobox';
 import {
     Dialog,
     DialogContent,
@@ -345,18 +346,12 @@ export default function ResumoEditPage({ params }: PageProps) {
                     <CardContent className="space-y-4">
                         <div className="space-y-2">
                             <label className="text-sm font-medium">Cliente</label>
-                            <Select value={clienteId} onValueChange={setClienteId}>
-                                <SelectTrigger>
-                                    <SelectValue placeholder="Selecione o Cliente" />
-                                </SelectTrigger>
-                                <SelectContent>
-                                    {clientes?.map((cliente) => (
-                                        <SelectItem key={cliente.id} value={cliente.id}>
-                                            {cliente.nome}
-                                        </SelectItem>
-                                    ))}
-                                </SelectContent>
-                            </Select>
+                            <ClienteCombobox
+                                clientes={clientes || []}
+                                value={clienteId}
+                                onChange={setClienteId}
+                                placeholder="Selecione o Cliente"
+                            />
                         </div>
                         <div className="space-y-2">
                             <label className="text-sm font-medium">Status</label>
