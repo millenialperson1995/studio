@@ -134,8 +134,7 @@ export const generateOrcamentoPDF = async (
   doc.setFontSize(10);
   doc.setFont('helvetica', 'bold');
   doc.text(`Orçamento #: ${orcamento.id.substring(0, 8)}`, margin, currentY);
-  const dataValidade = orcamento.dataValidade?.toDate ? orcamento.dataValidade.toDate() : new Date();
-  doc.text(`Válido até: ${format(dataValidade, 'dd/MM/yyyy')}`, pageWidth - margin, currentY, { align: 'right' });
+  doc.text(`Documento gerado: ${format(new Date(), 'dd/MM/yyyy')}`, pageWidth - margin, currentY, { align: 'right' });
   currentY += 10;
 
 
